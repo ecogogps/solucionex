@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Mail,
   Phone,
-  Package
+  Package,
+  BarChart3,
+  Contact2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,6 +169,12 @@ export default function ClientsPage() {
               <Users className="h-5 w-5 text-accent" /> Clientes
             </Button>
           </Link>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-white/5 opacity-50 cursor-not-allowed" disabled>
+            <Contact2 className="h-5 w-5" /> Flota
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-white/5 opacity-50 cursor-not-allowed" disabled>
+            <BarChart3 className="h-5 w-5" /> Reportes
+          </Button>
         </nav>
         <div className="pt-6 border-t border-white/10">
           <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => router.push('/')}>
