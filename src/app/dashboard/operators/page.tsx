@@ -183,7 +183,7 @@ export default function OperatorsPage() {
               <ClipboardList className="h-5 w-5" /> Pedidos
             </Button>
           </Link>
-          <Link href="/dashboard/clients">
+          <Link href="/dashboard/business">
             <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
               <Building2 className="h-5 w-5" /> Empresas
             </Button>

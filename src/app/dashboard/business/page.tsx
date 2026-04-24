@@ -3,22 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  ClipboardList, 
+  Building2, 
   Plus, 
   Search, 
   MoreVertical, 
   LogOut, 
   Truck, 
-  Clock, 
-  CheckCircle2, 
   Trash2,
   Edit2,
   Loader2,
-  AlertCircle,
-  Building2,
+  Mail,
+  Phone,
+  ClipboardList,
   UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   Table, 
   TableBody, 
@@ -34,7 +34,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
   DialogContent, 
@@ -43,42 +42,40 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-interface OrderData {
+interface CompanyData {
   id: string;
-  tracking: string;
-  company: string;
-  status: string;
-  destiny: string;
+  name: string;
+  email: string;
+  phone: string;
+  legal_id?: string;
   created_at: string;
 }
 
-export default function Dashboard() {
-  const [orders, setOrders] = useState<OrderData[]>([]);
+export default function CompaniesPage() {
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<OrderData | null>(null);
+  const [editingCompany, setEditingCompany] = useState<CompanyData | null>(null);
   
-  const [formData, setFormData] = useState({ company: '', destiny: '', status: 'Pendiente' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', legal_id: '' });
   
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchOrders();
+    fetchCompanies();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchCompanies = async () => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setOrders([
-        { id: '1', tracking: 'PED-9901', company: 'Empresa Demo A', destiny: 'Calle Falsa 123', status: 'En Ruta', created_at: new Date().toISOString() },
-        { id: '2', tracking: 'PED-4422', company: 'Tienda Ejemplo', destiny: 'Av. Libertador 456', status: 'Pendiente', created_at: new Date().toISOString() }
+      setCompanies([
+        { id: '1', name: 'Logística SA', email: 'contacto@logistica.com', phone: '555-0199', legal_id: '20123456789', created_at: new Date().toISOString() },
+        { id: '2', name: 'Moda Express', email: 'ventas@moda.com', phone: '555-0122', legal_id: '20876543210', created_at: new Date().toISOString() }
       ]);
       setLoading(false);
       return;
@@ -87,49 +84,47 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('orders')
+        .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setOrders(data || []);
+      setCompanies(data || []);
     } catch (error: any) {
-      console.error("Error cargando pedidos:", error);
+      console.error("Error cargando empresas:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!formData.company || !formData.destiny) {
-      toast({ variant: "destructive", title: "Campos incompletos", description: "Por favor llena todos los campos." });
+    if (!formData.name || !formData.email) {
+      toast({ variant: "destructive", title: "Campos incompletos", description: "El nombre y el correo son obligatorios." });
       return;
     }
 
     try {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        if (editingOrder) {
-          setOrders(orders.map(p => p.id === editingOrder.id ? { ...p, ...formData } : p));
+        if (editingCompany) {
+          setCompanies(companies.map(c => c.id === editingCompany.id ? { ...c, ...formData } : c));
         } else {
-          const newOrder = { 
+          const newCompany = { 
             id: Math.random().toString(), 
-            tracking: `PED-${Math.floor(1000 + Math.random() * 9000)}`, 
             ...formData, 
             created_at: new Date().toISOString() 
           };
-          setOrders([newOrder, ...orders]);
+          setCompanies([newCompany, ...companies]);
         }
-        toast({ title: "Operación exitosa", description: "Pedido guardado localmente." });
+        toast({ title: "Guardado", description: "Empresa actualizada localmente." });
       } else {
-        if (editingOrder) {
-          const { error } = await supabase.from('orders').update(formData).eq('id', editingOrder.id);
+        if (editingCompany) {
+          const { error } = await supabase.from('companies').update(formData).eq('id', editingCompany.id);
           if (error) throw error;
         } else {
-          const tracking = `PED-${Math.floor(1000 + Math.random() * 9000)}`;
-          const { error } = await supabase.from('orders').insert([{ ...formData, tracking }]);
+          const { error } = await supabase.from('companies').insert([formData]);
           if (error) throw error;
         }
-        fetchOrders();
+        fetchCompanies();
       }
       setIsDialogOpen(false);
     } catch (error: any) {
@@ -137,41 +132,33 @@ export default function Dashboard() {
     }
   };
 
-  const deleteOrder = async (id: string) => {
+  const deleteCompany = async (id: string) => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setOrders(orders.filter(p => p.id !== id));
-      toast({ title: "Eliminado", description: "El pedido ha sido removido." });
+      setCompanies(companies.filter(c => c.id !== id));
+      toast({ title: "Eliminado", description: "Empresa removida exitosamente." });
       return;
     }
 
     try {
-      await supabase.from('orders').delete().eq('id', id);
-      fetchOrders();
+      await supabase.from('companies').delete().eq('id', id);
+      fetchCompanies();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error al eliminar", description: error.message });
     }
   };
 
-  const openNewOrderModal = () => {
-    setEditingOrder(null);
-    setFormData({ company: '', destiny: '', status: 'Pendiente' });
+  const openNewCompanyModal = () => {
+    setEditingCompany(null);
+    setFormData({ name: '', email: '', phone: '', legal_id: '' });
     setIsDialogOpen(true);
   };
 
-  const openEditOrderModal = (order: OrderData) => {
-    setEditingOrder(order);
-    setFormData({ company: order.company, destiny: order.destiny, status: order.status });
+  const openEditCompanyModal = (company: CompanyData) => {
+    setEditingCompany(company);
+    setFormData({ name: company.name, email: company.email, phone: company.phone, legal_id: company.legal_id || '' });
     setTimeout(() => {
       setIsDialogOpen(true);
     }, 100);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
-      case 'En Ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Ruta</Badge>;
-      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
-    }
   };
 
   return (
@@ -183,13 +170,13 @@ export default function Dashboard() {
         </div>
         <nav className="flex-1 space-y-2">
           <Link href="/dashboard">
-            <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20 mb-2">
-              <ClipboardList className="h-5 w-5 text-accent" /> Pedidos
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5 mb-2">
+              <ClipboardList className="h-5 w-5" /> Pedidos
             </Button>
           </Link>
           <Link href="/dashboard/business">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Building2 className="h-5 w-5" /> Empresas
+            <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
+              <Building2 className="h-5 w-5 text-accent" /> Empresas
             </Button>
           </Link>
           <Link href="/dashboard/operators">
@@ -207,20 +194,20 @@ export default function Dashboard() {
 
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
-          <h2 className="text-xl font-bold text-white">Gestión de Pedidos</h2>
+          <h2 className="text-xl font-bold text-white">Gestión de Empresas</h2>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
-                placeholder="Buscar pedido..." 
+                placeholder="Buscar empresa..." 
                 className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             
-            <Button onClick={openNewOrderModal} className="bg-accent text-primary hover:bg-accent/90 font-bold">
-              <Plus className="h-4 w-4 mr-2" /> Nuevo Pedido
+            <Button onClick={openNewCompanyModal} className="bg-accent text-primary hover:bg-accent/90 font-bold">
+              <Plus className="h-4 w-4 mr-2" /> Nueva Empresa
             </Button>
           </div>
         </header>
@@ -231,36 +218,43 @@ export default function Dashboard() {
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <p>Cargando información...</p>
             </div>
-          ) : orders.length === 0 ? (
+          ) : companies.length === 0 ? (
             <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
-              <AlertCircle className="h-12 w-12 text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white">Sin pedidos registrados</h3>
-              <p className="text-slate-400">Comienza registrando tu primer pedido.</p>
+              <Building2 className="h-12 w-12 text-slate-500 mb-4" />
+              <h3 className="text-lg font-semibold text-white">Sin empresas registradas</h3>
+              <p className="text-slate-400">Comienza registrando tu primera empresa aliada.</p>
             </div>
           ) : (
             <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
               <Table>
                 <TableHeader className="bg-white/10">
                   <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="font-bold text-slate-300">Pedido ID</TableHead>
-                    <TableHead className="font-bold text-slate-300">Empresa</TableHead>
-                    <TableHead className="font-bold text-slate-300">Destino</TableHead>
-                    <TableHead className="font-bold text-slate-300">Estado</TableHead>
+                    <TableHead className="font-bold text-slate-300">Nombre de Empresa</TableHead>
+                    <TableHead className="font-bold text-slate-300">Contacto</TableHead>
+                    <TableHead className="font-bold text-slate-300">RUC</TableHead>
+                    <TableHead className="font-bold text-slate-300">Registro</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders
-                    .filter(p => 
-                      p.company.toLowerCase().includes(search.toLowerCase()) || 
-                      p.tracking.toLowerCase().includes(search.toLowerCase())
+                  {companies
+                    .filter(c => 
+                      c.name.toLowerCase().includes(search.toLowerCase()) || 
+                      c.email.toLowerCase().includes(search.toLowerCase())
                     )
-                    .map((order) => (
-                    <TableRow key={order.id} className="border-white/10 hover:bg-white/5">
-                      <TableCell className="font-mono font-medium text-accent">{order.tracking}</TableCell>
-                      <TableCell className="text-white">{order.company}</TableCell>
-                      <TableCell className="text-slate-300">{order.destiny}</TableCell>
-                      <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    .map((company) => (
+                    <TableRow key={company.id} className="border-white/10 hover:bg-white/5">
+                      <TableCell className="font-medium text-white">{company.name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-xs text-slate-400 gap-1">
+                          <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-accent" /> {company.email}</span>
+                          <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {company.phone}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">{company.legal_id || '-'}</TableCell>
+                      <TableCell className="text-slate-400 text-xs">
+                        {new Date(company.created_at).toLocaleDateString()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -269,14 +263,14 @@ export default function Dashboard() {
                           <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
                             <DropdownMenuItem 
                               className="gap-2 cursor-pointer" 
-                              onClick={() => openEditOrderModal(order)}
+                              onClick={() => openEditCompanyModal(company)}
                             >
                               <Edit2 className="h-4 w-4 text-blue-400" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-white/10" />
                             <DropdownMenuItem 
                               className="gap-2 text-red-400 cursor-pointer"
-                              onClick={() => deleteOrder(order.id)}
+                              onClick={() => deleteCompany(company.id)}
                             >
                               <Trash2 className="h-4 w-4" /> Eliminar
                             </DropdownMenuItem>
@@ -302,35 +296,30 @@ export default function Dashboard() {
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-white">
-                {editingOrder ? 'Editar Pedido' : 'Registrar Nuevo Pedido'}
+                {editingCompany ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="company">Empresa Solicitante</Label>
-                <Input id="company" value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="Ej: Empresa ACME" />
+                <Label htmlFor="name">Nombre de la Empresa</Label>
+                <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="Logística SA" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="destiny">Dirección de Destino</Label>
-                <Input id="destiny" value={formData.destiny} onChange={(e) => setFormData({...formData, destiny: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="Av. Principal 123" />
+                <Label htmlFor="email">Correo Corporativo</Label>
+                <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="admin@empresa.com" />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="status">Estado del Pedido</Label>
-                <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
-                  <SelectTrigger className="bg-white/5 border-white/10">
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-white/10 text-white">
-                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                    <SelectItem value="En Ruta">En Ruta</SelectItem>
-                    <SelectItem value="Entregado">Entregado</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="phone">Teléfono Central</Label>
+                <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="555-0101" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="legal_id">RUC</Label>
+                <Input id="legal_id" value={formData.legal_id} onChange={(e) => setFormData({...formData, legal_id: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" placeholder="Ej: 20123456789" />
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
-              <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold">Guardar Cambios</Button>
+              <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold">Guardar Empresa</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
