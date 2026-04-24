@@ -12,12 +12,10 @@ import {
   Trash2,
   Edit2,
   Loader2,
-  AlertCircle,
   Mail,
   Phone,
   Package,
-  BarChart3,
-  Contact2
+  UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,10 +168,7 @@ export default function ClientsPage() {
             </Button>
           </Link>
           <Button variant="ghost" className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-white/5 opacity-50 cursor-not-allowed" disabled>
-            <Contact2 className="h-5 w-5" /> Flota
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-slate-500 hover:text-white hover:bg-white/5 opacity-50 cursor-not-allowed" disabled>
-            <BarChart3 className="h-5 w-5" /> Reportes
+            <UserCheck className="h-5 w-5" /> Operadores
           </Button>
         </nav>
         <div className="pt-6 border-t border-white/10">
