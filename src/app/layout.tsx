@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Hola Mundo Display',
-  description: 'A simple and elegant Hello World application.',
+  title: 'Solucionex - Gestión de Delivery',
+  description: 'Sistema profesional de gestión de logística y entrega de paquetes.',
 };
 
 export default function RootLayout({

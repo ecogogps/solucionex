@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -19,37 +16,23 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleAuth = async (type: 'login' | 'register') => {
-    // Si no hay configuración real, permitimos entrar al dashboard para ver la UI
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        router.push('/dashboard');
-      }, 800);
-      return;
-    }
-
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    try {
-      if (type === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+
+    // Modo Prototipo: Permitimos el acceso para navegación
+    setTimeout(() => {
+      setLoading(false);
+      if (email && password) {
         router.push('/dashboard');
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        toast({ title: "Registro exitoso", description: "Revisa tu correo para confirmar la cuenta." });
+        toast({
+          variant: "destructive",
+          title: "Error de acceso",
+          description: "Por favor, ingresa tus credenciales.",
+        });
       }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error de autenticación",
-        description: error.message || "Ocurrió un error inesperado.",
-      });
-    } finally {
-      setLoading(false);
-    }
+    }, 800);
   };
 
   return (
@@ -60,54 +43,55 @@ export default function LoginPage() {
             <Truck className="h-10 w-10 text-accent" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-white">
-            FastDelivery <span className="text-accent">Pro</span>
+            Solucionex <span className="text-accent">Pro</span>
           </h1>
-          <p className="text-slate-300 mt-2 font-medium">Logística impulsada por Supabase</p>
+          <p className="text-slate-300 mt-2 font-medium">Logística Inteligente</p>
         </div>
 
         <Card className="border-white/10 shadow-2xl backdrop-blur-xl bg-white/5">
           <CardHeader>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10">
-                <TabsTrigger value="login" className="data-[state=active]:bg-accent data-[state=active]:text-primary">Ingresar</TabsTrigger>
-                <TabsTrigger value="register" className="data-[state=active]:bg-accent data-[state=active]:text-primary">Registro</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login" className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-login" className="text-white">Correo Electrónico</Label>
-                  <Input id="email-login" type="email" placeholder="tu@empresa.com" className="bg-white/5 border-white/10 text-white" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pass-login" className="text-white">Contraseña</Label>
-                  <Input id="pass-login" type="password" placeholder="••••••••" className="bg-white/5 border-white/10 text-white" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button className="w-full group bg-accent text-primary hover:bg-accent/90" disabled={loading} onClick={() => handleAuth('login')}>
-                  {loading ? <Loader2 className="animate-spin" /> : <>Iniciar Sesión <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></>}
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="register" className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-reg" className="text-white">Correo Electrónico</Label>
-                  <Input id="email-reg" type="email" placeholder="admin@empresa.com" className="bg-white/5 border-white/10 text-white" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pass-reg" className="text-white">Contraseña</Label>
-                  <Input id="pass-reg" type="password" placeholder="Mínimo 6 caracteres" className="bg-white/5 border-white/10 text-white" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button className="w-full bg-white text-primary hover:bg-white/90" disabled={loading} onClick={() => handleAuth('register')}>
-                  {loading ? <Loader2 className="animate-spin" /> : "Crear Empresa"}
-                </Button>
-              </TabsContent>
-            </Tabs>
+            <CardTitle className="text-white text-center">Iniciar Sesión</CardTitle>
+            <CardDescription className="text-slate-400 text-center">
+              Ingresa tus credenciales para acceder al panel
+            </CardDescription>
           </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white">Correo Electrónico</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="tu@correo.com" 
+                  className="bg-white/5 border-white/10 text-white" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-white">Contraseña</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="bg-white/5 border-white/10 text-white" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full group bg-accent text-primary hover:bg-accent/90 font-bold" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" /> : <>Ingresar al Sistema <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></>}
+              </Button>
+            </form>
+          </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 gap-4 mt-8 opacity-40">
           <div className="flex items-center gap-2 text-xs text-white justify-center">
             <ShieldCheck className="h-4 w-4" />
-            <span>Supabase Auth</span>
+            <span>Acceso Seguro</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-white justify-center">
             <Package className="h-4 w-4" />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -75,7 +74,7 @@ export default function Dashboard() {
   }, []);
 
   const fetchPackages = async () => {
-    // Si no hay configuración real, mostramos datos de prueba
+    // Si no hay configuración real, mostramos datos de prueba para navegación
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       setPackages([
         { id: '1', tracking: 'TRK-9901', client: 'Empresa Demo A', destiny: 'Calle Falsa 123', status: 'En Ruta', created_at: new Date().toISOString() },
@@ -107,7 +106,6 @@ export default function Dashboard() {
       return;
     }
 
-    // Lógica para modo Prototipo (sin backend)
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       if (editingPackage) {
         setPackages(packages.map(p => p.id === editingPackage.id ? { ...p, ...formData } : p));
@@ -121,10 +119,10 @@ export default function Dashboard() {
         setPackages([newPkg, ...packages]);
       }
       setIsDialogOpen(false);
+      toast({ title: "Operación exitosa", description: "Cambios guardados localmente (Modo Demo)." });
       return;
     }
 
-    // Lógica real con Supabase
     try {
       if (editingPackage) {
         const { error } = await supabase.from('packages').update(formData).eq('id', editingPackage.id);
@@ -168,7 +166,7 @@ export default function Dashboard() {
       <aside className="w-64 bg-black/20 border-r border-white/10 hidden lg:flex flex-col p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-10">
           <Truck className="h-8 w-8 text-accent" />
-          <span className="text-xl font-bold tracking-tight">FastDelivery</span>
+          <span className="text-xl font-bold tracking-tight">Solucionex</span>
         </div>
         <nav className="flex-1 space-y-2">
           <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
@@ -189,7 +187,7 @@ export default function Dashboard() {
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input 
-                placeholder="Buscar..." 
+                placeholder="Buscar por cliente o tracking..." 
                 className="pl-10 h-9 bg-white/5 border-white/10 text-white placeholder:text-slate-500" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
