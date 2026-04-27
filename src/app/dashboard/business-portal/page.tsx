@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, 
   Truck, 
   LogOut, 
   PlusCircle, 
-  History,
-  Send,
+  Send, 
   Loader2,
+  Search,
+  CheckCircle2,
+  MapPin,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +26,7 @@ import { cn } from '@/lib/utils';
 
 export default function BusinessPortal() {
   const [loading, setLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState<'solicitud' | 'paquetes'>('solicitud');
   const [formData, setFormData] = useState({
     type: '',
@@ -47,24 +51,72 @@ export default function BusinessPortal() {
     e.preventDefault();
     setLoading(true);
 
+    // Simular envío de datos
     setTimeout(() => {
       setLoading(false);
-      toast({
-        title: "Solicitud enviada",
-        description: `El paquete ${formData.trackingNumber} ha sido registrado exitosamente.`,
-      });
-      setFormData({
-        type: '',
-        pickupTime: '',
-        trackingNumber: '',
-        paymentMethod: 'transferencia',
-        orderValue: '',
-        address: '',
-        phone: '',
-        note: ''
-      });
-    }, 1200);
+      setIsSearching(true);
+      
+      // Simular búsqueda de operador durante 4 segundos
+      setTimeout(() => {
+        setIsSearching(false);
+        setActiveTab('paquetes');
+        toast({
+          title: "Solicitud registrada",
+          description: `El paquete ${formData.trackingNumber} ha sido procesado.`,
+        });
+        setFormData({
+          type: '',
+          pickupTime: '',
+          trackingNumber: '',
+          paymentMethod: 'transferencia',
+          orderValue: '',
+          address: '',
+          phone: '',
+          note: ''
+        });
+      }, 4000);
+    }, 800);
   };
+
+  // Pantalla de Búsqueda de Operador
+  if (isSearching) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-white overflow-hidden">
+        <div className="relative mb-8">
+          {/* Círculos de radar animados */}
+          <div className="absolute inset-0 rounded-full bg-accent/20 animate-ping" />
+          <div className="absolute inset-0 rounded-full bg-accent/10 animate-pulse delay-75" />
+          
+          <div className="relative bg-white/10 p-8 rounded-full border border-white/20 shadow-[0_0_50px_rgba(0,255,255,0.2)]">
+            <Search className="h-16 w-16 text-accent animate-bounce" />
+          </div>
+        </div>
+
+        <div className="text-center space-y-4 max-w-sm">
+          <h2 className="text-3xl font-bold tracking-tight">Buscando operador</h2>
+          <p className="text-slate-400">
+            Estamos localizando al transportista más cercano para tu paquete <span className="text-accent font-mono">{formData.trackingNumber}</span>.
+          </p>
+        </div>
+
+        <div className="mt-12 w-full max-w-xs space-y-4">
+          <div className="flex items-center gap-3 text-sm text-slate-300 bg-white/5 p-3 rounded-lg border border-white/10">
+            <MapPin className="h-4 w-4 text-accent" />
+            <span className="truncate">{formData.address}</span>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-300 bg-white/5 p-3 rounded-lg border border-white/10">
+            <Clock className="h-4 w-4 text-accent" />
+            <span>Recogida en {formData.pickupTime} min</span>
+          </div>
+        </div>
+
+        <div className="mt-12 flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-accent" />
+          <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">Conectando con flota activa</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden">
