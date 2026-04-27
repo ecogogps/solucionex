@@ -94,8 +94,8 @@ export default function BusinessPortal() {
 
         <div className="text-center space-y-4 max-w-sm">
           <h2 className="text-3xl font-bold tracking-tight mb-2">Buscando operador</h2>
-          <div className="bg-white/5 border border-white/10 rounded-full px-4 py-2 inline-block">
-            <span className="text-accent font-mono font-bold tracking-wider">Guía Nº: {formData.trackingNumber}</span>
+          <div className="bg-white/5 border border-white/10 rounded-full px-6 py-2 inline-block">
+            <span className="text-accent text-lg font-bold tracking-normal">Guía Nº: {formData.trackingNumber}</span>
           </div>
         </div>
 
@@ -174,7 +174,6 @@ export default function BusinessPortal() {
               <>
                 <div className="flex flex-col gap-1">
                   <h2 className="text-2xl font-bold">Nueva Solicitud</h2>
-                  <p className="text-slate-400">Genera una nueva recogida de paquete.</p>
                 </div>
 
                 <Card className="bg-white/5 border-white/10 shadow-2xl backdrop-blur-sm">
@@ -242,7 +241,7 @@ export default function BusinessPortal() {
                             id="valor"
                             type="number"
                             step="0.01"
-                            className="bg-white/5 border-white/10 text-white font-mono" 
+                            className="bg-white/5 border-white/10 text-white" 
                             value={formData.orderValue}
                             onChange={(e) => setFormData({...formData, orderValue: e.target.value})}
                             required
