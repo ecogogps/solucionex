@@ -10,10 +10,9 @@ import {
   History,
   Send,
   Loader2,
-  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,18 +36,21 @@ export default function BusinessPortal() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Solo permite números
+    setFormData({ ...formData, phone: value });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulación de envío
     setTimeout(() => {
       setLoading(false);
       toast({
         title: "Solicitud enviada",
         description: `El paquete ${formData.trackingNumber} ha sido registrado exitosamente.`,
       });
-      // Limpiar formulario
       setFormData({
         type: '',
         pickupTime: '',
@@ -75,7 +77,7 @@ export default function BusinessPortal() {
             <PlusCircle className="h-5 w-5 text-accent" /> Nueva Solicitud
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-            <History className="h-5 w-5" /> Mis Pedidos
+            <History className="h-5 w-5" /> Mis Paquetes
           </Button>
         </nav>
         <div className="pt-6 border-t border-white/10 mt-6">
@@ -96,7 +98,7 @@ export default function BusinessPortal() {
           <Card className="bg-white/5 border-white/10 shadow-2xl">
             <CardHeader className="border-b border-white/5 pb-4">
               <CardTitle className="text-white flex items-center gap-2">
-                <Package className="h-5 w-5 text-accent" /> Datos del Envío
+                <Package className="h-5 w-5 text-accent" /> Datos del Paquete
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -140,18 +142,18 @@ export default function BusinessPortal() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="guia" className="text-slate-300">Guía Nº</Label>
-                    <Input 
-                      id="guia"
-                      className="bg-white/5 border-white/10 text-white" 
-                      value={formData.trackingNumber}
-                      onChange={(e) => setFormData({...formData, trackingNumber: e.target.value})}
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guia" className="text-slate-300">Guía Nº</Label>
+                  <Input 
+                    id="guia"
+                    className="bg-white/5 border-white/10 text-white" 
+                    value={formData.trackingNumber}
+                    onChange={(e) => setFormData({...formData, trackingNumber: e.target.value})}
+                    required
+                  />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="valor" className="text-slate-300">Valor Pedido ($)</Label>
                     <Input 
@@ -164,24 +166,24 @@ export default function BusinessPortal() {
                       required
                     />
                   </div>
-                </div>
 
-                <div className="space-y-3">
-                  <Label className="text-slate-300">Método de Pago</Label>
-                  <RadioGroup 
-                    value={formData.paymentMethod} 
-                    onValueChange={(v) => setFormData({...formData, paymentMethod: v})}
-                    className="flex gap-6"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="transferencia" id="transferencia" className="border-accent text-accent" />
-                      <Label htmlFor="transferencia" className="cursor-pointer">Transferencia</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="efectivo" id="efectivo" className="border-accent text-accent" />
-                      <Label htmlFor="efectivo" className="cursor-pointer">Efectivo</Label>
-                    </div>
-                  </RadioGroup>
+                  <div className="space-y-3">
+                    <Label className="text-slate-300">Método de Pago</Label>
+                    <RadioGroup 
+                      value={formData.paymentMethod} 
+                      onValueChange={(v) => setFormData({...formData, paymentMethod: v})}
+                      className="flex gap-4 pt-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="transferencia" id="transferencia" className="border-accent text-accent" />
+                        <Label htmlFor="transferencia" className="cursor-pointer text-sm">Transferencia</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="efectivo" id="efectivo" className="border-accent text-accent" />
+                        <Label htmlFor="efectivo" className="cursor-pointer text-sm">Efectivo</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,9 +202,11 @@ export default function BusinessPortal() {
                     <Label htmlFor="telf" className="text-slate-300">Teléfono</Label>
                     <Input 
                       id="telf"
+                      type="text"
+                      inputMode="numeric"
                       className="bg-white/5 border-white/10 text-white" 
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={handlePhoneChange}
                       required
                     />
                   </div>
