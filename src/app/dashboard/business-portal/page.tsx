@@ -324,7 +324,6 @@ export default function BusinessPortal() {
                 <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
                   <Package className="h-12 w-12 text-slate-500 mb-4" />
                   <h3 className="text-lg font-semibold text-white">Sin paquetes registrados</h3>
-                  <p className="text-slate-400">Las solicitudes que envíes aparecerán aquí.</p>
                 </div>
               </div>
             )}
