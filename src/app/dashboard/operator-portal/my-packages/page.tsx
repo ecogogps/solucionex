@@ -84,7 +84,6 @@ export default function MyPackagesPage() {
     getSession();
   }, [router]);
 
-  // Suscripción en tiempo real
   useEffect(() => {
     if (!userId) return;
 
@@ -99,7 +98,6 @@ export default function MyPackagesPage() {
           filter: `operador_id=eq.${userId}`
         }, 
         () => {
-          // Sincronizar toda la lista en tiempo real
           fetchData(userId);
         }
       )
@@ -108,7 +106,7 @@ export default function MyPackagesPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, selectedPackage?.id]); // Dependencia del ID seleccionado para asegurar actualización del modal
+  }, [userId, selectedPackage?.id]);
 
   const fetchData = async (currentUserId: string) => {
     try {
@@ -127,13 +125,11 @@ export default function MyPackagesPage() {
       const packages = data || [];
       setMyDeliveries(packages);
 
-      // CRÍTICO: Si el modal de detalles está abierto, actualizar el paquete seleccionado con los nuevos datos
       if (selectedPackage) {
         const updatedPackage = packages.find(p => p.id === selectedPackage.id);
         if (updatedPackage) {
           setSelectedPackage(updatedPackage);
         } else {
-          // Si ya no está en la lista (ej. entregado por otro proceso), cerrar modal
           setIsDetailOpen(false);
         }
       }
@@ -169,8 +165,6 @@ export default function MyPackagesPage() {
         setIsDetailOpen(false);
       }
       
-      // fetchData se llamará automáticamente por el canal de tiempo real, 
-      // pero lo llamamos aquí para feedback inmediato
       if (userId) fetchData(userId);
     } catch (error: any) {
       toast({
@@ -233,7 +227,7 @@ export default function MyPackagesPage() {
             {myDeliveries.length === 0 ? (
               <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
                 <Navigation className="h-12 w-12 text-slate-500 mb-4" />
-                <h3 className="text-lg font-semibold text-white">Sin rutas activas</h3>
+                <h3 className="text-lg font-semibold text-white">Sin Paquetes activos</h3>
               </div>
             ) : (
               myDeliveries.map((pkg) => (
