@@ -144,7 +144,7 @@ export default function CompaniesPage() {
         toast({ title: "Actualizado", description: "Datos de la empresa actualizados." });
       } else {
         // Crear usuario + Perfil + Empresa usando la Edge Function
-        const { data, error } = await supabase.functions.invoke('crear-usuario-con-rol', {
+        const { data, error } = await supabase.functions.invoke('crear-usuario', {
           body: {
             email: formData.correo,
             password: formData.password,

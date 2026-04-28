@@ -139,7 +139,7 @@ export default function OperatorsPage() {
         toast({ title: "Actualizado", description: "Datos del operador actualizados." });
       } else {
         // Crear usuario + Perfil + Operador usando la Edge Function
-        const { data, error } = await supabase.functions.invoke('crear-usuario-con-rol', {
+        const { data, error } = await supabase.functions.invoke('crear-usuario', {
           body: {
             email: formData.email,
             password: formData.password,
