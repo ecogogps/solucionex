@@ -60,6 +60,7 @@ interface OperadorData {
   id: string;
   nombres: string;
   telefono: string;
+  correo: string;
   cedula: string;
   tipo: 'clase_a' | 'clase_b' | 'clase_f';
   estado: 'activo' | 'inactivo';
@@ -133,13 +134,13 @@ export default function OperatorsPage() {
     setIsSaving(true);
     try {
       if (editingOperador) {
-        // Al editar, no hay campos obligatorios en el frontend
         const { error } = await supabase
           .from('operadores')
           .update({
             nombres: formData.nombres,
             telefono: formData.telefono,
             cedula: formData.cedula,
+            correo: formData.email,
             tipo: formData.tipo,
             estado: formData.estado
           })
@@ -157,6 +158,7 @@ export default function OperatorsPage() {
               nombres: formData.nombres,
               telefono: formData.telefono,
               cedula: formData.cedula,
+              correo: formData.email,
               tipo: formData.tipo,
               estado: formData.estado
             }
@@ -218,7 +220,7 @@ export default function OperatorsPage() {
     setEditingOperador(op);
     setFormData({ 
       nombres: op.nombres || '', 
-      email: '', 
+      email: op.correo || '', 
       password: '',
       telefono: op.telefono || '', 
       cedula: op.cedula || '', 
@@ -309,7 +311,8 @@ export default function OperatorsPage() {
                   {operadores
                     .filter(o => 
                       o.nombres?.toLowerCase().includes(search.toLowerCase()) || 
-                      o.cedula?.toLowerCase().includes(search.toLowerCase())
+                      o.cedula?.toLowerCase().includes(search.toLowerCase()) ||
+                      o.correo?.toLowerCase().includes(search.toLowerCase())
                     )
                     .map((op) => (
                     <TableRow key={op.id} className="border-white/10 hover:bg-white/5">
@@ -318,7 +321,10 @@ export default function OperatorsPage() {
                           <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                             <BadgeCheck className="w-4 h-4 text-accent" />
                           </div>
-                          {op.nombres}
+                          <div className="flex flex-col">
+                            <span>{op.nombres}</span>
+                            <span className="text-[10px] text-slate-500">{op.correo}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-300 font-mono text-xs">
@@ -400,24 +406,24 @@ export default function OperatorsPage() {
                     onChange={(e) => setFormData({...formData, email: e.target.value})} 
                     className="bg-white/5 border-white/10 focus:ring-accent" 
                     placeholder="operador@gmail.com"
-                    disabled={!!editingOperador}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Contraseña {editingOperador && "(Solo lectura)"}</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                      className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
-                      placeholder="••••••••"
-                      disabled={!!editingOperador}
-                    />
+                {!editingOperador && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        value={formData.password} 
+                        onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                        className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
+                        placeholder="••••••••"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
