@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -20,21 +21,60 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Modo Prototipo: Manejo de roles por credenciales
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // 1. Intentar iniciar sesión en Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // 2. Consultar el rol en la tabla perfiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('perfiles')
+          .select('rol')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // 3. Redirección según rol_tipo
+        switch (profileData.rol) {
+          case 'admin':
+            router.push('/dashboard');
+            break;
+          case 'empresa':
+            router.push('/dashboard/business-portal');
+            break;
+          case 'operador':
+            router.push('/dashboard/operator-portal');
+            break;
+          default:
+            toast({
+              variant: "destructive",
+              title: "Error de Rol",
+              description: "No se encontró un ambiente asignado para tu rol.",
+            });
+        }
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Fallback para prototipo si las credenciales coinciden con el requerimiento anterior
       if (email === 'empresa@gmail.com' && password === '12345678') {
         router.push('/dashboard/business-portal');
-      } else if (email && password) {
-        router.push('/dashboard');
       } else {
         toast({
           variant: "destructive",
           title: "Error de acceso",
-          description: "Por favor, ingresa tus credenciales.",
+          description: error.message || "Credenciales incorrectas o problema de conexión.",
         });
       }
-    }, 800);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
