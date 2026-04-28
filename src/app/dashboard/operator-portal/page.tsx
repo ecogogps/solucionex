@@ -19,7 +19,9 @@ import {
   ChevronRight,
   FileText,
   CreditCard,
-  Image as ImageIcon
+  Image as ImageIcon,
+  MapPinned,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +53,10 @@ interface PaqueteData {
   nota?: string;
   imagen_url?: string;
   created_at: string;
+  empresas?: {
+    nombre: string;
+    direccion: string;
+  };
 }
 
 export default function OperatorPortal() {
@@ -106,10 +112,17 @@ export default function OperatorPortal() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*')
+        .select('*, empresas(nombre, direccion)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching data:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        return;
+      }
 
       // Disponibles: estado 'buscando_operador' y sin operador asignado
       const available = data.filter(p => p.estado === 'buscando_operador' && !p.operador_id);
@@ -126,7 +139,7 @@ export default function OperatorPortal() {
         if (updated) setSelectedPackage(updated);
       }
     } catch (error: any) {
-      console.error("Error fetching data:", error);
+      console.error("Unexpected error:", error);
     } finally {
       setLoading(false);
     }
@@ -173,9 +186,15 @@ export default function OperatorPortal() {
 
       if (error) throw error;
 
+      const statusLabels: Record<string, string> = {
+        'en_ruta': 'En Ruta',
+        'llegado': 'Llegado al destino',
+        'entregado': 'Entregado'
+      };
+
       toast({
         title: "Estado actualizado",
-        description: `Pedido marcado como ${newStatus.replace('_', ' ')}.`,
+        description: `Pedido marcado como ${statusLabels[newStatus] || newStatus.replace('_', ' ')}.`,
       });
       
       if (newStatus === 'entregado') {
@@ -208,6 +227,16 @@ export default function OperatorPortal() {
 
   const visiblePackages = availablePackages.filter(p => !rejectedIds.includes(p.id));
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Ruta</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> He llegado</Badge>;
+      case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50 bg-accent/10"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Buscando</Badge>;
+      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
       <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40 backdrop-blur-md">
@@ -234,7 +263,7 @@ export default function OperatorPortal() {
           <p className="text-slate-400 text-sm">
             {activeTab === 'disponibles' 
               ? `${visiblePackages.length} pedidos esperando ser tomados` 
-              : `Tienes ${myDeliveries.length} entregas pendientes`}
+              : `Tienes ${myDeliveries.length} entregas activas`}
           </p>
         </div>
 
@@ -266,15 +295,21 @@ export default function OperatorPortal() {
                   <CardContent className="p-4 space-y-4">
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">
-                        <MapPin className="h-4 w-4 text-accent mt-1 shrink-0" />
-                        <span className="text-sm font-medium line-clamp-2">{pkg.direccion}</span>
+                        <Building2 className="h-4 w-4 text-accent mt-1 shrink-0" />
+                        <div className="flex flex-col">
+                           <span className="text-sm font-bold text-white">{pkg.empresas?.nombre || 'Empresa Aliada'}</span>
+                           <span className="text-[10px] text-slate-400 italic">Recogida: {pkg.empresas?.direccion || 'Ver en mapa'}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-slate-400">
-                        <Clock className="h-4 w-4 shrink-0" />
-                        <span className="text-xs italic">Recogida: {pkg.tiempo_recogida} min</span>
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-accent mt-1 shrink-0" />
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold">Destino de Entrega</p>
+                          <span className="text-sm font-medium line-clamp-2">{pkg.direccion}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <Button 
                         variant="ghost" 
                         className="flex-1 text-red-400 hover:bg-red-400/10 hover:text-red-400"
@@ -316,6 +351,7 @@ export default function OperatorPortal() {
                           <Package className="h-5 w-5 text-accent" />
                         </div>
                         <div className="flex flex-col">
+                          <span className="text-xs text-slate-400">{pkg.empresas?.nombre}</span>
                           <span className="text-sm font-bold">Guía: {pkg.guia_numero}</span>
                           <span className="text-[10px] text-slate-400 flex items-center gap-1">
                             <MapPin className="h-2 w-2" /> {pkg.direccion}
@@ -323,12 +359,9 @@ export default function OperatorPortal() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={cn(
-                          "px-2 py-0.5 text-[8px] uppercase font-bold",
-                          pkg.estado === 'en_ruta' ? "bg-blue-500/20 text-blue-400" : "bg-orange-500/20 text-orange-400"
-                        )}>
-                          {pkg.estado.replace('_', ' ')}
-                        </Badge>
+                        <div className="hidden sm:block">
+                           {getStatusBadge(pkg.estado)}
+                        </div>
                         <ChevronRight className="h-4 w-4 text-slate-500" />
                       </div>
                     </div>
@@ -356,12 +389,20 @@ export default function OperatorPortal() {
                   <h3 className="text-lg font-bold">Guía: {selectedPackage.guia_numero}</h3>
                   <p className="text-xs text-slate-400">{new Date(selectedPackage.created_at).toLocaleString()}</p>
                 </div>
-                <Badge className={cn(
-                  "uppercase",
-                  selectedPackage.estado === 'en_ruta' ? "bg-blue-500/20 text-blue-400" : "bg-orange-500/20 text-orange-400"
-                )}>
-                  {selectedPackage.estado.replace('_', ' ')}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                   {getStatusBadge(selectedPackage.estado)}
+                </div>
+              </div>
+
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-accent shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
+                    <p className="text-sm font-bold">{selectedPackage.empresas?.nombre || 'Empresa Aliada'}</p>
+                    <p className="text-[10px] text-slate-400 italic">{selectedPackage.empresas?.direccion}</p>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -395,14 +436,6 @@ export default function OperatorPortal() {
                     <a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">
                       {selectedPackage.telefono}
                     </a>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-accent shrink-0" />
-                  <div>
-                    <p className="text-xs text-slate-500 font-bold uppercase">Tiempo Recogida</p>
-                    <p className="text-sm">{selectedPackage.tiempo_recogida} minutos aprox.</p>
                   </div>
                 </div>
 
@@ -446,14 +479,29 @@ export default function OperatorPortal() {
                 Tomar y Salir a Ruta
               </Button>
             )}
-            <Button 
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12"
-              onClick={() => selectedPackage && handleUpdateStatus(selectedPackage.id, 'entregado')}
-              disabled={updatingStatus}
-            >
-              {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-              Marcar como Entregado
-            </Button>
+
+            {selectedPackage?.estado === 'en_ruta' && (
+              <Button 
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-12"
+                onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')}
+                disabled={updatingStatus}
+              >
+                {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPinned className="mr-2 h-5 w-5" />}
+                He llegado
+              </Button>
+            )}
+
+            {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12"
+                onClick={() => selectedPackage && handleUpdateStatus(selectedPackage.id, 'entregado')}
+                disabled={updatingStatus}
+              >
+                {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                Marcar como Entregado
+              </Button>
+            )}
+
             <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full text-slate-400">
               Cerrar
             </Button>
