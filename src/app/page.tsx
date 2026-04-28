@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       if (authData.user) {
         // 2. Consultar el rol en la tabla perfiles
-        // Importante: Si esto falla, suele ser por RLS en Supabase
+        // Importante: Si esto falla, suele ser por RLS en Supabase o tabla inexistente
         const { data: profileData, error: profileError } = await supabase
           .from('perfiles')
           .select('rol')
@@ -47,8 +47,13 @@ export default function LoginPage() {
           .maybeSingle();
 
         if (profileError) {
-          console.error("Error de perfil de Supabase:", profileError);
-          throw new Error(`Error de base de datos: ${profileError.message}. Revisa las políticas RLS de la tabla 'perfiles'.`);
+          console.error("Error de perfil de Supabase:", {
+            message: profileError.message,
+            details: profileError.details,
+            hint: profileError.hint,
+            code: profileError.code
+          });
+          throw new Error(`Error de base de datos: ${profileError.message}. Revisa si la tabla 'perfiles' existe y es accesible.`);
         }
 
         if (!profileData) {
