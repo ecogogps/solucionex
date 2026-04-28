@@ -185,15 +185,27 @@ export default function CompaniesPage() {
   };
 
   const deleteEmpresa = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta empresa? Esto no eliminará el usuario de autenticación automáticamente por seguridad.')) return;
+    if (!confirm('¿Estás seguro de eliminar esta empresa? Esto eliminará también su cuenta de acceso de forma permanente.')) return;
     
+    setLoading(true);
     try {
-      const { error } = await supabase.from('empresas').delete().eq('id', id);
+      const { data, error } = await supabase.functions.invoke('crear-usuario', {
+        body: { accion: 'eliminar', userId: id }
+      });
+      
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: "Eliminado", description: "Empresa y usuario de acceso eliminados correctamente." });
       fetchEmpresas();
-      toast({ title: "Eliminado", description: "Registro eliminado de la tabla empresas." });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      console.error("Error al eliminar:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Error al eliminar", 
+        description: error.message || "No se pudo eliminar el registro." 
+      });
+      setLoading(false);
     }
   };
 
@@ -276,7 +288,7 @@ export default function CompaniesPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Cargando empresas...</p>
+              <p>Procesando...</p>
             </div>
           ) : empresas.length === 0 ? (
             <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">

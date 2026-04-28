@@ -138,7 +138,6 @@ export default function OperatorsPage() {
         if (error) throw error;
         toast({ title: "Actualizado", description: "Datos del operador actualizados." });
       } else {
-        // Crear usuario + Perfil + Operador usando la Edge Function
         const { data, error } = await supabase.functions.invoke('crear-usuario', {
           body: {
             email: formData.email,
@@ -175,15 +174,27 @@ export default function OperatorsPage() {
   };
 
   const deleteOperador = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este operador? El usuario de autenticación no se eliminará automáticamente.')) return;
+    if (!confirm('¿Estás seguro de eliminar este operador? Esto eliminará también su cuenta de acceso de forma permanente.')) return;
     
+    setLoading(true);
     try {
-      const { error } = await supabase.from('operadores').delete().eq('id', id);
+      const { data, error } = await supabase.functions.invoke('crear-usuario', {
+        body: { accion: 'eliminar', userId: id }
+      });
+      
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: "Eliminado", description: "Operador y usuario de acceso eliminados correctamente." });
       fetchOperadores();
-      toast({ title: "Eliminado", description: "Operador removido exitosamente." });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      console.error("Error al eliminar:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Error al eliminar", 
+        description: error.message || "No se pudo eliminar el registro." 
+      });
+      setLoading(false);
     }
   };
 
@@ -197,7 +208,7 @@ export default function OperatorsPage() {
     setEditingOperador(op);
     setFormData({ 
       nombres: op.nombres, 
-      email: '', // No disponible en la tabla operadores directamente en este prototipo
+      email: '', 
       password: '',
       telefono: op.telefono || '', 
       cedula: op.cedula, 
@@ -264,7 +275,7 @@ export default function OperatorsPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Cargando operadores...</p>
+              <p>Procesando...</p>
             </div>
           ) : operadores.length === 0 ? (
             <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
