@@ -26,14 +26,19 @@ export default function LoginPage() {
       // 1. Intentar iniciar sesión en Supabase
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password.trim(),
+        password: password, // No usamos trim en contraseña
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Manejo específico para credenciales inválidas
+        if (authError.message === 'Invalid login credentials') {
+          throw new Error("Credenciales incorrectas. Si creaste el usuario por SQL, asegúrate de que el hash sea compatible o intenta registrarlo desde la consola de Supabase.");
+        }
+        throw authError;
+      }
 
       if (authData.user) {
         // 2. Consultar el rol en la tabla perfiles
-        // Importante: Si esto falla con "Permission Denied", es por las políticas RLS en Supabase
         const { data: profileData, error: profileError } = await supabase
           .from('perfiles')
           .select('rol')
@@ -41,12 +46,11 @@ export default function LoginPage() {
           .maybeSingle();
 
         if (profileError) {
-          console.error("Error al obtener perfil:", profileError);
           throw new Error("Error al verificar permisos de acceso.");
         }
 
         if (!profileData) {
-          throw new Error("Usuario autenticado pero sin perfil asignado.");
+          throw new Error("Usuario sin perfil asignado. Contacta al administrador.");
         }
 
         // 3. Redirección según rol
@@ -69,13 +73,10 @@ export default function LoginPage() {
         }
       }
     } catch (error: any) {
-      console.error("Login detail:", error);
       toast({
         variant: "destructive",
         title: "Error de acceso",
-        description: error.message === "Invalid login credentials" 
-          ? "Credenciales incorrectas (verifica email y clave)." 
-          : error.message || "Problema de conexión con el servidor.",
+        description: error.message || "Problema de conexión con el servidor.",
       });
     } finally {
       setLoading(false);
