@@ -17,7 +17,8 @@ import {
   Package,
   UserCheck,
   MapPin,
-  Key
+  Key,
+  Hash
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +65,7 @@ interface EmpresaData {
   direccion: string;
   tipo: 'ultima_milla' | 'real_time';
   ruc: string;
+  guia_numero: string;
   estado: 'activo' | 'inactivo';
   created_at?: string;
 }
@@ -84,6 +86,7 @@ export default function CompaniesPage() {
     direccion: '', 
     tipo: 'ultima_milla' as const, 
     ruc: '', 
+    guia_numero: '',
     estado: 'activo' as const 
   });
   
@@ -126,7 +129,6 @@ export default function CompaniesPage() {
     setIsSaving(true);
     try {
       if (editingEmpresa) {
-        // Solo actualizar datos de la tabla empresa (no auth)
         const { error } = await supabase
           .from('empresas')
           .update({
@@ -136,6 +138,7 @@ export default function CompaniesPage() {
             direccion: formData.direccion,
             tipo: formData.tipo,
             ruc: formData.ruc,
+            guia_numero: formData.guia_numero,
             estado: formData.estado
           })
           .eq('id', editingEmpresa.id);
@@ -143,7 +146,6 @@ export default function CompaniesPage() {
         if (error) throw error;
         toast({ title: "Actualizado", description: "Datos de la empresa actualizados." });
       } else {
-        // Crear usuario + Perfil + Empresa usando la Edge Function
         const { data, error } = await supabase.functions.invoke('crear-usuario', {
           body: {
             email: formData.correo,
@@ -156,6 +158,7 @@ export default function CompaniesPage() {
               direccion: formData.direccion,
               tipo: formData.tipo,
               ruc: formData.ruc,
+              guia_numero: formData.guia_numero,
               estado: formData.estado
             }
           }
@@ -196,7 +199,7 @@ export default function CompaniesPage() {
 
   const openNewEmpresaModal = () => {
     setEditingEmpresa(null);
-    setFormData({ nombre: '', correo: '', password: '', telefono: '', direccion: '', tipo: 'ultima_milla', ruc: '', estado: 'activo' });
+    setFormData({ nombre: '', correo: '', password: '', telefono: '', direccion: '', tipo: 'ultima_milla', ruc: '', guia_numero: '', estado: 'activo' });
     setIsDialogOpen(true);
   };
 
@@ -205,11 +208,12 @@ export default function CompaniesPage() {
     setFormData({ 
       nombre: empresa.nombre, 
       correo: empresa.correo, 
-      password: '', // No se edita la clave desde aquí por seguridad
+      password: '', 
       telefono: empresa.telefono || '', 
       direccion: empresa.direccion || '', 
       tipo: empresa.tipo, 
       ruc: empresa.ruc || '', 
+      guia_numero: empresa.guia_numero || '',
       estado: empresa.estado 
     });
     setTimeout(() => {
@@ -272,7 +276,7 @@ export default function CompaniesPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Cargando información...</p>
+              <p>Cargando empresas...</p>
             </div>
           ) : empresas.length === 0 ? (
             <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
@@ -287,7 +291,7 @@ export default function CompaniesPage() {
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="font-bold text-slate-300">Empresa</TableHead>
                     <TableHead className="font-bold text-slate-300">Contacto</TableHead>
-                    <TableHead className="font-bold text-slate-300">RUC</TableHead>
+                    <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
                     <TableHead className="font-bold text-slate-300">Tipo / Estado</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
                   </TableRow>
@@ -312,7 +316,12 @@ export default function CompaniesPage() {
                           <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {empresa.telefono}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-300 font-mono text-xs">{empresa.ruc || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col text-xs text-slate-300 gap-1">
+                          <span className="font-mono">RUC: {empresa.ruc || '-'}</span>
+                          <span className="font-mono text-accent">Guía: {empresa.guia_numero || '-'}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
@@ -370,7 +379,7 @@ export default function CompaniesPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="nombre">Nombre</Label>
+                  <Label htmlFor="nombre">Nombre Comercial</Label>
                   <Input id="nombre" value={formData.nombre} onChange={(e) => setFormData({...formData, nombre: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
                 </div>
                 <div className="grid gap-2">
@@ -381,36 +390,11 @@ export default function CompaniesPage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="correo">Correo Electrónico (Login)</Label>
-                  <Input 
-                    id="correo" 
-                    type="email" 
-                    value={formData.correo} 
-                    onChange={(e) => setFormData({...formData, correo: e.target.value})} 
-                    className="bg-white/5 border-white/10 focus:ring-accent" 
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Contraseña {editingEmpresa && "(Dejar en blanco para no cambiar)"}</Label>
+                  <Label htmlFor="guia_numero">Guía Nº (Identificador)</Label>
                   <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                      className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
-                      placeholder="••••••••"
-                      disabled={!!editingEmpresa} // Solo crear en este prototipo, no editar auth
-                    />
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <Input id="guia_numero" value={formData.guia_numero} onChange={(e) => setFormData({...formData, guia_numero: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent pl-10" placeholder="Ej: GU-001" />
                   </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="telefono">Teléfono</Label>
-                  <Input id="telefono" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
                 </div>
                 <div className="grid gap-2">
                   <Label>Tipo de Empresa</Label>
@@ -425,21 +409,57 @@ export default function CompaniesPage() {
                   </Select>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="correo">Correo Electrónico (Login)</Label>
+                  <Input 
+                    id="correo" 
+                    type="email" 
+                    value={formData.correo} 
+                    onChange={(e) => setFormData({...formData, correo: e.target.value})} 
+                    className="bg-white/5 border-white/10 focus:ring-accent" 
+                    disabled={!!editingEmpresa}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Contraseña {editingEmpresa && "(No editable)"}</Label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={formData.password} 
+                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                      className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
+                      placeholder="••••••••"
+                      disabled={!!editingEmpresa}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="telefono">Teléfono</Label>
+                  <Input id="telefono" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Estado</Label>
+                  <Select value={formData.estado} onValueChange={(v: any) => setFormData({...formData, estado: v})}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      <SelectItem value="activo">Activo</SelectItem>
+                      <SelectItem value="inactivo">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="direccion">Dirección Fiscal</Label>
                 <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Estado</Label>
-                <Select value={formData.estado} onValueChange={(v: any) => setFormData({...formData, estado: v})}>
-                  <SelectTrigger className="bg-white/5 border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-white/10 text-white">
-                    <SelectItem value="activo">Activo</SelectItem>
-                    <SelectItem value="inactivo">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
