@@ -39,6 +39,7 @@ export default function LoginPage() {
 
       if (authData.user) {
         // 2. Consultar el rol en la tabla perfiles
+        // Importante: Si esto falla, suele ser por RLS en Supabase
         const { data: profileData, error: profileError } = await supabase
           .from('perfiles')
           .select('rol')
@@ -46,15 +47,19 @@ export default function LoginPage() {
           .maybeSingle();
 
         if (profileError) {
-          throw new Error("Error al verificar permisos de acceso.");
+          console.error("Error de perfil de Supabase:", profileError);
+          throw new Error(`Error de base de datos: ${profileError.message}. Revisa las políticas RLS de la tabla 'perfiles'.`);
         }
 
         if (!profileData) {
-          throw new Error("Usuario sin perfil asignado. Contacta al administrador.");
+          throw new Error("Usuario autenticado pero sin perfil asignado en la tabla 'perfiles'.");
         }
 
         // 3. Redirección según rol
-        switch (profileData.rol) {
+        const rol = profileData.rol;
+        console.log("Sesión iniciada como:", rol);
+
+        switch (rol) {
           case 'admin':
             router.push('/dashboard');
             break;
@@ -68,11 +73,12 @@ export default function LoginPage() {
             toast({
               variant: "destructive",
               title: "Error de Rol",
-              description: "Tu cuenta no tiene un ambiente asignado.",
+              description: `El rol '${rol}' no tiene un ambiente asignado.`,
             });
         }
       }
     } catch (error: any) {
+      console.error("Login Error:", error);
       toast({
         variant: "destructive",
         title: "Error de acceso",
