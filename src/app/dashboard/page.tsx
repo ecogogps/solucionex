@@ -496,7 +496,7 @@ export default function DashboardAdmin() {
                   <div>
                     <h3 className="text-xl font-bold text-accent">Guía: {viewingPackage.guia_numero}</h3>
                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Calendar className="w-3 h-3" /> Registrado el: {new Date(viewingPackage.created_at).toLocaleString()}
+                      <Calendar className="w-3 h-3" /> {new Date(viewingPackage.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
