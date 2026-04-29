@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -119,8 +118,6 @@ export default function DashboardAdmin() {
 
   const fetchData = async () => {
     try {
-      // Intentamos cargar paquetes con relaciones. 
-      // Si falla por falta de FK en la DB, mostramos un error informativo.
       const { data: pkgData, error: pkgError } = await supabase
         .from('paquetes')
         .select(`
@@ -132,7 +129,6 @@ export default function DashboardAdmin() {
       
       if (pkgError) {
         console.error("Error cargando paquetes:", JSON.stringify(pkgError, null, 2));
-        // Si el error es específicamente de relación, intentamos cargar sin relaciones para no romper la UI
         if (pkgError.code === 'PGRST200') {
           const { data: simpleData } = await supabase.from('paquetes').select('*').order('created_at', { ascending: false });
           setPackages(simpleData || []);
@@ -272,7 +268,7 @@ export default function DashboardAdmin() {
 
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
-          <h2 className="text-xl font-bold text-white">Gestión General de Paquetes</h2>
+          <h2 className="text-xl font-bold text-white">Gestión Paquetes</h2>
           <div className="flex items-center gap-4">
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
