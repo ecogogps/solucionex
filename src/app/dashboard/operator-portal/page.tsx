@@ -142,7 +142,7 @@ export default function SolicitudesPage() {
   const handleRejectLocal = (id: string) => {
     setRejectedIds(prev => [...prev, id]);
     toast({
-      description: "Pedido ignorado de tu lista.",
+      description: "Paquete ignorado de tu lista.",
     });
   };
 
