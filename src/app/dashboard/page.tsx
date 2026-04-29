@@ -93,7 +93,16 @@ export default function DashboardAdmin() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchData();
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        fetchData();
+      } else {
+        router.push('/');
+      }
+    };
+    
+    checkSession();
     
     // Suscripción en tiempo real
     const channel = supabase
@@ -106,10 +115,9 @@ export default function DashboardAdmin() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [router]);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       // Cargar paquetes
       const { data: pkgData, error: pkgError } = await supabase
@@ -130,8 +138,12 @@ export default function DashboardAdmin() {
       setOperadores(opData || []);
 
     } catch (error: any) {
-      console.error("Error cargando datos:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudo sincronizar la información." });
+      console.error("Error cargando datos:", JSON.stringify(error, null, 2));
+      toast({ 
+        variant: "destructive", 
+        title: "Error de sincronización", 
+        description: "No se pudo obtener la información más reciente del servidor." 
+      });
     } finally {
       setLoading(false);
     }
@@ -256,7 +268,7 @@ export default function DashboardAdmin() {
         </header>
 
         <div className="p-8">
-          {loading && packages.length === 0 ? (
+          {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <p>Sincronizando con el servidor...</p>
