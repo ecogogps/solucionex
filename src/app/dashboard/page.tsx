@@ -19,7 +19,12 @@ import {
   MapPin,
   DollarSign,
   Hash,
-  MapPinned
+  MapPinned,
+  Eye,
+  Phone,
+  CreditCard,
+  FileText,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -51,6 +56,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface PackageData {
   id: string;
@@ -63,6 +69,10 @@ interface PackageData {
   operador_id: string | null;
   empresa_id: string;
   created_at: string;
+  telefono?: string;
+  nota?: string;
+  imagen_url?: string;
+  tiempo_recogida?: number;
   empresas?: { nombre: string };
   operadores?: { nombres: string };
 }
@@ -78,8 +88,14 @@ export default function DashboardAdmin() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
+  
+  // Modales
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  // Estados de datos para modales
   const [editingPackage, setEditingPackage] = useState<PackageData | null>(null);
+  const [viewingPackage, setViewingPackage] = useState<PackageData | null>(null);
   
   const [formData, setFormData] = useState({ 
     guia_numero: '',
@@ -223,6 +239,11 @@ export default function DashboardAdmin() {
     }, 100);
   };
 
+  const openViewPackageModal = (pkg: PackageData) => {
+    setViewingPackage(pkg);
+    setIsViewDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
     switch (s) {
@@ -340,26 +361,36 @@ export default function DashboardAdmin() {
                       <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
                       <TableCell>{getStatusBadge(pkg.estado)}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
-                            <DropdownMenuItem 
-                              className="gap-2 cursor-pointer" 
-                              onClick={() => openEditPackageModal(pkg)}
-                            >
-                              <Edit2 className="h-4 w-4 text-blue-400" /> Gestionar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/10" />
-                            <DropdownMenuItem 
-                              className="gap-2 text-red-400 cursor-pointer"
-                              onClick={() => deletePackage(pkg.id)}
-                            >
-                              <Trash2 className="h-4 w-4" /> Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="hover:bg-accent/20 text-accent"
+                            onClick={() => openViewPackageModal(pkg)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
+                              <DropdownMenuItem 
+                                className="gap-2 cursor-pointer" 
+                                onClick={() => openEditPackageModal(pkg)}
+                              >
+                                <Edit2 className="h-4 w-4 text-blue-400" /> Gestionar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-white/10" />
+                              <DropdownMenuItem 
+                                className="gap-2 text-red-400 cursor-pointer"
+                                onClick={() => deletePackage(pkg.id)}
+                              >
+                                <Trash2 className="h-4 w-4" /> Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -369,6 +400,7 @@ export default function DashboardAdmin() {
           )}
         </div>
 
+        {/* Modal de Gestión */}
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           if (!open) {
             setIsDialogOpen(false);
@@ -444,6 +476,121 @@ export default function DashboardAdmin() {
               <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
                 {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
                 Guardar Cambios
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Vista Detallada */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <Eye className="h-5 w-5 text-accent" /> Detalles del Paquete
+              </DialogTitle>
+            </DialogHeader>
+            
+            {viewingPackage && (
+              <div className="grid gap-6 py-4">
+                <div className="flex justify-between items-start border-b border-white/5 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-accent">Guía: {viewingPackage.guia_numero}</h3>
+                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                      <Calendar className="w-3 h-3" /> Registrado el: {new Date(viewingPackage.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {getStatusBadge(viewingPackage.estado)}
+                    <Badge variant="outline" className="border-white/10 text-slate-400 text-[10px] uppercase">
+                      {viewingPackage.tipo}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-4 rounded-lg border border-white/5">
+                    <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
+                      <Building2 className="w-3 h-3" /> Empresa Cliente
+                    </Label>
+                    <p className="font-semibold">{viewingPackage.empresas?.nombre || 'No disponible'}</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg border border-white/5">
+                    <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
+                      <UserCheck className="w-3 h-3" /> Operador Asignado
+                    </Label>
+                    <p className="font-semibold">{viewingPackage.operadores?.nombres || 'Sin asignar'}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-accent shrink-0 mt-1" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Dirección de Destino</p>
+                      <p className="text-sm">{viewingPackage.direccion}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-accent shrink-0" />
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p>
+                        <p className="text-sm font-mono">{viewingPackage.telefono || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-accent shrink-0" />
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold uppercase">Valor y Pago</p>
+                        <p className="text-sm font-bold">${viewingPackage.valor_pedido} <span className="text-[10px] text-slate-400 font-normal uppercase">({viewingPackage.metodo_pago})</span></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {viewingPackage.tiempo_recogida && (
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-accent shrink-0" />
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold uppercase">Tiempo Recogida (Empresa)</p>
+                        <p className="text-sm">{viewingPackage.tiempo_recogida} minutos</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingPackage.nota && (
+                    <div className="flex items-start gap-3 bg-white/5 p-3 rounded-lg border-l-2 border-accent">
+                      <FileText className="h-5 w-5 text-accent shrink-0" />
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold uppercase">Notas / Instrucciones</p>
+                        <p className="text-sm italic text-slate-300">{viewingPackage.nota}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingPackage.imagen_url && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" /> Imagen de Guía Física
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_url} 
+                          alt="Imagen Guía" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter className="border-t border-white/5 pt-4">
+              <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="w-full text-slate-400 hover:text-white">
+                Cerrar Vista
               </Button>
             </DialogFooter>
           </DialogContent>
