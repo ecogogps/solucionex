@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -26,11 +25,10 @@ export default function LoginPage() {
       // 1. Intentar iniciar sesión en Supabase
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password, // No usamos trim en contraseña
+        password: password,
       });
 
       if (authError) {
-        // Manejo específico para credenciales inválidas
         if (authError.message === 'Invalid login credentials') {
           throw new Error("Credenciales incorrectas.");
         }
@@ -39,31 +37,43 @@ export default function LoginPage() {
 
       if (authData.user) {
         // 2. Consultar el rol en la tabla perfiles
-        // Importante: Si esto falla, suele ser por RLS en Supabase o tabla inexistente
         const { data: profileData, error: profileError } = await supabase
           .from('perfiles')
           .select('rol')
           .eq('id', authData.user.id)
           .maybeSingle();
 
-        if (profileError) {
-          console.error("Error de perfil de Supabase:", {
-            message: profileError.message,
-            details: profileError.details,
-            hint: profileError.hint,
-            code: profileError.code
-          });
-          throw new Error(`Error de base de datos: ${profileError.message}. Revisa si la tabla 'perfiles' existe y es accesible.`);
-        }
+        if (profileError) throw new Error(`Error de base de datos: ${profileError.message}`);
+        if (!profileData) throw new Error("Usuario autenticado pero sin perfil asignado.");
 
-        if (!profileData) {
-          throw new Error("Usuario autenticado pero sin perfil asignado en la tabla 'perfiles'.");
-        }
-
-        // 3. Redirección según rol
         const rol = profileData.rol;
-        console.log("Sesión iniciada como:", rol);
 
+        // 3. Verificar estado de cuenta para Empresas u Operadores
+        if (rol === 'empresa') {
+          const { data: empData } = await supabase
+            .from('empresas')
+            .select('estado')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+          
+          if (empData && empData.estado !== 'activo') {
+            await supabase.auth.signOut();
+            throw new Error("Tu cuenta de empresa está desactivada. Por favor, contacta al administrador.");
+          }
+        } else if (rol === 'operador') {
+          const { data: opData } = await supabase
+            .from('operadores')
+            .select('estado')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+          
+          if (opData && opData.estado !== 'activo') {
+            await supabase.auth.signOut();
+            throw new Error("Tu cuenta de operador está desactivada. Por favor, contacta al administrador.");
+          }
+        }
+
+        // 4. Redirección según rol
         switch (rol) {
           case 'admin':
             router.push('/dashboard');
@@ -86,7 +96,7 @@ export default function LoginPage() {
       console.error("Login Error:", error);
       toast({
         variant: "destructive",
-        title: "Error de acceso",
+        title: "Acceso Denegado",
         description: error.message || "Problema de conexión con el servidor.",
       });
     } finally {
