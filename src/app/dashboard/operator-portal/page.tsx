@@ -61,8 +61,6 @@ export default function SolicitudesPage() {
   }, [router]);
 
   useEffect(() => {
-    // Escucha en tiempo real para cualquier cambio en la tabla paquetes
-    // Esto asegura que si un paquete desaparece (es aceptado por otro) se actualice la lista
     const channel = supabase
       .channel('paquetes_realtime_solicitudes')
       .on(
@@ -109,8 +107,6 @@ export default function SolicitudesPage() {
     if (!userId) return;
 
     try {
-      // Intento de actualización con condición de carrera controlada
-      // Solo actualizamos si el estado sigue siendo 'buscando_operador'
       const { data, error } = await supabase
         .from('paquetes')
         .update({ 
@@ -119,19 +115,17 @@ export default function SolicitudesPage() {
         })
         .eq('id', pkg.id)
         .eq('estado', 'buscando_operador')
-        .select(); // El .select() es clave para verificar si se actualizó algo
+        .select();
 
       if (error) throw error;
 
-      // Si data está vacío, significa que el .eq('estado', 'buscando_operador') falló
-      // (alguien más lo cambió primero)
       if (!data || data.length === 0) {
         throw new Error("Este pedido ya ha sido aceptado por otro operador.");
       }
 
       toast({
-        title: "¡Pedido Aceptado!",
-        description: `El paquete ${pkg.guia_numero} ha sido añadido a tus rutas.`,
+        title: "¡Paquete Aceptado!",
+        description: `El paquete ${pkg.guia_numero} ha sido añadido.`,
       });
       
       router.push('/dashboard/operator-portal/my-packages');
@@ -141,7 +135,7 @@ export default function SolicitudesPage() {
         title: "No disponible",
         description: error.message || "No se pudo aceptar el pedido en este momento.",
       });
-      fetchData(); // Refrescar la lista inmediatamente
+      fetchData();
     }
   };
 
