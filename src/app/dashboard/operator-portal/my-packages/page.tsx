@@ -400,8 +400,7 @@ export default function MyPackagesPage() {
                   Marcar como Entregado
                 </Button>
                 <Button 
-                  variant="outline"
-                  className="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-bold h-12"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold h-12"
                   onClick={() => selectedPackage && handleUpdateStatus(selectedPackage.id, 'cancelado')}
                   disabled={updatingStatus}
                 >
