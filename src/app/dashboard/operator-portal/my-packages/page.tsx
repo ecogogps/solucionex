@@ -161,7 +161,7 @@ export default function MyPackagesPage() {
 
       toast({
         title: "Estado actualizado",
-        description: `Pedido marcado como ${statusLabels[newStatus] || newStatus}.`,
+        description: `Paquete marcado como ${statusLabels[newStatus] || newStatus}.`,
       });
       
       if (newStatus === 'entregado' || newStatus === 'cancelado') {
