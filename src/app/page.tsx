@@ -32,7 +32,7 @@ export default function LoginPage() {
       if (authError) {
         // Manejo específico para credenciales inválidas
         if (authError.message === 'Invalid login credentials') {
-          throw new Error("Credenciales incorrectas. Si creaste el usuario por SQL, asegúrate de que el hash sea compatible o intenta registrarlo desde la consola de Supabase.");
+          throw new Error("Credenciales incorrectas.");
         }
         throw authError;
       }

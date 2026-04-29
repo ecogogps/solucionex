@@ -197,6 +197,11 @@ export default function CompaniesPage() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   const openNewEmpresaModal = () => {
     setEditingEmpresa(null);
     setFormData({ nombre: '', correo: '', password: '', telefono: '', direccion: '', tipo: 'ultima_milla', ruc: '', guia_numero: '', estado: 'activo' });
@@ -246,7 +251,7 @@ export default function CompaniesPage() {
           </Link>
         </nav>
         <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => router.push('/')}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
             <LogOut className="h-5 w-5" /> Cerrar Sesión
           </Button>
         </div>

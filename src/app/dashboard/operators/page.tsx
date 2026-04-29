@@ -199,6 +199,11 @@ export default function OperatorsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   const openNewOperadorModal = () => {
     setEditingOperador(null);
     setFormData({ nombres: '', email: '', password: '', telefono: '', cedula: '', tipo: 'clase_b', estado: 'activo' });
@@ -246,7 +251,7 @@ export default function OperatorsPage() {
           </Link>
         </nav>
         <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => router.push('/')}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
             <LogOut className="h-5 w-5" /> Cerrar Sesión
           </Button>
         </div>

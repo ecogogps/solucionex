@@ -256,6 +256,11 @@ export default function DashboardAdmin() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-background flex text-white">
       <aside className="w-64 bg-black/20 border-r border-white/10 hidden lg:flex flex-col p-6 shadow-2xl">
@@ -281,7 +286,7 @@ export default function DashboardAdmin() {
           </Link>
         </nav>
         <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => router.push('/')}>
+          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
             <LogOut className="h-5 w-5" /> Cerrar Sesión
           </Button>
         </div>
