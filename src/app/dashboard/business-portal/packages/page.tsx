@@ -208,7 +208,7 @@ export default function BusinessPackagesPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo anular el paquete."
+        description: "No se pudo anular el paquete. Asegúrate de haber actualizado el tipo en Supabase."
       });
     } finally {
       setIsUpdating(false);

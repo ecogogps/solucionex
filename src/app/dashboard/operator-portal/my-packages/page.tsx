@@ -81,6 +81,7 @@ export default function MyPackagesPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Estados para alertas y cambio de pago
   const [isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [paymentImage, setPaymentImage] = useState<string | null>(null);
@@ -89,6 +90,7 @@ export default function MyPackagesPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estado para el campo novedad (entrega no ejecutada)
   const [novedad, setNovedad] = useState('');
   const [novedadError, setNovedadError] = useState(false);
   
