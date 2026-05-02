@@ -30,7 +30,8 @@ import {
   RotateCcw,
   Upload,
   Wrench,
-  UserMinus
+  UserMinus,
+  Timer
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -235,7 +236,7 @@ export default function MyPackagesPage() {
       toast({ 
         variant: "destructive", 
         title: "Error", 
-        description: "No se pudo liberar el paquete. Verifica las políticas RLS." 
+        description: "No se pudo liberar el paquete." 
       });
     } finally {
       setUpdatingStatus(false);
@@ -361,9 +362,15 @@ export default function MyPackagesPage() {
                           <Package className="h-5 w-5 text-accent" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs text-slate-400 font-bold">{pkg.empresas?.nombre}</span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs text-slate-400 font-bold">{pkg.empresas?.nombre}</span>
+                            <Badge variant="outline" className="text-[9px] h-4 border-white/10 text-accent px-1 uppercase">{pkg.tipo}</Badge>
+                          </div>
                           <span className="text-sm font-bold">Guía: {pkg.guia_numero}</span>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
+                            <span className="text-[10px] text-orange-400 flex items-center gap-1"><Clock className="h-2 w-2" /> {pkg.tiempo_recogida} min</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -402,7 +409,7 @@ export default function MyPackagesPage() {
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
-                  className={cn("h-12 w-full gap-2 border-yellow-500/50", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500")} 
+                  className={cn("h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500")} 
                   onClick={toggleNoContesta} 
                   disabled={updatingStatus}
                 >
@@ -410,7 +417,7 @@ export default function MyPackagesPage() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-12 w-full gap-2 border-blue-500/50 text-blue-400" 
+                  className="h-12 w-full gap-2 border-blue-500/50 text-blue-400 hover:bg-transparent" 
                   onClick={() => { setIsPaymentChangeOpen(true); setIsDetailOpen(false); }} 
                   disabled={updatingStatus}
                 >
@@ -419,7 +426,7 @@ export default function MyPackagesPage() {
                 
                 <Button 
                   variant="outline" 
-                  className="h-12 w-full gap-2 border-orange-500/30 text-orange-400" 
+                  className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-transparent" 
                   onClick={() => handleLiberateClick('Liberado por daño mecánico')}
                   disabled={updatingStatus}
                 >
@@ -427,7 +434,7 @@ export default function MyPackagesPage() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400" 
+                  className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400 hover:bg-transparent" 
                   onClick={() => handleLiberateClick('Liberado por reasignación consentida')}
                   disabled={updatingStatus}
                 >
@@ -453,6 +460,17 @@ export default function MyPackagesPage() {
                 <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                   <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><CreditCard className="w-3 h-3" /> Pago</span>
                   <p className="text-sm font-medium capitalize">{selectedPackage.metodo_pago}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Package className="w-3 h-3" /> Tamaño</span>
+                  <p className="text-sm font-bold capitalize">{selectedPackage.tipo}</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Timer className="w-3 h-3" /> Recogida</span>
+                  <p className="text-sm font-bold">{selectedPackage.tiempo_recogida} minutos</p>
                 </div>
               </div>
 
@@ -484,7 +502,7 @@ export default function MyPackagesPage() {
                     <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
                       <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para "No ejecutada")</span>
                     </Label>
-                    <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm", novedadError ? "border-red-500" : "border-white/10")} />
+                    <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-white/10")} />
                   </div>
                 )}
               </div>
@@ -494,7 +512,7 @@ export default function MyPackagesPage() {
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             {selectedPackage?.estado === 'pendiente' && (
               <Button 
-                className="w-full bg-blue-600 h-12 font-bold" 
+                className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-600" 
                 onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
                 disabled={updatingStatus}
               >
@@ -505,7 +523,7 @@ export default function MyPackagesPage() {
             
             {selectedPackage?.estado === 'en_ruta' && (
               <Button 
-                className="w-full bg-orange-600 h-12 font-bold" 
+                className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-600" 
                 onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')} 
                 disabled={updatingStatus}
               >
@@ -517,7 +535,7 @@ export default function MyPackagesPage() {
             {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
               <>
                 <Button 
-                  className="w-full bg-green-600 h-12 font-bold" 
+                  className="w-full bg-green-600 h-12 font-bold hover:bg-green-600" 
                   onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
                   disabled={updatingStatus}
                 >
@@ -525,7 +543,7 @@ export default function MyPackagesPage() {
                   Marcar como Entregado
                 </Button>
                 <Button 
-                  className="w-full bg-red-600 h-12 font-bold" 
+                  className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
                   onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
                   disabled={updatingStatus}
                 >
@@ -535,7 +553,7 @@ export default function MyPackagesPage() {
               </>
             )}
             
-            <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400">
+            <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400 hover:bg-transparent">
               Cerrar
             </Button>
           </DialogFooter>
@@ -573,10 +591,10 @@ export default function MyPackagesPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2" onClick={() => setShowCamera(true)}>
+                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-transparent" onClick={() => setShowCamera(true)}>
                     <Camera className="h-5 w-5" /> Usar Cámara
                   </Button>
-                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2" onClick={() => fileInputRef.current?.click()}>
+                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-transparent" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="h-5 w-5" /> Adjuntar Imagen
                   </Button>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
@@ -586,13 +604,13 @@ export default function MyPackagesPage() {
           </div>
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             <Button 
-              className="w-full h-12 bg-accent text-primary font-bold" 
+              className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent" 
               onClick={submitPaymentChange} 
               disabled={updatingStatus || !paymentImage || !newPaymentMethod}
             >
               Confirmar Cambio
             </Button>
-            <Button variant="ghost" className="w-full h-12" onClick={() => setIsPaymentChangeOpen(false)}>
+            <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setIsPaymentChangeOpen(false)}>
               Cancelar
             </Button>
           </DialogFooter>
@@ -617,12 +635,12 @@ export default function MyPackagesPage() {
           <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
             <AlertDialogAction 
               onClick={executeRelease}
-              className="bg-red-600 hover:bg-red-700 text-white h-12 w-full"
+              className="bg-red-600 hover:bg-red-600 text-white h-12 w-full"
             >
               Sí, liberar paquete
             </AlertDialogAction>
             <AlertDialogCancel 
-              className="bg-white/5 border-white/10 text-white hover:bg-white/10 h-12 w-full"
+              className="bg-white/5 border-white/10 text-white hover:bg-transparent h-12 w-full"
             >
               Cancelar
             </AlertDialogCancel>
@@ -636,8 +654,8 @@ export default function MyPackagesPage() {
           <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline onCanPlay={() => videoRef.current?.play()} />
           <canvas ref={canvasRef} className="hidden" />
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-            <Button onClick={takePhoto} className="w-full h-12 bg-accent text-primary font-bold">Capturar</Button>
-            <Button variant="ghost" className="w-full h-12" onClick={() => setShowCamera(false)}>Cancelar</Button>
+            <Button onClick={takePhoto} className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
+            <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setShowCamera(false)}>Cancelar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
