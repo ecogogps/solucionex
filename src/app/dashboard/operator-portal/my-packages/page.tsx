@@ -45,6 +45,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -92,6 +102,10 @@ export default function MyPackagesPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados para confirmación de liberación
+  const [isReleaseConfirmOpen, setIsReleaseConfirmOpen] = useState(false);
+  const [pendingReleaseReason, setPendingReleaseReason] = useState('');
 
   // Estado para el campo novedad (entrega no ejecutada)
   const [novedad, setNovedad] = useState('');
@@ -184,9 +198,13 @@ export default function MyPackagesPage() {
     }
   };
 
-  const handleLiberatePackage = async (reason: string) => {
-    if (!selectedPackage) return;
-    if (!confirm(`¿Estás seguro de liberar este paquete? Motivo: ${reason}`)) return;
+  const handleLiberateClick = (reason: string) => {
+    setPendingReleaseReason(reason);
+    setIsReleaseConfirmOpen(true);
+  };
+
+  const executeRelease = async () => {
+    if (!selectedPackage || !pendingReleaseReason) return;
 
     setUpdatingStatus(true);
     try {
@@ -195,7 +213,7 @@ export default function MyPackagesPage() {
         .update({
           estado: 'buscando_operador',
           operador_id: null,
-          novedad: reason,
+          novedad: pendingReleaseReason,
           alerta_no_contesta: false,
           alerta_cambio_pago: false
         })
@@ -205,6 +223,7 @@ export default function MyPackagesPage() {
 
       toast({ title: "Paquete liberado", description: "El paquete está disponible nuevamente para otros operadores." });
       setIsDetailOpen(false);
+      setIsReleaseConfirmOpen(false);
       if (userId) fetchData(userId);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo liberar el paquete." });
@@ -363,7 +382,6 @@ export default function MyPackagesPage() {
                 {getStatusBadge(selectedPackage.estado)}
               </div>
 
-              {/* Sección de Alertas y Liberación en Columna */}
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
@@ -382,11 +400,10 @@ export default function MyPackagesPage() {
                   <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
                 </Button>
                 
-                {/* Nuevos Botones de Liberación */}
                 <Button 
                   variant="outline" 
                   className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10" 
-                  onClick={() => handleLiberatePackage('Liberado por daño mecánico')}
+                  onClick={() => handleLiberateClick('Liberado por daño mecánico')}
                   disabled={updatingStatus}
                 >
                   <Wrench className="w-5 h-5" /> Daño Mecánico
@@ -394,7 +411,7 @@ export default function MyPackagesPage() {
                 <Button 
                   variant="outline" 
                   className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" 
-                  onClick={() => handleLiberatePackage('Liberado por reasignación consentida')}
+                  onClick={() => handleLiberateClick('Liberado por reasignación consentida')}
                   disabled={updatingStatus}
                 >
                   <UserMinus className="w-5 h-5" /> Reasignación Consentida
@@ -457,7 +474,6 @@ export default function MyPackagesPage() {
             </div>
           )}
 
-          {/* Footer con Botones en Columna */}
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             {selectedPackage?.estado === 'pendiente' && (
               <Button 
@@ -509,7 +525,6 @@ export default function MyPackagesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Cambio de Pago en Columna */}
       <Dialog open={isPaymentChangeOpen} onOpenChange={setIsPaymentChangeOpen}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
           <DialogHeader><DialogTitle>Reportar Cambio de Pago</DialogTitle></DialogHeader>
@@ -559,6 +574,30 @@ export default function MyPackagesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={setIsReleaseConfirmOpen}>
+        <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirmar Liberación</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              ¿Estás seguro de liberar este paquete? Motivo: <span className="text-accent font-bold">{pendingReleaseReason}</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <AlertDialogAction 
+              onClick={executeRelease}
+              className="bg-red-600 hover:bg-red-700 text-white h-12 w-full"
+            >
+              Sí, liberar paquete
+            </AlertDialogAction>
+            <AlertDialogCancel 
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10 h-12 w-full"
+            >
+              Cancelar
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={showCamera} onOpenChange={setShowCamera}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
