@@ -226,7 +226,12 @@ export default function MyPackagesPage() {
       setIsReleaseConfirmOpen(false);
       if (userId) fetchData(userId);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo liberar el paquete." });
+      console.error("Error al liberar paquete:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: "No se pudo liberar el paquete. Asegúrate de ejecutar el script SQL de RLS." 
+      });
     } finally {
       setUpdatingStatus(false);
     }
@@ -382,6 +387,7 @@ export default function MyPackagesPage() {
                 {getStatusBadge(selectedPackage.estado)}
               </div>
 
+              {/* Botones de Comunicación en Columna */}
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
@@ -400,6 +406,7 @@ export default function MyPackagesPage() {
                   <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
                 </Button>
                 
+                {/* Nuevos botones de Liberación en Columna */}
                 <Button 
                   variant="outline" 
                   className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10" 
