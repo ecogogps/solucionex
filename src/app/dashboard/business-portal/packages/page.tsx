@@ -197,7 +197,7 @@ export default function BusinessPackagesPage() {
   const handleAnularPaquete = async () => {
     if (!selectedPackage) return;
     
-    if (!confirm('¿Estás seguro de anular este pedido y solicitar el retorno a origen? Esta acción es irreversible.')) return;
+    if (!confirm('¿Estás seguro de solicitar el retorno a origen para este pedido? Esta acción es irreversible.')) return;
 
     setIsUpdating(true);
     try {
@@ -395,7 +395,7 @@ export default function BusinessPackagesPage() {
                 {!isEditable(selectedPackage.estado) ? (
                   <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <p className="text-xs text-red-400 font-medium">
-                      Este paquete ya no puede ser editado o anulado. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
+                      Este paquete ya no puede ser editado o retornado a origen. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
                     </p>
                   </div>
                 ) : (
