@@ -208,7 +208,7 @@ export default function BusinessPackagesPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo anular el paquete. Asegúrate de haber actualizado el tipo en Supabase."
+        description: "No se pudo anular el paquete."
       });
     } finally {
       setIsUpdating(false);
@@ -283,7 +283,7 @@ export default function BusinessPackagesPage() {
                   <Card 
                     key={pkg.id} 
                     className={cn(
-                      "bg-white/5 border-white/10 transition-all cursor-pointer hover:bg-white/10 group",
+                      "bg-white/5 border-white/10 transition-all cursor-pointer group",
                       (pkg.alerta_no_contesta || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40"
                     )}
                     onClick={() => handleOpenEdit(pkg)}
@@ -296,7 +296,7 @@ export default function BusinessPackagesPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
-                          {isEditable(pkg.estado) && <Edit2 className="h-4 w-4 text-slate-500 group-hover:text-accent transition-colors" />}
+                          {isEditable(pkg.estado) && <Edit2 className="h-4 w-4 text-slate-500" />}
                         </div>
                       </div>
 
@@ -341,7 +341,7 @@ export default function BusinessPackagesPage() {
       </main>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md w-[95vw] rounded-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit2 className="h-5 w-5 text-accent" /> Gestionar Paquete
@@ -356,7 +356,7 @@ export default function BusinessPackagesPage() {
               {!isEditable(selectedPackage.estado) ? (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <p className="text-xs text-red-400 font-medium">
-                    Este paquete ya no puede ser editado o anulado debido a su estado actual: <span className="font-bold uppercase">{selectedPackage.estado === 'anulado_retornar' ? 'Anulado' : selectedPackage.estado}</span>
+                    Este paquete ya no puede ser editado o anulado debido a su estado actual: <span className="font-bold uppercase">{selectedPackage.estado === 'anulado_retornar' ? 'Anulado' : selectedPackage.estado === 'en_ruta' ? 'En Camino' : selectedPackage.estado}</span>
                   </p>
                 </div>
               ) : (
@@ -368,7 +368,7 @@ export default function BusinessPackagesPage() {
                     <Input 
                       value={editFormData.direccion} 
                       onChange={(e) => setEditFormData({...editFormData, direccion: e.target.value})}
-                      className="bg-white/5 border-white/10 focus:ring-accent"
+                      className="bg-white/5 border-white/10 focus-visible:ring-accent"
                     />
                   </div>
 
@@ -379,7 +379,7 @@ export default function BusinessPackagesPage() {
                     <Input 
                       value={editFormData.telefono} 
                       onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
-                      className="bg-white/5 border-white/10 focus:ring-accent"
+                      className="bg-white/5 border-white/10 focus-visible:ring-accent"
                       placeholder="Ej: 0999999999"
                     />
                   </div>
@@ -406,12 +406,12 @@ export default function BusinessPackagesPage() {
             </div>
           )}
 
-          <DialogFooter className="flex flex-col gap-2">
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col">
             {selectedPackage && isEditable(selectedPackage.estado) && (
               <>
                 <Button 
                   onClick={handleUpdatePackage} 
-                  className="w-full bg-accent text-primary font-bold hover:bg-accent/90"
+                  className="w-full bg-accent text-primary font-bold h-12"
                   disabled={isUpdating}
                 >
                   {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
@@ -420,7 +420,7 @@ export default function BusinessPackagesPage() {
                 <Button 
                   onClick={handleAnularPaquete} 
                   variant="outline"
-                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  className="w-full border-red-500/50 text-red-400 h-12"
                   disabled={isUpdating}
                 >
                   {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
@@ -428,7 +428,7 @@ export default function BusinessPackagesPage() {
                 </Button>
               </>
             )}
-            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400">
+            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 h-10">
               Cancelar
             </Button>
           </DialogFooter>
