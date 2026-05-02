@@ -409,7 +409,7 @@ export default function MyPackagesPage() {
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
-                  className={cn("h-12 w-full gap-2 border-yellow-500/50", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white hover:bg-yellow-600" : "text-yellow-500 hover:bg-transparent hover:text-yellow-500")} 
+                  className={cn("h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500 hover:text-yellow-500")} 
                   onClick={toggleNoContesta} 
                   disabled={updatingStatus}
                 >
@@ -465,7 +465,7 @@ export default function MyPackagesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Package className="w-3 h-3" /> Tamaño</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Package className="w-3 h-3" /> Tipo de Paquete</span>
                   <p className="text-sm font-bold capitalize">{selectedPackage.tipo}</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-lg border border-white/5">
