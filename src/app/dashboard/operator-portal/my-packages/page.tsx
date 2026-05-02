@@ -28,7 +28,9 @@ import {
   X,
   Image as ImageIcon,
   RotateCcw,
-  Upload
+  Upload,
+  Wrench,
+  UserMinus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -182,6 +184,35 @@ export default function MyPackagesPage() {
     }
   };
 
+  const handleLiberatePackage = async (reason: string) => {
+    if (!selectedPackage) return;
+    if (!confirm(`¿Estás seguro de liberar este paquete? Motivo: ${reason}`)) return;
+
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('paquetes')
+        .update({
+          estado: 'buscando_operador',
+          operador_id: null,
+          novedad: reason,
+          alerta_no_contesta: false,
+          alerta_cambio_pago: false
+        })
+        .eq('id', selectedPackage.id);
+
+      if (error) throw error;
+
+      toast({ title: "Paquete liberado", description: "El paquete está disponible nuevamente para otros operadores." });
+      setIsDetailOpen(false);
+      if (userId) fetchData(userId);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo liberar el paquete." });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const toggleNoContesta = async () => {
     if (!selectedPackage) return;
     setUpdatingStatus(true);
@@ -235,7 +266,7 @@ export default function MyPackagesPage() {
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En camino</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> He llegado</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> Entrega no ejecutada</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> No ejecutada</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50"><RotateCcw className="w-3 h-3 mr-1"/> Anulado - Retornar</Badge>;
       default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
     }
@@ -332,7 +363,7 @@ export default function MyPackagesPage() {
                 {getStatusBadge(selectedPackage.estado)}
               </div>
 
-              {/* Sección de Alertas en Columna */}
+              {/* Sección de Alertas y Liberación en Columna */}
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
@@ -350,6 +381,24 @@ export default function MyPackagesPage() {
                 >
                   <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
                 </Button>
+                
+                {/* Nuevos Botones de Liberación */}
+                <Button 
+                  variant="outline" 
+                  className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10" 
+                  onClick={() => handleLiberatePackage('Liberado por daño mecánico')}
+                  disabled={updatingStatus}
+                >
+                  <Wrench className="w-5 h-5" /> Daño Mecánico
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" 
+                  onClick={() => handleLiberatePackage('Liberado por reasignación consentida')}
+                  disabled={updatingStatus}
+                >
+                  <UserMinus className="w-5 h-5" /> Reasignación Consentida
+                </Button>
               </div>
 
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
@@ -358,7 +407,6 @@ export default function MyPackagesPage() {
                   <div>
                     <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
                     <p className="text-sm font-bold">{selectedPackage.empresas?.nombre}</p>
-                    <p className="text-[10px] text-slate-400 italic">{selectedPackage.empresas?.direccion}</p>
                   </div>
                 </div>
               </div>
