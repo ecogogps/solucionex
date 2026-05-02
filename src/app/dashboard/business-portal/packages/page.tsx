@@ -21,8 +21,7 @@ import {
   MessageSquareOff,
   RefreshCcw,
   ExternalLink,
-  UserX,
-  X
+  UserX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,6 +41,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { PrintTemplate } from '@/components/PrintTemplate';
 
 interface PaqueteData {
   id: string;
@@ -58,6 +58,8 @@ interface PaqueteData {
   alerta_no_contesta?: boolean;
   alerta_cambio_pago?: boolean;
   imagen_pago_url?: string;
+  empresas?: { nombre: string };
+  operadores?: { nombres: string };
 }
 
 export default function BusinessPackagesPage() {
@@ -111,7 +113,7 @@ export default function BusinessPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*')
+        .select('*, empresas(nombre), operadores(nombres)')
         .eq('empresa_id', uid)
         .order('created_at', { ascending: false });
 
@@ -434,7 +436,7 @@ export default function BusinessPackagesPage() {
               <Button 
                 onClick={handlePrint} 
                 variant="outline"
-                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent hover:text-accent"
+                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent hover:text-accent shadow-none"
               >
                 <Printer className="h-4 w-4 mr-2" /> Imprimir
               </Button>
@@ -443,7 +445,7 @@ export default function BusinessPackagesPage() {
                 <>
                   <Button 
                     onClick={handleUpdatePackage} 
-                    className="w-full bg-accent text-primary font-bold h-12"
+                    className="w-full bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
                     disabled={isUpdating}
                   >
                     {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
@@ -452,7 +454,7 @@ export default function BusinessPackagesPage() {
                   <Button 
                     onClick={handleAnularPaquete} 
                     variant="outline"
-                    className="w-full border-red-500/50 text-red-400 h-12 hover:bg-transparent"
+                    className="w-full border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
                     disabled={isUpdating}
                   >
                     {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
@@ -460,76 +462,14 @@ export default function BusinessPackagesPage() {
                   </Button>
                 </>
               )}
-              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 hover:bg-transparent">
+              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 hover:bg-transparent shadow-none">
                 Cerrar
               </Button>
             </DialogFooter>
           </div>
 
-          {/* Template de Impresión - SOLO VISIBLE EN IMPRESIÓN */}
-          {selectedPackage && (
-            <div className="hidden print:block p-8 bg-white text-black min-h-screen font-sans">
-              <div className="border-2 border-black p-6 space-y-6">
-                <div className="flex justify-between items-start border-b-2 border-black pb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold">SOLUCIONEX</h1>
-                    <p className="text-sm">Logística y Entregas Profesionales</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">GUÍA DE TRANSPORTE</p>
-                    <p className="text-2xl font-mono">#{selectedPackage.guia_numero}</p>
-                    <p className="text-xs">Fecha: {new Date(selectedPackage.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8 text-sm">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="font-bold border-b border-black mb-1 text-[10px]">DESTINATARIO</p>
-                      <p className="text-base font-medium">{selectedPackage.direccion}</p>
-                      <p className="text-base font-medium">Telf: {selectedPackage.telefono || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold border-b border-black mb-1 text-[10px]">DETALLES DEL PEDIDO</p>
-                      <p>Tipo: <span className="capitalize">{selectedPackage.tipo}</span></p>
-                      <p>Estado Actual: <span className="uppercase font-bold">{selectedPackage.estado.replace('_', ' ')}</span></p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="bg-gray-100 p-4 border border-black text-center">
-                      <p className="text-[10px] font-bold uppercase">Valor a Cobrar</p>
-                      <p className="text-4xl font-bold">${selectedPackage.valor_pedido}</p>
-                      <p className="text-sm font-medium mt-1 uppercase">Pago: {selectedPackage.metodo_pago}</p>
-                    </div>
-                    {selectedPackage.nota && (
-                      <div>
-                        <p className="font-bold border-b border-black mb-1 text-[10px]">INSTRUCCIONES</p>
-                        <p className="italic text-xs">{selectedPackage.nota}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {(selectedPackage.novedad || selectedPackage.alerta_no_contesta || selectedPackage.alerta_cambio_pago) && (
-                  <div className="bg-gray-50 p-3 border border-dashed border-black">
-                    <p className="font-bold text-[10px] mb-1 uppercase">Observaciones de Ruta:</p>
-                    {selectedPackage.alerta_no_contesta && <p className="text-xs">• Cliente no contesta llamadas/mensajes.</p>}
-                    {selectedPackage.alerta_cambio_pago && <p className="text-xs">• Reporte de cambio de método de pago.</p>}
-                    {selectedPackage.novedad && <p className="text-xs">• {selectedPackage.novedad}</p>}
-                  </div>
-                )}
-
-                <div className="pt-12 grid grid-cols-2 gap-12 text-center">
-                  <div>
-                    <div className="border-t border-black mt-12 pt-1 text-[10px] uppercase">Firma del Operador</div>
-                  </div>
-                  <div>
-                    <div className="border-t border-black mt-12 pt-1 text-[10px] uppercase">Recibido Conforme (Firma y Cédula)</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Template de Impresión - Consumido desde componente externo */}
+          {selectedPackage && <PrintTemplate data={selectedPackage} />}
         </DialogContent>
       </Dialog>
 
