@@ -87,6 +87,7 @@ export default function MyPackagesPage() {
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estado para el campo novedad (entrega no ejecutada)
   const [novedad, setNovedad] = useState('');
@@ -305,6 +306,17 @@ export default function MyPackagesPage() {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
     }
     setShowCamera(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const openDetails = (pkg: PaqueteData) => {
@@ -644,7 +656,19 @@ export default function MyPackagesPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 gap-2" onClick={startCamera}><Camera className="w-4 h-4"/> Foto</Button>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={startCamera}>
+                    <Camera className="w-4 h-4"/> Foto
+                  </Button>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>
+                    <ImageIcon className="w-4 h-4"/> Adjuntar
+                  </Button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                  />
                 </div>
               )}
             </div>
