@@ -71,6 +71,7 @@ interface PackageData {
   created_at: string;
   telefono?: string;
   nota?: string;
+  novedad?: string;
   imagen_url?: string;
   tiempo_recogida?: number;
   empresas?: { nombre: string };
@@ -250,7 +251,7 @@ export default function DashboardAdmin() {
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En camino</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> He llegado</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> Sin respuesta</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> Entrega no ejecutada</Badge>;
       case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50 bg-accent/10"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Buscando</Badge>;
       default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
     }
@@ -470,7 +471,7 @@ export default function DashboardAdmin() {
                       <SelectItem value="en_ruta">En camino</SelectItem>
                       <SelectItem value="llegado">He llegado</SelectItem>
                       <SelectItem value="entregado">Entregado</SelectItem>
-                      <SelectItem value="cancelado">Sin respuesta</SelectItem>
+                      <SelectItem value="cancelado">Entrega no ejecutada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -569,6 +570,16 @@ export default function DashboardAdmin() {
                       <div>
                         <p className="text-xs text-slate-500 font-bold uppercase">Notas / Instrucciones</p>
                         <p className="text-sm italic text-slate-300">{viewingPackage.nota}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingPackage.novedad && (
+                    <div className="flex items-start gap-3 bg-red-500/5 p-3 rounded-lg border-l-2 border-red-500">
+                      <UserX className="h-5 w-5 text-red-400 shrink-0" />
+                      <div>
+                        <p className="text-xs text-red-400 font-bold uppercase">Novedad del Operador</p>
+                        <p className="text-sm italic text-slate-300">{viewingPackage.novedad}</p>
                       </div>
                     </div>
                   )}
