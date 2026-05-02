@@ -20,7 +20,7 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
   if (!data) return null;
 
   return (
-    <div className="hidden print:block p-10 bg-white text-black min-h-screen font-sans">
+    <div className="hidden print:block p-12 bg-white text-black min-h-screen font-sans">
       <div className="border-4 border-black p-8 space-y-8">
         {/* Marca */}
         <div className="text-center border-b-4 border-black pb-6">
@@ -74,14 +74,16 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
               <span className="font-semibold">{data.telefono || 'N/A'}</span>
             </div>
 
-            <div className="flex flex-col bg-gray-50 p-3 rounded border border-gray-200">
-              <span className="font-bold uppercase text-sm text-gray-600 mb-1">Nota:</span>
-              <p className="italic">{data.nota || 'Sin observaciones adicionales'}</p>
-            </div>
+            {data.nota && (
+              <div className="flex flex-col bg-gray-50 p-3 rounded border border-gray-200">
+                <span className="font-bold uppercase text-sm text-gray-600 mb-1">Nota:</span>
+                <p className="italic">{data.nota}</p>
+              </div>
+            )}
 
             <div className="flex border-b border-gray-300 pb-2">
               <span className="w-48 font-bold uppercase text-sm text-gray-600">Estado del paquete:</span>
-              <span className="font-bold uppercase text-accent-foreground bg-gray-200 px-2 py-1 rounded">
+              <span className="font-bold uppercase bg-gray-200 px-2 py-1 rounded">
                 {data.estado.replace('_', ' ')}
               </span>
             </div>
@@ -93,11 +95,6 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Footer simple */}
-        <div className="pt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest">
-          Documento generado por Solucionex System
         </div>
       </div>
     </div>

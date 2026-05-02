@@ -51,3 +51,13 @@
 .animate-pulse-yellow {
   animation: pulse-yellow-alert 2s infinite;
 }
+
+@media print {
+  @page {
+    margin: 0; /* Esto oculta el encabezado (fecha) y pie de página (URL) del navegador */
+  }
+  body {
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+  }
+}

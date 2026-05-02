@@ -111,9 +111,14 @@ export default function BusinessPackagesPage() {
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
+      // Usamos el mismo formato de select que el admin dashboard para asegurar que traiga relaciones
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas(nombre), operadores(nombres)')
+        .select(`
+          *,
+          empresas (nombre),
+          operadores (nombres)
+        `)
         .eq('empresa_id', uid)
         .order('created_at', { ascending: false });
 
@@ -123,6 +128,12 @@ export default function BusinessPackagesPage() {
       
       const count = packages.filter(p => p.alerta_no_contesta || p.alerta_cambio_pago).length;
       setAlertCount(count);
+
+      // Si hay un paquete seleccionado, actualizamos su data local
+      if (selectedPackage) {
+        const updated = packages.find(p => p.id === selectedPackage.id);
+        if (updated) setSelectedPackage(updated);
+      }
 
     } catch (error: any) {
       console.error("Error fetching packages:", error);
@@ -436,7 +447,7 @@ export default function BusinessPackagesPage() {
               <Button 
                 onClick={handlePrint} 
                 variant="outline"
-                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent hover:text-accent shadow-none"
+                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent shadow-none"
               >
                 <Printer className="h-4 w-4 mr-2" /> Imprimir
               </Button>
