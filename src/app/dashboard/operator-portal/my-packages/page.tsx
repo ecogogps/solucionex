@@ -152,6 +152,7 @@ export default function MyPackagesPage() {
         .eq('operador_id', currentUserId)
         .neq('estado', 'entregado')
         .neq('estado', 'cancelado')
+        .neq('estado', 'anulado_retornar')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -221,16 +222,22 @@ export default function MyPackagesPage() {
 
       if (error) throw error;
 
-      toast({ title: "Paquete liberado", description: "El paquete está disponible nuevamente para otros operadores." });
-      setIsDetailOpen(false);
+      toast({ title: "Paquete liberado", description: "El paquete está disponible nuevamente." });
+      
+      // Cerrar de forma secuencial y forzar limpieza de UI
       setIsReleaseConfirmOpen(false);
+      setIsDetailOpen(false);
+      
+      // Asegurar que pointer-events se restablezca
+      document.body.style.pointerEvents = 'auto';
+      
       if (userId) fetchData(userId);
     } catch (error: any) {
       console.error("Error al liberar paquete:", error);
       toast({ 
         variant: "destructive", 
         title: "Error", 
-        description: "No se pudo liberar el paquete. Asegúrate de ejecutar el script SQL de RLS." 
+        description: "No se pudo liberar el paquete. Verifica las políticas RLS." 
       });
     } finally {
       setUpdatingStatus(false);
@@ -374,7 +381,15 @@ export default function MyPackagesPage() {
         )}
       </main>
 
-      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+      <Dialog open={isDetailOpen} onOpenChange={(open) => {
+        setIsDetailOpen(open);
+        if (!open) {
+          // Limpiar pointer-events al cerrar
+          setTimeout(() => {
+            document.body.style.pointerEvents = 'auto';
+          }, 300);
+        }
+      }}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Info className="h-5 w-5 text-accent" /> Detalles del Paquete</DialogTitle></DialogHeader>
           {selectedPackage && (
@@ -387,7 +402,6 @@ export default function MyPackagesPage() {
                 {getStatusBadge(selectedPackage.estado)}
               </div>
 
-              {/* Botones de Comunicación en Columna */}
               <div className="flex flex-col gap-2">
                 <Button 
                   variant="outline" 
@@ -406,7 +420,6 @@ export default function MyPackagesPage() {
                   <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
                 </Button>
                 
-                {/* Nuevos botones de Liberación en Columna */}
                 <Button 
                   variant="outline" 
                   className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10" 
@@ -532,7 +545,14 @@ export default function MyPackagesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPaymentChangeOpen} onOpenChange={setIsPaymentChangeOpen}>
+      <Dialog open={isPaymentChangeOpen} onOpenChange={(open) => {
+        setIsPaymentChangeOpen(open);
+        if (!open) {
+          setTimeout(() => {
+            document.body.style.pointerEvents = 'auto';
+          }, 300);
+        }
+      }}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
           <DialogHeader><DialogTitle>Reportar Cambio de Pago</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
@@ -582,7 +602,14 @@ export default function MyPackagesPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={setIsReleaseConfirmOpen}>
+      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={(open) => {
+        setIsReleaseConfirmOpen(open);
+        if (!open) {
+          setTimeout(() => {
+            document.body.style.pointerEvents = 'auto';
+          }, 300);
+        }
+      }}>
         <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Confirmar Liberación</AlertDialogTitle>
