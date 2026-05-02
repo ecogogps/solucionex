@@ -358,7 +358,7 @@ export default function BusinessPackagesPage() {
       </main>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-lg w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
           <div className="print:hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -371,18 +371,24 @@ export default function BusinessPackagesPage() {
 
             {selectedPackage && (
               <div className="space-y-4 py-4">
-                <div className="p-3 bg-white/5 border border-white/10 rounded-lg space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Registro</span>
-                    <span className="text-xs">{new Date(selectedPackage.created_at).toLocaleDateString()}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Calendar className="w-3 h-3" /> Registro
+                    </div>
+                    <div className="text-sm font-medium">{new Date(selectedPackage.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 flex items-center gap-1"><Hash className="w-3 h-3" /> Estado Actual</span>
-                    <span className="scale-75 origin-right">{getStatusBadge(selectedPackage.estado)}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Hash className="w-3 h-3" /> Estado Actual
+                    </div>
+                    <div>{getStatusBadge(selectedPackage.estado)}</div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Valor Total</span>
-                    <span className="font-bold text-accent">${selectedPackage.valor_pedido}</span>
+                  <div className="space-y-2 sm:col-span-2 pt-2 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <DollarSign className="w-3 h-3" /> Valor Total
+                    </div>
+                    <div className="text-2xl font-black text-accent">${selectedPackage.valor_pedido}</div>
                   </div>
                 </div>
 
@@ -405,7 +411,7 @@ export default function BusinessPackagesPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-slate-400 flex items-center gap-2">
                           <Phone className="h-3 w-3" /> Teléfono
@@ -439,37 +445,43 @@ export default function BusinessPackagesPage() {
               </div>
             )}
 
-            <DialogFooter className="flex flex-col gap-2">
+            <DialogFooter className="flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-4">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full">
+                <Button 
+                  onClick={handlePrint} 
+                  variant="outline"
+                  className="flex-1 border-accent/50 text-accent h-12 hover:bg-transparent shadow-none"
+                >
+                  <Printer className="h-4 w-4 mr-2" /> Imprimir
+                </Button>
+                
+                {selectedPackage && isEditable(selectedPackage.estado) && (
+                  <>
+                    <Button 
+                      onClick={handleUpdatePackage} 
+                      className="flex-1 bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                      Guardar
+                    </Button>
+                    <Button 
+                      onClick={handleAnularPaquete} 
+                      variant="outline"
+                      className="flex-1 border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                      Anular
+                    </Button>
+                  </>
+                )}
+              </div>
               <Button 
-                onClick={handlePrint} 
-                variant="outline"
-                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent hover:text-accent shadow-none"
+                variant="ghost" 
+                onClick={() => setIsEditModalOpen(false)} 
+                className="w-full sm:w-auto text-slate-400 hover:bg-transparent shadow-none px-4 h-12"
               >
-                <Printer className="h-4 w-4 mr-2" /> Imprimir
-              </Button>
-              
-              {selectedPackage && isEditable(selectedPackage.estado) && (
-                <>
-                  <Button 
-                    onClick={handleUpdatePackage} 
-                    className="w-full bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent hover:text-primary"
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                    Guardar Cambios
-                  </Button>
-                  <Button 
-                    onClick={handleAnularPaquete} 
-                    variant="outline"
-                    className="w-full border-red-500/50 text-red-400 h-12 hover:bg-transparent hover:text-red-400 shadow-none"
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                    Anular Pedido
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 hover:bg-transparent hover:text-slate-400 shadow-none">
                 Cerrar
               </Button>
             </DialogFooter>
