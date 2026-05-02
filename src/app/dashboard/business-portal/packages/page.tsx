@@ -111,7 +111,6 @@ export default function BusinessPackagesPage() {
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
-      // Usamos el mismo formato de select que el admin dashboard para asegurar que traiga relaciones
       const { data, error } = await supabase
         .from('paquetes')
         .select(`
@@ -129,7 +128,6 @@ export default function BusinessPackagesPage() {
       const count = packages.filter(p => p.alerta_no_contesta || p.alerta_cambio_pago).length;
       setAlertCount(count);
 
-      // Si hay un paquete seleccionado, actualizamos su data local
       if (selectedPackage) {
         const updated = packages.find(p => p.id === selectedPackage.id);
         if (updated) setSelectedPackage(updated);
@@ -252,7 +250,6 @@ export default function BusinessPackagesPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden print:bg-white print:text-black">
-      {/* Sidebar - Oculto en impresión */}
       <aside className="hidden lg:flex w-64 bg-black/20 border-r border-white/10 flex-col p-6 shadow-2xl print:hidden">
         <div className="flex items-center gap-3 mb-10">
           <Truck className="h-8 w-8 text-accent" />
@@ -362,7 +359,6 @@ export default function BusinessPackagesPage() {
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
-          {/* Contenido Web - Oculto en impresión */}
           <div className="print:hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -447,7 +443,7 @@ export default function BusinessPackagesPage() {
               <Button 
                 onClick={handlePrint} 
                 variant="outline"
-                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent shadow-none"
+                className="w-full border-accent/50 text-accent h-12 hover:bg-transparent hover:text-accent shadow-none"
               >
                 <Printer className="h-4 w-4 mr-2" /> Imprimir
               </Button>
@@ -456,7 +452,7 @@ export default function BusinessPackagesPage() {
                 <>
                   <Button 
                     onClick={handleUpdatePackage} 
-                    className="w-full bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
+                    className="w-full bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent hover:text-primary"
                     disabled={isUpdating}
                   >
                     {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
@@ -465,7 +461,7 @@ export default function BusinessPackagesPage() {
                   <Button 
                     onClick={handleAnularPaquete} 
                     variant="outline"
-                    className="w-full border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
+                    className="w-full border-red-500/50 text-red-400 h-12 hover:bg-transparent hover:text-red-400 shadow-none"
                     disabled={isUpdating}
                   >
                     {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
@@ -473,18 +469,16 @@ export default function BusinessPackagesPage() {
                   </Button>
                 </>
               )}
-              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 hover:bg-transparent shadow-none">
+              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="w-full text-slate-400 hover:bg-transparent hover:text-slate-400 shadow-none">
                 Cerrar
               </Button>
             </DialogFooter>
           </div>
 
-          {/* Template de Impresión - Consumido desde componente externo */}
           {selectedPackage && <PrintTemplate data={selectedPackage} />}
         </DialogContent>
       </Dialog>
 
-      {/* Nav de móviles - Oculto en impresión */}
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl print:hidden">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
           <PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span>
