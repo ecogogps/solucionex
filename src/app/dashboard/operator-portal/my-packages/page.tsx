@@ -289,6 +289,7 @@ export default function MyPackagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
       case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
@@ -485,7 +486,6 @@ export default function MyPackagesPage() {
                     <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
                   </div>
                   
-                  {/* Seccion de Novedad condicional al presionar botones especificos */}
                   {pendingAction && (
                     <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                       <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-accent")}>
@@ -522,9 +522,9 @@ export default function MyPackagesPage() {
               <DialogFooter className="flex flex-col gap-2 sm:flex-col pt-4 border-t border-white/5">
                 {!isFinalState && !pendingAction && (
                   <>
-                    {selectedPackage?.estado === 'pendiente' && (
+                    {(selectedPackage?.estado === 'pendiente' || selectedPackage?.estado === 'pedido_listo') && (
                       <Button 
-                        className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-600" 
+                        className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'camino_a_retirar')} 
                         disabled={updatingStatus}
                       >
@@ -535,7 +535,7 @@ export default function MyPackagesPage() {
 
                     {selectedPackage?.estado === 'camino_a_retirar' && (
                       <Button 
-                        className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-600" 
+                        className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
                         disabled={updatingStatus}
                       >
@@ -546,7 +546,7 @@ export default function MyPackagesPage() {
 
                     {selectedPackage?.estado === 'paquete_retirado' && (
                       <Button 
-                        className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-600" 
+                        className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
                         disabled={updatingStatus}
                       >
@@ -557,7 +557,7 @@ export default function MyPackagesPage() {
                     
                     {selectedPackage?.estado === 'en_ruta' && (
                       <Button 
-                        className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-600" 
+                        className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')} 
                         disabled={updatingStatus}
                       >
@@ -569,7 +569,7 @@ export default function MyPackagesPage() {
                     {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
                       <>
                         <Button 
-                          className="w-full bg-green-600 h-12 font-bold hover:bg-green-600" 
+                          className="w-full bg-green-600 h-12 font-bold hover:bg-green-700" 
                           onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
                           disabled={updatingStatus}
                         >
@@ -577,7 +577,7 @@ export default function MyPackagesPage() {
                           ENTREGADO CON EXITO
                         </Button>
                         <Button 
-                          className="w-full bg-green-800 h-12 font-bold hover:bg-green-800" 
+                          className="w-full bg-green-800 h-12 font-bold hover:bg-green-900" 
                           onClick={() => setPendingAction('entregado_novedad')} 
                           disabled={updatingStatus}
                         >
@@ -585,7 +585,7 @@ export default function MyPackagesPage() {
                           ENTREGADO CON NOVEDAD
                         </Button>
                         <Button 
-                          className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
+                          className="w-full bg-red-600 h-12 font-bold hover:bg-red-700" 
                           onClick={() => setPendingAction('cancelado')} 
                           disabled={updatingStatus}
                         >
@@ -688,7 +688,7 @@ export default function MyPackagesPage() {
           <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
             <AlertDialogAction 
               onClick={executeRelease}
-              className="bg-red-600 hover:bg-red-600 text-white h-12 w-full"
+              className="bg-red-600 hover:bg-red-700 text-white h-12 w-full"
             >
               Sí, liberar paquete
             </AlertDialogAction>

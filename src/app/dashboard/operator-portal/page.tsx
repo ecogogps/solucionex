@@ -91,7 +91,7 @@ export default function SolicitudesPage() {
       const { data, error } = await supabase
         .from('paquetes')
         .select('*, empresas(nombre, direccion)')
-        .eq('estado', 'buscando_operador')
+        .in('estado', ['buscando_operador', 'pedido_listo'])
         .is('operador_id', null)
         .order('created_at', { ascending: false });
 
@@ -119,7 +119,7 @@ export default function SolicitudesPage() {
           estado: 'pendiente' 
         })
         .eq('id', pkg.id)
-        .eq('estado', 'buscando_operador')
+        .in('estado', ['buscando_operador', 'pedido_listo'])
         .select();
 
       if (error) throw error;
@@ -153,6 +153,7 @@ export default function SolicitudesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
       case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;

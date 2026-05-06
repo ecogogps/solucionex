@@ -195,6 +195,38 @@ export default function BusinessPackagesPage() {
     }
   };
 
+  const handlePedidoListo = async () => {
+    if (!selectedPackage) return;
+
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('paquetes')
+        .update({
+          estado: 'pedido_listo'
+        })
+        .eq('id', selectedPackage.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Estado actualizado",
+        description: "El paquete ha sido marcado como 'Pedido listo'."
+      });
+      
+      setIsEditModalOpen(false);
+      if (userId) fetchMisPaquetes(userId);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el estado."
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleAnularPaquete = async () => {
     if (!selectedPackage) return;
     
@@ -235,6 +267,7 @@ export default function BusinessPackagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
       case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
@@ -256,6 +289,11 @@ export default function BusinessPackagesPage() {
 
   const canRequestReturnToOrigin = (status: string) => {
     return !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(status);
+  };
+
+  const canShowPedidoListo = (status: string) => {
+    const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'];
+    return !afterRetirado.includes(status);
   };
 
   return (
@@ -374,9 +412,9 @@ export default function BusinessPackagesPage() {
               <DialogTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-accent" /> Gestionar Paquete
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogTitle className="text-xs text-slate-400 font-normal">
                 Información de la Guía: {selectedPackage?.guia_numero}
-              </DialogDescription>
+              </DialogTitle>
             </DialogHeader>
 
             {selectedPackage && (
@@ -405,7 +443,7 @@ export default function BusinessPackagesPage() {
                 {!canRequestReturnToOrigin(selectedPackage.estado) && !canEditDetails(selectedPackage.estado) ? (
                   <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <p className="text-xs text-red-400 font-medium">
-                      Este paquete ha llegado a su estado final y ya no puede ser modificado. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
+                      Este paquete no puede ser editado ni retornado a origen. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
                     </p>
                   </div>
                 ) : (
@@ -477,6 +515,16 @@ export default function BusinessPackagesPage() {
                 
                 {selectedPackage && (
                   <>
+                    {canShowPedidoListo(selectedPackage.estado) && (
+                      <Button 
+                        onClick={handlePedidoListo} 
+                        className="flex-1 bg-emerald-600 text-white font-bold h-12 shadow-none hover:bg-emerald-700"
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PackageCheck className="h-4 w-4 mr-2" />}
+                        Pedido listo
+                      </Button>
+                    )}
                     {canEditDetails(selectedPackage.estado) && (
                       <Button 
                         onClick={handleUpdatePackage} 

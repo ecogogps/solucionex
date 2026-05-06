@@ -17,6 +17,7 @@ interface PaquetePrintData {
 }
 
 const statusMap: Record<string, string> = {
+  'pedido_listo': 'PEDIDO LISTO',
   'entregado': 'ENTREGADO CON EXITO',
   'entregado_novedad': 'ENTREGADO CON NOVEDAD',
   'en_ruta': 'En Transito a Destino',

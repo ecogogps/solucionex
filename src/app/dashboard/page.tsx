@@ -230,6 +230,7 @@ export default function DashboardAdmin() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50"><PackageCheck className="w-3 h-3 mr-1"/> PEDIDO LISTO</Badge>;
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> ENTREGADO CON EXITO</Badge>;
       case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50"><PackageCheck className="w-3 h-3 mr-1"/> ENTREGADO CON NOVEDAD</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Transito a Destino</Badge>;
@@ -447,6 +448,7 @@ export default function DashboardAdmin() {
                       <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      <SelectItem value="pedido_listo">Pedido Listo</SelectItem>
                       <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
                       <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
                       <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
