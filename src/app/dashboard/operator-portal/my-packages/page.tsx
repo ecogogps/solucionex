@@ -105,6 +105,7 @@ export default function MyPackagesPage() {
 
   const [novedad, setNovedad] = useState('');
   const [novedadError, setNovedadError] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'entregado_novedad' | 'cancelado' | null>(null);
   
   const router = useRouter();
   const pathname = usePathname();
@@ -185,6 +186,7 @@ export default function MyPackagesPage() {
         setIsDetailOpen(false);
         setNovedad('');
         setNovedadError(false);
+        setPendingAction(null);
       }
       if (userId) fetchData(userId);
     } catch (error: any) {
@@ -355,7 +357,7 @@ export default function MyPackagesPage() {
                 <Card 
                   key={pkg.id} 
                   className={cn("bg-white/10 border-accent/20 cursor-pointer active:scale-[0.98] transition-all", pkg.alerta_no_contesta && "animate-pulse-yellow border-yellow-500/50")}
-                  onClick={() => { setSelectedPackage(pkg); setNovedad(''); setNovedadError(false); setIsDetailOpen(true); }}
+                  onClick={() => { setSelectedPackage(pkg); setNovedad(''); setNovedadError(false); setPendingAction(null); setIsDetailOpen(true); }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -410,7 +412,7 @@ export default function MyPackagesPage() {
                   {getStatusBadge(selectedPackage.estado)}
                 </div>
 
-                {!isFinalState && (
+                {!isFinalState && !pendingAction && (
                   <div className="flex flex-col gap-2">
                     <Button 
                       variant="outline" 
@@ -483,16 +485,32 @@ export default function MyPackagesPage() {
                     <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
                   </div>
                   
-                  {!isFinalState && (selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado') && (
-                    <div className="space-y-2 pt-2">
-                      <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
-                        <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para No ejecutado/Novedad)</span>
+                  {/* Seccion de Novedad condicional al presionar botones especificos */}
+                  {pendingAction && (
+                    <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-accent")}>
+                        <AlertTriangle className="w-3 h-3" /> {pendingAction === 'cancelado' ? 'Motivo de No Ejecución' : 'Detalle de Novedad'}
                       </Label>
-                      <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-white/10")} />
+                      <Textarea 
+                        placeholder="Escribe el motivo detallado aquí..." 
+                        value={novedad} 
+                        onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} 
+                        className={cn("bg-white/5 border text-white min-h-[100px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-accent/30")} 
+                      />
+                      <div className="flex gap-2 pt-1">
+                        <Button variant="ghost" className="flex-1 text-slate-400" onClick={() => { setPendingAction(null); setNovedad(''); setNovedadError(false); }}>Cancelar</Button>
+                        <Button 
+                          className={cn("flex-1 font-bold", pendingAction === 'cancelado' ? "bg-red-600" : "bg-green-800")}
+                          onClick={() => handleUpdateStatus(selectedPackage.id, pendingAction)}
+                          disabled={updatingStatus}
+                        >
+                           Confirmar {pendingAction === 'cancelado' ? 'No Ejecutado' : 'Con Novedad'}
+                        </Button>
+                      </div>
                     </div>
                   )}
                   
-                  {(isFinalState || selectedPackage.novedad) && (
+                  {(isFinalState || selectedPackage.novedad) && !pendingAction && (
                     <div className="space-y-2 pt-2 bg-white/5 p-3 rounded-lg border border-white/10">
                       <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Historial de Novedad:</p>
                       <p className="text-sm italic text-slate-300">{selectedPackage.novedad || 'Sin novedades registradas.'}</p>
@@ -502,7 +520,7 @@ export default function MyPackagesPage() {
               </div>
 
               <DialogFooter className="flex flex-col gap-2 sm:flex-col pt-4 border-t border-white/5">
-                {!isFinalState && (
+                {!isFinalState && !pendingAction && (
                   <>
                     {selectedPackage?.estado === 'pendiente' && (
                       <Button 
@@ -560,7 +578,7 @@ export default function MyPackagesPage() {
                         </Button>
                         <Button 
                           className="w-full bg-green-800 h-12 font-bold hover:bg-green-800" 
-                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado_novedad')} 
+                          onClick={() => setPendingAction('entregado_novedad')} 
                           disabled={updatingStatus}
                         >
                           {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
@@ -568,7 +586,7 @@ export default function MyPackagesPage() {
                         </Button>
                         <Button 
                           className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
-                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
+                          onClick={() => setPendingAction('cancelado')} 
                           disabled={updatingStatus}
                         >
                           {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
@@ -579,9 +597,11 @@ export default function MyPackagesPage() {
                   </>
                 )}
                 
-                <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400 hover:bg-transparent">
-                  Cerrar
-                </Button>
+                {!pendingAction && (
+                  <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400 hover:bg-transparent">
+                    Cerrar
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : (
