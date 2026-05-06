@@ -151,7 +151,6 @@ export default function MyPackagesPage() {
         .eq('operador_id', currentUserId)
         .neq('estado', 'entregado')
         .neq('estado', 'entregado_novedad')
-        .neq('estado', 'cancelado')
         .neq('estado', 'anulado_retornar')
         .order('created_at', { ascending: false });
 
@@ -477,7 +476,7 @@ export default function MyPackagesPage() {
                   <Phone className="h-4 w-4 text-accent shrink-0" />
                   <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
                 </div>
-                {(selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado') && (
+                {(selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado' || selectedPackage.estado === 'cancelado') && (
                   <div className="space-y-2 pt-2">
                     <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
                       <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para No ejecutado/Novedad)</span>
@@ -534,7 +533,7 @@ export default function MyPackagesPage() {
               </Button>
             )}
 
-            {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
+            {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta' || selectedPackage?.estado === 'cancelado') && (
               <>
                 <Button 
                   className="w-full bg-green-600 h-12 font-bold hover:bg-green-600" 
@@ -552,14 +551,16 @@ export default function MyPackagesPage() {
                   {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
                   ENTREGADO CON NOVEDAD
                 </Button>
-                <Button 
-                  className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
-                  onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
-                  disabled={updatingStatus}
-                >
-                  {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
-                  No ejecutado
-                </Button>
+                {selectedPackage?.estado !== 'cancelado' && (
+                  <Button 
+                    className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
+                    onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
+                    disabled={updatingStatus}
+                  >
+                    {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
+                    No ejecutado
+                  </Button>
+                )}
               </>
             )}
             

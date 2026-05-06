@@ -154,8 +154,6 @@ export default function BusinessPackagesPage() {
   const handleUpdatePackage = async () => {
     if (!selectedPackage) return;
     
-    // Restricciones para EDITAR datos básicos (Dirección, Teléfono, Pago)
-    // No se permite editar si ya se está en un proceso avanzado o final
     const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'];
     if (restrictedForEdits.includes(selectedPackage.estado)) {
       toast({
@@ -252,12 +250,10 @@ export default function BusinessPackagesPage() {
     }
   };
 
-  // Helper para determinar si se pueden editar los campos de texto
   const canEditDetails = (status: string) => {
     return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'].includes(status);
   };
 
-  // Helper para determinar si se puede solicitar el retorno (restringido solo si ya es exitoso o ya está retornando)
   const canRequestReturnToOrigin = (status: string) => {
     return !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(status);
   };
@@ -372,7 +368,7 @@ export default function BusinessPackagesPage() {
       </main>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-lg w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
           <div className="print:hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -414,7 +410,6 @@ export default function BusinessPackagesPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Sección de edición solo si es posible editar detalles */}
                     {canEditDetails(selectedPackage.estado) ? (
                       <>
                         <div className="space-y-2">
