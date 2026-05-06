@@ -237,7 +237,6 @@ export default function DashboardAdmin() {
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Transito a Destino</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> Paquete llego al Destino</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50"><ArrowRightCircle className="w-3 h-3 mr-1"/> En camino a retirar</Badge>;
-      case 'llegado_a_origen': return <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/50"><MapPinCheck className="w-3 h-3 mr-1"/> Llegado a Origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50"><Package className="w-3 h-3 mr-1"/> Paquete retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Operador</Badge>;
@@ -454,7 +453,6 @@ export default function DashboardAdmin() {
                       <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
                       <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
                       <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
-                      <SelectItem value="llegado_a_origen">He llegado a la empresa</SelectItem>
                       <SelectItem value="demorado_despacho">Demorado Despacho</SelectItem>
                       <SelectItem value="demorado_operador">Demorado Operador</SelectItem>
                       <SelectItem value="paquete_retirado">Paquete retirado de origen</SelectItem>

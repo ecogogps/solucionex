@@ -162,7 +162,7 @@ export default function BusinessPackagesPage() {
   const handleUpdatePackage = async () => {
     if (!selectedPackage) return;
     
-    const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado', 'llegado_a_origen'];
+    const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'];
     if (restrictedForEdits.includes(selectedPackage.estado)) {
       toast({
         variant: "destructive",
@@ -281,7 +281,6 @@ export default function BusinessPackagesPage() {
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
-      case 'llegado_a_origen': return <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/50">Llegado a Origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
@@ -293,7 +292,7 @@ export default function BusinessPackagesPage() {
   };
 
   const canEditDetails = (status: string) => {
-    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado', 'llegado_a_origen'].includes(status);
+    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'].includes(status);
   };
 
   const canRequestReturnToOrigin = (pkg: PaqueteData) => {
@@ -301,7 +300,7 @@ export default function BusinessPackagesPage() {
   };
 
   const canShowPedidoListo = (pkg: PaqueteData) => {
-    const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar', 'llegado_a_origen'];
+    const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'];
     return !afterRetirado.includes(pkg.estado) && !hasAchieved(pkg, 'pedido_listo');
   };
 
@@ -413,164 +412,6 @@ export default function BusinessPackagesPage() {
           </div>
         </div>
       </main>
-
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl w-[95vw] rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
-          <div className="print:hidden">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-accent" /> Gestionar Paquete
-              </DialogTitle>
-              <DialogTitle className="text-xs text-slate-400 font-normal">
-                Información de la Guía: {selectedPackage?.guia_numero}
-              </DialogTitle>
-            </DialogHeader>
-
-            {selectedPackage && (
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Calendar className="w-3 h-3" /> Registro
-                    </div>
-                    <div className="text-sm font-medium">{new Date(selectedPackage.created_at).toLocaleDateString()}</div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Hash className="w-3 h-3" /> Estado Actual
-                    </div>
-                    <div>{getStatusBadge(selectedPackage.estado)}</div>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2 pt-2 border-t border-white/5">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <DollarSign className="w-3 h-3" /> Valor Total
-                    </div>
-                    <div className="text-2xl font-black text-accent">${selectedPackage.valor_pedido}</div>
-                  </div>
-                </div>
-
-                {!canRequestReturnToOrigin(selectedPackage) && !canEditDetails(selectedPackage.estado) ? (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-xs text-red-400 font-medium">
-                      Este paquete no puede ser editado ni retornado a origen. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {canEditDetails(selectedPackage.estado) ? (
-                      <>
-                        <div className="space-y-2">
-                          <Label className="text-slate-400 flex items-center gap-2">
-                            <MapPin className="h-3 w-3" /> Dirección de Entrega
-                          </Label>
-                          <Input 
-                            value={editFormData.direccion} 
-                            onChange={(e) => setEditFormData({...editFormData, direccion: e.target.value})}
-                            className="bg-white/5 border-white/10 focus-visible:ring-accent"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-slate-400 flex items-center gap-2">
-                              <Phone className="h-3 w-3" /> Teléfono
-                            </Label>
-                            <Input 
-                              value={editFormData.telefono} 
-                              onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
-                              className="bg-white/5 border-white/10 focus-visible:ring-accent"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-slate-400 flex items-center gap-2">
-                              <CreditCard className="h-3 w-3" /> Pago
-                            </Label>
-                            <Select 
-                              value={editFormData.metodo_pago} 
-                              onValueChange={(v) => setEditFormData({...editFormData, metodo_pago: v})}
-                            >
-                              <SelectTrigger className="bg-white/5 border-white/10">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-800 border-white/10 text-white">
-                                <SelectItem value="transferencia">Transferencia</SelectItem>
-                                <SelectItem value="efectivo">Efectivo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                        <p className="text-xs text-yellow-500 font-medium">
-                          La edición de dirección y teléfono ya no está disponible, pero aún puedes solicitar el retorno a origen si lo requieres.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <DialogFooter className="flex flex-col sm:flex-row gap-3 border-t border-white/5 pt-4">
-              <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full">
-                <Button 
-                  onClick={handlePrint} 
-                  variant="outline"
-                  className="flex-1 border-accent/50 text-accent h-12 hover:bg-transparent shadow-none"
-                >
-                  <Printer className="h-4 w-4 mr-2" /> Imprimir
-                </Button>
-                
-                {selectedPackage && (
-                  <>
-                    {canShowPedidoListo(selectedPackage) && (
-                      <Button 
-                        onClick={handlePedidoListo} 
-                        className="flex-1 bg-emerald-600 text-white font-bold h-12 shadow-none hover:bg-emerald-700"
-                        disabled={isUpdating}
-                      >
-                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <PackageCheck className="h-4 w-4 mr-2" />}
-                        Pedido listo
-                      </Button>
-                    )}
-                    {canEditDetails(selectedPackage.estado) && (
-                      <Button 
-                        onClick={handleUpdatePackage} 
-                        className="flex-1 bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
-                        disabled={isUpdating}
-                      >
-                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Guardar
-                      </Button>
-                    )}
-                    {canRequestReturnToOrigin(selectedPackage) && (
-                      <Button 
-                        onClick={handleAnularPaquete} 
-                        variant="outline"
-                        className="flex-1 border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
-                        disabled={isUpdating}
-                      >
-                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                        Retornar a origen
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-              <Button 
-                variant="ghost" 
-                onClick={() => setIsEditModalOpen(false)} 
-                className="w-full sm:w-auto text-slate-400 hover:bg-transparent shadow-none px-4 h-12"
-              >
-                Cerrar
-              </Button>
-            </DialogFooter>
-          </div>
-
-          {selectedPackage && <PrintTemplate data={selectedPackage} />}
-        </DialogContent>
-      </Dialog>
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
