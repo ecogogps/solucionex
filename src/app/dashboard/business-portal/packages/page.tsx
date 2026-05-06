@@ -61,6 +61,7 @@ interface PaqueteData {
   imagen_pago_url?: string;
   empresas?: { nombre: string };
   operadores?: { nombres: string };
+  paquetes_historial?: { estado: string }[];
 }
 
 export default function BusinessPackagesPage() {
@@ -117,7 +118,8 @@ export default function BusinessPackagesPage() {
         .select(`
           *,
           empresas (nombre),
-          operadores (nombres)
+          operadores (nombres),
+          paquetes_historial (estado)
         `)
         .eq('empresa_id', uid)
         .order('created_at', { ascending: false });
@@ -139,6 +141,10 @@ export default function BusinessPackagesPage() {
     } finally {
       setFetchingPackages(false);
     }
+  };
+
+  const hasAchieved = (pkg: PaqueteData | null, state: string) => {
+    return pkg?.paquetes_historial?.some(h => h.estado === state);
   };
 
   const handleOpenEdit = (pkg: PaqueteData) => {
@@ -287,13 +293,13 @@ export default function BusinessPackagesPage() {
     return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'].includes(status);
   };
 
-  const canRequestReturnToOrigin = (status: string) => {
-    return !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(status);
+  const canRequestReturnToOrigin = (pkg: PaqueteData) => {
+    return !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved(pkg, 'anulado_retornar');
   };
 
-  const canShowPedidoListo = (status: string) => {
+  const canShowPedidoListo = (pkg: PaqueteData) => {
     const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'];
-    return !afterRetirado.includes(status);
+    return !afterRetirado.includes(pkg.estado) && !hasAchieved(pkg, 'pedido_listo');
   };
 
   return (
@@ -440,7 +446,7 @@ export default function BusinessPackagesPage() {
                   </div>
                 </div>
 
-                {!canRequestReturnToOrigin(selectedPackage.estado) && !canEditDetails(selectedPackage.estado) ? (
+                {!canRequestReturnToOrigin(selectedPackage) && !canEditDetails(selectedPackage.estado) ? (
                   <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <p className="text-xs text-red-400 font-medium">
                       Este paquete no puede ser editado ni retornado a origen. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
@@ -515,7 +521,7 @@ export default function BusinessPackagesPage() {
                 
                 {selectedPackage && (
                   <>
-                    {canShowPedidoListo(selectedPackage.estado) && (
+                    {canShowPedidoListo(selectedPackage) && (
                       <Button 
                         onClick={handlePedidoListo} 
                         className="flex-1 bg-emerald-600 text-white font-bold h-12 shadow-none hover:bg-emerald-700"
@@ -535,7 +541,7 @@ export default function BusinessPackagesPage() {
                         Guardar
                       </Button>
                     )}
-                    {canRequestReturnToOrigin(selectedPackage.estado) && (
+                    {canRequestReturnToOrigin(selectedPackage) && (
                       <Button 
                         onClick={handleAnularPaquete} 
                         variant="outline"

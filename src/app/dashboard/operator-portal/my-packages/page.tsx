@@ -81,6 +81,7 @@ interface PaqueteData {
     nombre: string;
     direccion: string;
   };
+  paquetes_historial?: { estado: string }[];
 }
 
 export default function MyPackagesPage() {
@@ -144,7 +145,7 @@ export default function MyPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas(nombre, direccion)')
+        .select('*, empresas(nombre, direccion), paquetes_historial(estado)')
         .eq('operador_id', currentUserId)
         .neq('estado', 'entregado')
         .neq('estado', 'entregado_novedad')
@@ -163,6 +164,10 @@ export default function MyPackagesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasAchieved = (state: string) => {
+    return selectedPackage?.paquetes_historial?.some(h => h.estado === state);
   };
 
   const handleUpdateStatus = async (pkgId: string, newStatus: string) => {
@@ -522,7 +527,7 @@ export default function MyPackagesPage() {
               <DialogFooter className="flex flex-col gap-2 sm:flex-col pt-4 border-t border-white/5">
                 {!isFinalState && !pendingAction && (
                   <>
-                    {(selectedPackage?.estado === 'pendiente' || selectedPackage?.estado === 'pedido_listo') && (
+                    {(selectedPackage?.estado === 'pendiente' || selectedPackage?.estado === 'pedido_listo') && !hasAchieved('camino_a_retirar') && (
                       <Button 
                         className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'camino_a_retirar')} 
@@ -533,7 +538,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'camino_a_retirar' && (
+                    {selectedPackage?.estado === 'camino_a_retirar' && !hasAchieved('paquete_retirado') && (
                       <Button 
                         className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
@@ -544,7 +549,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'paquete_retirado' && (
+                    {selectedPackage?.estado === 'paquete_retirado' && !hasAchieved('en_ruta') && (
                       <Button 
                         className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
@@ -555,7 +560,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
                     
-                    {selectedPackage?.estado === 'en_ruta' && (
+                    {selectedPackage?.estado === 'en_ruta' && !hasAchieved('llegado') && (
                       <Button 
                         className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')} 
@@ -568,30 +573,36 @@ export default function MyPackagesPage() {
 
                     {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
                       <>
-                        <Button 
-                          className="w-full bg-green-600 h-12 font-bold hover:bg-green-700" 
-                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
-                          disabled={updatingStatus}
-                        >
-                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                          ENTREGADO CON EXITO
-                        </Button>
-                        <Button 
-                          className="w-full bg-green-800 h-12 font-bold hover:bg-green-900" 
-                          onClick={() => setPendingAction('entregado_novedad')} 
-                          disabled={updatingStatus}
-                        >
-                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                          ENTREGADO CON NOVEDAD
-                        </Button>
-                        <Button 
-                          className="w-full bg-red-600 h-12 font-bold hover:bg-red-700" 
-                          onClick={() => setPendingAction('cancelado')} 
-                          disabled={updatingStatus}
-                        >
-                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
-                          No ejecutado
-                        </Button>
+                        {!hasAchieved('entregado') && (
+                          <Button 
+                            className="w-full bg-green-600 h-12 font-bold hover:bg-green-700" 
+                            onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
+                            disabled={updatingStatus}
+                          >
+                            {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                            ENTREGADO CON EXITO
+                          </Button>
+                        )}
+                        {!hasAchieved('entregado_novedad') && (
+                          <Button 
+                            className="w-full bg-green-800 h-12 font-bold hover:bg-green-900" 
+                            onClick={() => setPendingAction('entregado_novedad')} 
+                            disabled={updatingStatus}
+                          >
+                            {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                            ENTREGADO CON NOVEDAD
+                          </Button>
+                        )}
+                        {!hasAchieved('cancelado') && (
+                          <Button 
+                            className="w-full bg-red-600 h-12 font-bold hover:bg-red-700" 
+                            onClick={() => setPendingAction('cancelado')} 
+                            disabled={updatingStatus}
+                          >
+                            {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
+                            No ejecutado
+                          </Button>
+                        )}
                       </>
                     )}
                   </>
