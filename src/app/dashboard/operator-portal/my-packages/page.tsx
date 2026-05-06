@@ -540,7 +540,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'camino_a_retirar' && !hasAchieved('llegado_a_origen') && (
+                    {(selectedPackage?.estado === 'camino_a_retirar' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('camino_a_retirar'))) && !hasAchieved('llegado_a_origen') && (
                       <Button 
                         className="w-full bg-violet-600 h-12 font-bold hover:bg-violet-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado_a_origen')} 
@@ -551,7 +551,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'llegado_a_origen' && !hasAchieved('paquete_retirado') && (
+                    {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
                       <Button 
                         className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
@@ -562,7 +562,7 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'paquete_retirado' && !hasAchieved('en_ruta') && (
+                    {(selectedPackage?.estado === 'paquete_retirado' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('paquete_retirado'))) && !hasAchieved('en_ruta') && (
                       <Button 
                         className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
