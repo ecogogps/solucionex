@@ -8,4 +8,12 @@ const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim()
 // Si la URL contiene /rest/v1 la cortamos para evitar errores de conexión
 const cleanUrl = supabaseUrl.split('/rest/v1')[0].replace(/\/$/, '');
 
-export const supabase = createClient(cleanUrl, supabaseAnonKey);
+export const supabase = createClient(cleanUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    }
+  });
+  

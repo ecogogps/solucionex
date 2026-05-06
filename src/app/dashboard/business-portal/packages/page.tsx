@@ -21,7 +21,13 @@ import {
   MessageSquareOff,
   RefreshCcw,
   ExternalLink,
-  UserX
+  UserX,
+  CheckCircle2,
+  MapPinned,
+  Clock,
+  AlertTriangle,
+  ArrowRightCircle,
+  PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -153,7 +159,7 @@ export default function BusinessPackagesPage() {
   const handleUpdatePackage = async () => {
     if (!selectedPackage) return;
     
-    const restrictedStatuses = ['llegado', 'entregado', 'cancelado', 'anulado_retornar'];
+    const restrictedStatuses = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'];
     if (restrictedStatuses.includes(selectedPackage.estado)) {
       toast({
         variant: "destructive",
@@ -234,18 +240,23 @@ export default function BusinessPackagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">Entregado</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Llegado</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Camino</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">Cancelado</Badge>;
+      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
+      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
+      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
+      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
+      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
+      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Anulado - Retornar</Badge>;
-      case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50">Buscando</Badge>;
+      case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50">Buscando Operador</Badge>;
       default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50">Pendiente</Badge>;
     }
   };
 
   const isEditable = (status: string) => {
-    return !['llegado', 'entregado', 'cancelado', 'anulado_retornar'].includes(status);
+    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(status);
   };
 
   return (
@@ -491,7 +502,7 @@ export default function BusinessPackagesPage() {
         </DialogContent>
       </Dialog>
 
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl print:hidden">
+      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
           <PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span>
         </Link>

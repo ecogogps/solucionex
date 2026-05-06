@@ -16,6 +16,21 @@ interface PaquetePrintData {
   operadores?: { nombres: string };
 }
 
+const statusMap: Record<string, string> = {
+  'entregado': 'ENTREGADO CON EXITO',
+  'entregado_novedad': 'ENTREGADO CON NOVEDAD',
+  'en_ruta': 'En Transito a Destino',
+  'llegado': 'Paquete llego al Destino',
+  'camino_a_retirar': 'Estoy en camino a retirar',
+  'paquete_retirado': 'Paquete retirado de origen',
+  'demorado_despacho': 'Demorado Despacho',
+  'demorado_operador': 'Demorado Operador',
+  'buscando_operador': 'Buscando Operador',
+  'pendiente': 'Pendiente',
+  'cancelado': 'No ejecutado',
+  'anulado_retornar': 'Anulado - Retornar'
+};
+
 export function PrintTemplate({ data }: { data: PaquetePrintData }) {
   if (!data) return null;
 
@@ -84,7 +99,7 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
             <div className="flex border-b border-gray-300 pb-2">
               <span className="w-48 font-bold uppercase text-sm text-gray-600">Estado del paquete:</span>
               <span className="font-bold uppercase bg-gray-200 px-2 py-1 rounded">
-                {data.estado.replace('_', ' ')}
+                {statusMap[data.estado] || data.estado}
               </span>
             </div>
 

@@ -25,7 +25,10 @@ import {
   CreditCard,
   FileText,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  AlertTriangle,
+  ArrowRightCircle,
+  PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -226,15 +229,20 @@ export default function DashboardAdmin() {
   };
 
   const getStatusBadge = (status: string) => {
-    const s = status.toLowerCase();
-    switch (s) {
-      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En camino</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> He llegado</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> Entrega no ejecutada</Badge>;
+    switch (status) {
+      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> ENTREGADO CON EXITO</Badge>;
+      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50"><PackageCheck className="w-3 h-3 mr-1"/> ENTREGADO CON NOVEDAD</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Transito a Destino</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> Paquete llego al Destino</Badge>;
+      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50"><ArrowRightCircle className="w-3 h-3 mr-1"/> En camino a retirar</Badge>;
+      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50"><Package className="w-3 h-3 mr-1"/> Paquete retirado de origen</Badge>;
+      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Despacho</Badge>;
+      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Operador</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> No ejecutado</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50"><RotateCcw className="w-3 h-3 mr-1"/> Anulado - Retornar</Badge>;
-      case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50 bg-accent/10"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Buscando</Badge>;
-      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
+      case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50 bg-accent/10"><Loader2 className="w-3 h-3 mr-1 animate-spin"/> Buscando Operador</Badge>;
+      case 'pendiente': return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -441,10 +449,15 @@ export default function DashboardAdmin() {
                     <SelectContent className="bg-slate-800 border-white/10 text-white">
                       <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
                       <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
-                      <SelectItem value="en_ruta">En camino</SelectItem>
-                      <SelectItem value="llegado">He llegado</SelectItem>
-                      <SelectItem value="entregado">Entregado</SelectItem>
-                      <SelectItem value="cancelado">Entrega no ejecutada</SelectItem>
+                      <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
+                      <SelectItem value="demorado_despacho">Demorado Despacho</SelectItem>
+                      <SelectItem value="demorado_operador">Demorado Operador</SelectItem>
+                      <SelectItem value="paquete_retirado">Paquete retirado de origen</SelectItem>
+                      <SelectItem value="en_ruta">En Transito a Destino</SelectItem>
+                      <SelectItem value="llegado">Paquete llego al Destino</SelectItem>
+                      <SelectItem value="entregado">ENTREGADO CON EXITO</SelectItem>
+                      <SelectItem value="entregado_novedad">ENTREGADO CON NOVEDAD</SelectItem>
+                      <SelectItem value="cancelado">No ejecutado</SelectItem>
                       <SelectItem value="anulado_retornar">Anulado - Retornar a origen</SelectItem>
                     </SelectContent>
                   </Select>

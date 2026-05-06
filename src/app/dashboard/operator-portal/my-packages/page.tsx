@@ -26,12 +26,13 @@ import {
   RefreshCcw,
   Camera,
   X,
-  Image as ImageIcon,
   RotateCcw,
   Upload,
   Wrench,
   UserMinus,
-  Timer
+  Timer,
+  ArrowRightCircle,
+  PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -95,7 +96,6 @@ export default function MyPackagesPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Estados para alertas y cambio de pago
   const [isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [paymentImage, setPaymentImage] = useState<string | null>(null);
@@ -104,11 +104,9 @@ export default function MyPackagesPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados para confirmación de liberación
   const [isReleaseConfirmOpen, setIsReleaseConfirmOpen] = useState(false);
   const [pendingReleaseReason, setPendingReleaseReason] = useState('');
 
-  // Estado para el campo novedad (entrega no ejecutada)
   const [novedad, setNovedad] = useState('');
   const [novedadError, setNovedadError] = useState(false);
   
@@ -152,6 +150,7 @@ export default function MyPackagesPage() {
         .select('*, empresas(nombre, direccion)')
         .eq('operador_id', currentUserId)
         .neq('estado', 'entregado')
+        .neq('estado', 'entregado_novedad')
         .neq('estado', 'cancelado')
         .neq('estado', 'anulado_retornar')
         .order('created_at', { ascending: false });
@@ -172,7 +171,7 @@ export default function MyPackagesPage() {
   };
 
   const handleUpdateStatus = async (pkgId: string, newStatus: string) => {
-    if (newStatus === 'cancelado' && !novedad.trim()) {
+    if ((newStatus === 'cancelado' || newStatus === 'entregado_novedad') && !novedad.trim()) {
       setNovedadError(true);
       toast({ variant: "destructive", title: "Novedad requerida", description: "Debes registrar una novedad." });
       return;
@@ -181,13 +180,14 @@ export default function MyPackagesPage() {
     setUpdatingStatus(true);
     try {
       const updatePayload: Record<string, any> = { estado: newStatus };
-      if (newStatus === 'cancelado' && novedad.trim()) updatePayload.novedad = novedad.trim();
+      if (novedad.trim()) updatePayload.novedad = novedad.trim();
 
       const { error } = await supabase.from('paquetes').update(updatePayload).eq('id', pkgId);
       if (error) throw error;
 
       toast({ title: "Estado actualizado" });
-      if (newStatus === 'entregado' || newStatus === 'cancelado') {
+      const finalStates = ['entregado', 'entregado_novedad', 'cancelado'];
+      if (finalStates.includes(newStatus)) {
         setIsDetailOpen(false);
         setNovedad('');
         setNovedadError(false);
@@ -293,12 +293,17 @@ export default function MyPackagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50"><CheckCircle2 className="w-3 h-3 mr-1"/> Entregado</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En camino</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> He llegado</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50"><UserX className="w-3 h-3 mr-1"/> No ejecutada</Badge>;
-      case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50"><RotateCcw className="w-3 h-3 mr-1"/> Anulado - Retornar</Badge>;
-      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10"><Clock className="w-3 h-3 mr-1"/> Pendiente</Badge>;
+      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
+      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
+      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
+      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
+      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
+      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
+      case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Anulado - Retornar</Badge>;
+      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10">Pendiente</Badge>;
     }
   };
 
@@ -463,17 +468,6 @@ export default function MyPackagesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Package className="w-3 h-3" /> Tipo de Paquete</span>
-                  <p className="text-sm font-bold capitalize">{selectedPackage.tipo}</p>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Timer className="w-3 h-3" /> Recogida</span>
-                  <p className="text-sm font-bold">{selectedPackage.tiempo_recogida} minutos</p>
-                </div>
-              </div>
-
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-accent shrink-0 mt-1" />
@@ -483,24 +477,10 @@ export default function MyPackagesPage() {
                   <Phone className="h-4 w-4 text-accent shrink-0" />
                   <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
                 </div>
-                {selectedPackage.nota && (
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-4 w-4 text-accent shrink-0 mt-1" />
-                    <div><p className="text-xs text-slate-500 font-bold uppercase">Nota / Instrucciones</p><p className="text-sm italic text-slate-300">{selectedPackage.nota}</p></div>
-                  </div>
-                )}
-                {selectedPackage.imagen_url && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-slate-500 font-bold uppercase flex items-center gap-1"><CreditCard className="w-3 h-3" /> Imagen de Guía</p>
-                    <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                      <Image src={selectedPackage.imagen_url} alt="Imagen Guía" fill className="object-contain" unoptimized />
-                    </div>
-                  </div>
-                )}
-                {(selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta') && (
+                {(selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado') && (
                   <div className="space-y-2 pt-2">
                     <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
-                      <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para "No ejecutada")</span>
+                      <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para No ejecutado/Novedad)</span>
                     </Label>
                     <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-white/10")} />
                   </div>
@@ -512,12 +492,34 @@ export default function MyPackagesPage() {
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             {selectedPackage?.estado === 'pendiente' && (
               <Button 
+                className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-600" 
+                onClick={() => handleUpdateStatus(selectedPackage.id, 'camino_a_retirar')} 
+                disabled={updatingStatus}
+              >
+                {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <ArrowRightCircle className="mr-2 h-5 w-5" />}
+                Estoy en camino a retirar
+              </Button>
+            )}
+
+            {selectedPackage?.estado === 'camino_a_retirar' && (
+              <Button 
+                className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-600" 
+                onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
+                disabled={updatingStatus}
+              >
+                {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />}
+                Paquete retirado de origen
+              </Button>
+            )}
+
+            {selectedPackage?.estado === 'paquete_retirado' && (
+              <Button 
                 className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-600" 
                 onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
                 disabled={updatingStatus}
               >
                 {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Navigation className="mr-2 h-5 w-5" />}
-                Tomar y Salir a Ruta
+                En Transito a Destino
               </Button>
             )}
             
@@ -528,7 +530,7 @@ export default function MyPackagesPage() {
                 disabled={updatingStatus}
               >
                 {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPinned className="mr-2 h-5 w-5" />}
-                He llegado
+                Paquete llego al Destino
               </Button>
             )}
 
@@ -540,7 +542,15 @@ export default function MyPackagesPage() {
                   disabled={updatingStatus}
                 >
                   {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                  Marcar como Entregado
+                  ENTREGADO CON EXITO
+                </Button>
+                <Button 
+                  className="w-full bg-green-800 h-12 font-bold hover:bg-green-800" 
+                  onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado_novedad')} 
+                  disabled={updatingStatus}
+                >
+                  {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                  ENTREGADO CON NOVEDAD
                 </Button>
                 <Button 
                   className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
@@ -548,7 +558,7 @@ export default function MyPackagesPage() {
                   disabled={updatingStatus}
                 >
                   {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
-                  Entrega no ejecutada
+                  No ejecutado
                 </Button>
               </>
             )}
