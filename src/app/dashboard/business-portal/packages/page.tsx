@@ -22,11 +22,6 @@ import {
   RefreshCcw,
   ExternalLink,
   UserX,
-  CheckCircle2,
-  MapPinned,
-  Clock,
-  AlertTriangle,
-  ArrowRightCircle,
   PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -159,12 +154,14 @@ export default function BusinessPackagesPage() {
   const handleUpdatePackage = async () => {
     if (!selectedPackage) return;
     
-    const restrictedStatuses = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'];
-    if (restrictedStatuses.includes(selectedPackage.estado)) {
+    // Restricciones para EDITAR datos básicos (Dirección, Teléfono, Pago)
+    // No se permite editar si ya se está en un proceso avanzado o final
+    const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'];
+    if (restrictedForEdits.includes(selectedPackage.estado)) {
       toast({
         variant: "destructive",
-        title: "Acción no permitida",
-        description: "No se puede editar este paquete debido a su estado actual."
+        title: "Edición no permitida",
+        description: "Los datos de contacto no pueden modificarse en el estado actual del paquete."
       });
       return;
     }
@@ -255,8 +252,14 @@ export default function BusinessPackagesPage() {
     }
   };
 
-  const isEditable = (status: string) => {
-    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(status);
+  // Helper para determinar si se pueden editar los campos de texto
+  const canEditDetails = (status: string) => {
+    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'].includes(status);
+  };
+
+  // Helper para determinar si se puede solicitar el retorno (restringido solo si ya es exitoso o ya está retornando)
+  const canRequestReturnToOrigin = (status: string) => {
+    return !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(status);
   };
 
   return (
@@ -324,7 +327,7 @@ export default function BusinessPackagesPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
-                          {isEditable(pkg.estado) && <Edit2 className="h-4 w-4 text-slate-500" />}
+                          <Edit2 className="h-4 w-4 text-slate-500" />
                         </div>
                       </div>
 
@@ -403,54 +406,65 @@ export default function BusinessPackagesPage() {
                   </div>
                 </div>
 
-                {!isEditable(selectedPackage.estado) ? (
+                {!canRequestReturnToOrigin(selectedPackage.estado) && !canEditDetails(selectedPackage.estado) ? (
                   <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <p className="text-xs text-red-400 font-medium">
-                      Este paquete ya no puede ser editado o retornado a origen. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
+                      Este paquete ha llegado a su estado final y ya no puede ser modificado. Estado: <span className="font-bold uppercase">{selectedPackage.estado.replace('_', ' ')}</span>
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-400 flex items-center gap-2">
-                        <MapPin className="h-3 w-3" /> Dirección de Entrega
-                      </Label>
-                      <Input 
-                        value={editFormData.direccion} 
-                        onChange={(e) => setEditFormData({...editFormData, direccion: e.target.value})}
-                        className="bg-white/5 border-white/10 focus-visible:ring-accent"
-                      />
-                    </div>
+                    {/* Sección de edición solo si es posible editar detalles */}
+                    {canEditDetails(selectedPackage.estado) ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-slate-400 flex items-center gap-2">
+                            <MapPin className="h-3 w-3" /> Dirección de Entrega
+                          </Label>
+                          <Input 
+                            value={editFormData.direccion} 
+                            onChange={(e) => setEditFormData({...editFormData, direccion: e.target.value})}
+                            className="bg-white/5 border-white/10 focus-visible:ring-accent"
+                          />
+                        </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-slate-400 flex items-center gap-2">
-                          <Phone className="h-3 w-3" /> Teléfono
-                        </Label>
-                        <Input 
-                          value={editFormData.telefono} 
-                          onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
-                          className="bg-white/5 border-white/10 focus-visible:ring-accent"
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-slate-400 flex items-center gap-2">
+                              <Phone className="h-3 w-3" /> Teléfono
+                            </Label>
+                            <Input 
+                              value={editFormData.telefono} 
+                              onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
+                              className="bg-white/5 border-white/10 focus-visible:ring-accent"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-slate-400 flex items-center gap-2">
+                              <CreditCard className="h-3 w-3" /> Pago
+                            </Label>
+                            <Select 
+                              value={editFormData.metodo_pago} 
+                              onValueChange={(v) => setEditFormData({...editFormData, metodo_pago: v})}
+                            >
+                              <SelectTrigger className="bg-white/5 border-white/10">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                <SelectItem value="transferencia">Transferencia</SelectItem>
+                                <SelectItem value="efectivo">Efectivo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                        <p className="text-xs text-yellow-500 font-medium">
+                          La edición de dirección y teléfono ya no está disponible, pero aún puedes solicitar el retorno a origen si lo requieres.
+                        </p>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-slate-400 flex items-center gap-2">
-                          <CreditCard className="h-3 w-3" /> Pago
-                        </Label>
-                        <Select 
-                          value={editFormData.metodo_pago} 
-                          onValueChange={(v) => setEditFormData({...editFormData, metodo_pago: v})}
-                        >
-                          <SelectTrigger className="bg-white/5 border-white/10">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-800 border-white/10 text-white">
-                            <SelectItem value="transferencia">Transferencia</SelectItem>
-                            <SelectItem value="efectivo">Efectivo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -466,25 +480,29 @@ export default function BusinessPackagesPage() {
                   <Printer className="h-4 w-4 mr-2" /> Imprimir
                 </Button>
                 
-                {selectedPackage && isEditable(selectedPackage.estado) && (
+                {selectedPackage && (
                   <>
-                    <Button 
-                      onClick={handleUpdatePackage} 
-                      className="flex-1 bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
-                      disabled={isUpdating}
-                    >
-                      {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                      Guardar
-                    </Button>
-                    <Button 
-                      onClick={handleAnularPaquete} 
-                      variant="outline"
-                      className="flex-1 border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
-                      disabled={isUpdating}
-                    >
-                      {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                      Retornar a origen
-                    </Button>
+                    {canEditDetails(selectedPackage.estado) && (
+                      <Button 
+                        onClick={handleUpdatePackage} 
+                        className="flex-1 bg-accent text-primary font-bold h-12 shadow-none hover:bg-accent"
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Guardar
+                      </Button>
+                    )}
+                    {canRequestReturnToOrigin(selectedPackage.estado) && (
+                      <Button 
+                        onClick={handleAnularPaquete} 
+                        variant="outline"
+                        className="flex-1 border-red-500/50 text-red-400 h-12 hover:bg-transparent shadow-none"
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                        Retornar a origen
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
