@@ -22,7 +22,10 @@ import {
   RefreshCcw,
   ExternalLink,
   UserX,
-  PackageCheck
+  PackageCheck,
+  MapPinned,
+  ArrowRightCircle,
+  MapPinCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,8 +38,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter,
-  DialogDescription
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -160,7 +162,7 @@ export default function BusinessPackagesPage() {
   const handleUpdatePackage = async () => {
     if (!selectedPackage) return;
     
-    const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'];
+    const restrictedForEdits = ['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado', 'llegado_a_origen'];
     if (restrictedForEdits.includes(selectedPackage.estado)) {
       toast({
         variant: "destructive",
@@ -279,6 +281,7 @@ export default function BusinessPackagesPage() {
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
+      case 'llegado_a_origen': return <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/50">Llegado a Origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
@@ -290,7 +293,7 @@ export default function BusinessPackagesPage() {
   };
 
   const canEditDetails = (status: string) => {
-    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado'].includes(status);
+    return !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar', 'en_ruta', 'paquete_retirado', 'llegado_a_origen'].includes(status);
   };
 
   const canRequestReturnToOrigin = (pkg: PaqueteData) => {
@@ -298,7 +301,7 @@ export default function BusinessPackagesPage() {
   };
 
   const canShowPedidoListo = (pkg: PaqueteData) => {
-    const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'];
+    const afterRetirado = ['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar', 'llegado_a_origen'];
     return !afterRetirado.includes(pkg.estado) && !hasAchieved(pkg, 'pedido_listo');
   };
 

@@ -29,7 +29,8 @@ import {
   ArrowRightCircle,
   PackageCheck,
   MapPinned,
-  CreditCard
+  CreditCard,
+  MapPinCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -300,6 +301,7 @@ export default function MyPackagesPage() {
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
+      case 'llegado_a_origen': return <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/50">Llegado a Origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
@@ -538,7 +540,18 @@ export default function MyPackagesPage() {
                       </Button>
                     )}
 
-                    {selectedPackage?.estado === 'camino_a_retirar' && !hasAchieved('paquete_retirado') && (
+                    {selectedPackage?.estado === 'camino_a_retirar' && !hasAchieved('llegado_a_origen') && (
+                      <Button 
+                        className="w-full bg-violet-600 h-12 font-bold hover:bg-violet-700" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado_a_origen')} 
+                        disabled={updatingStatus}
+                      >
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPinCheck className="mr-2 h-5 w-5" />}
+                        He llegado a la empresa
+                      </Button>
+                    )}
+
+                    {selectedPackage?.estado === 'llegado_a_origen' && !hasAchieved('paquete_retirado') && (
                       <Button 
                         className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" 
                         onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
