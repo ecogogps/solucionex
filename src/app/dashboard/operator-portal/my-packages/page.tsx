@@ -15,9 +15,6 @@ import {
   DollarSign,
   Info,
   ChevronRight,
-  FileText,
-  CreditCard,
-  MapPinned,
   Building2,
   Clock,
   UserX,
@@ -26,13 +23,13 @@ import {
   RefreshCcw,
   Camera,
   X,
-  RotateCcw,
   Upload,
   Wrench,
   UserMinus,
-  Timer,
   ArrowRightCircle,
-  PackageCheck
+  PackageCheck,
+  MapPinned,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -60,7 +57,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Image from 'next/image';
 
 interface PaqueteData {
   id: string;
@@ -327,6 +323,7 @@ export default function MyPackagesPage() {
   };
 
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
+  const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
@@ -363,7 +360,7 @@ export default function MyPackagesPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="bg-accent/20 p-2 rounded-lg relative">
+                        <div className="bg-accent/20 p-2 rounded-lg">
                           <Package className="h-5 w-5 text-accent" />
                         </div>
                         <div className="flex flex-col">
@@ -401,184 +398,198 @@ export default function MyPackagesPage() {
       }}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Info className="h-5 w-5 text-accent" /> Detalles del Paquete</DialogTitle></DialogHeader>
-          {selectedPackage && (
-            <div className="space-y-6 py-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-bold">Guía: {selectedPackage.guia_numero}</h3>
-                  <p className="text-xs text-slate-400">{isMounted ? new Date(selectedPackage.created_at).toLocaleDateString() : ''}</p>
-                </div>
-                {getStatusBadge(selectedPackage.estado)}
-              </div>
-
-              {!isFinalState && (
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    variant="outline" 
-                    className={cn("h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500 hover:text-yellow-500")} 
-                    onClick={toggleNoContesta} 
-                    disabled={updatingStatus}
-                  >
-                    <MessageSquareOff className="w-5 h-5" /> {selectedPackage.alerta_no_contesta ? "Alerta Activada" : "Cliente no contesta"}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-12 w-full gap-2 border-blue-500/50 text-blue-400 hover:bg-transparent hover:text-blue-400" 
-                    onClick={() => { setIsPaymentChangeOpen(true); setIsDetailOpen(false); }} 
-                    disabled={updatingStatus}
-                  >
-                    <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-transparent hover:text-orange-400" 
-                    onClick={() => handleLiberateClick('Liberado por daño mecánico')}
-                    disabled={updatingStatus}
-                  >
-                    <Wrench className="w-5 h-5" /> Daño Mecánico
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400 hover:bg-transparent hover:text-indigo-400" 
-                    onClick={() => handleLiberateClick('Liberado por reasignación consentida')}
-                    disabled={updatingStatus}
-                  >
-                    <UserMinus className="w-5 h-5" /> Reasignación Consentida
-                  </Button>
-                </div>
-              )}
-
-              <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-accent shrink-0" />
+          
+          {selectedPackage ? (
+            <>
+              <div className="space-y-6 py-4">
+                <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
-                    <p className="text-sm font-bold">{selectedPackage.empresas?.nombre}</p>
+                    <h3 className="text-lg font-bold">Guía: {selectedPackage.guia_numero}</h3>
+                    <p className="text-xs text-slate-400">{isMounted ? new Date(selectedPackage.created_at).toLocaleDateString() : ''}</p>
                   </div>
+                  {getStatusBadge(selectedPackage.estado)}
+                </div>
+
+                {!isFinalState && (
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      variant="outline" 
+                      className={cn("h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500 hover:text-yellow-500")} 
+                      onClick={toggleNoContesta} 
+                      disabled={updatingStatus}
+                    >
+                      <MessageSquareOff className="w-5 h-5" /> {selectedPackage.alerta_no_contesta ? "Alerta Activada" : "Cliente no contesta"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-12 w-full gap-2 border-blue-500/50 text-blue-400 hover:bg-transparent hover:text-blue-400" 
+                      onClick={() => { setIsPaymentChangeOpen(true); setIsDetailOpen(false); }} 
+                      disabled={updatingStatus}
+                    >
+                      <RefreshCcw className="w-5 h-5" /> Reportar Cambio de Pago
+                    </Button>
+                    
+                    {canShowLiberationButtons && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          className="h-12 w-full gap-2 border-orange-500/30 text-orange-400 hover:bg-transparent hover:text-orange-400" 
+                          onClick={() => handleLiberateClick('Liberado por daño mecánico')}
+                          disabled={updatingStatus}
+                        >
+                          <Wrench className="w-5 h-5" /> Daño Mecánico
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="h-12 w-full gap-2 border-indigo-500/30 text-indigo-400 hover:bg-transparent hover:text-indigo-400" 
+                          onClick={() => handleLiberateClick('Liberado por reasignación consentida')}
+                          disabled={updatingStatus}
+                        >
+                          <UserMinus className="w-5 h-5" /> Reasignación Consentida
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-5 w-5 text-accent shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
+                      <p className="text-sm font-bold">{selectedPackage.empresas?.nombre}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Valor</span>
+                    <p className="text-lg font-bold text-accent">${selectedPackage.valor_pedido}</p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><CreditCard className="w-3 h-3" /> Pago</span>
+                    <p className="text-sm font-medium capitalize">{selectedPackage.metodo_pago}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 text-accent shrink-0 mt-1" />
+                    <div><p className="text-xs text-slate-500 font-bold uppercase">Dirección de Entrega</p><p className="text-sm">{selectedPackage.direccion}</p></div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-accent shrink-0" />
+                    <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
+                  </div>
+                  
+                  {!isFinalState && (selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado') && (
+                    <div className="space-y-2 pt-2">
+                      <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
+                        <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para No ejecutado/Novedad)</span>
+                      </Label>
+                      <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-white/10")} />
+                    </div>
+                  )}
+                  
+                  {(isFinalState || selectedPackage.novedad) && (
+                    <div className="space-y-2 pt-2 bg-white/5 p-3 rounded-lg border border-white/10">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Historial de Novedad:</p>
+                      <p className="text-sm italic text-slate-300">{selectedPackage.novedad || 'Sin novedades registradas.'}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Valor</span>
-                  <p className="text-lg font-bold text-accent">${selectedPackage.valor_pedido}</p>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><CreditCard className="w-3 h-3" /> Pago</span>
-                  <p className="text-sm font-medium capitalize">{selectedPackage.metodo_pago}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-accent shrink-0 mt-1" />
-                  <div><p className="text-xs text-slate-500 font-bold uppercase">Dirección de Entrega</p><p className="text-sm">{selectedPackage.direccion}</p></div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-accent shrink-0" />
-                  <div><p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p><a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a></div>
-                </div>
-                {!isFinalState && (selectedPackage.estado === 'llegado' || selectedPackage.estado === 'en_ruta' || selectedPackage.estado === 'camino_a_retirar' || selectedPackage.estado === 'paquete_retirado') && (
-                  <div className="space-y-2 pt-2">
-                    <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-slate-400")}>
-                      <AlertTriangle className="w-3 h-3" /> Novedad <span className="text-red-400 font-normal normal-case">(requerida para No ejecutado/Novedad)</span>
-                    </Label>
-                    <Textarea placeholder="Motivo..." value={novedad} onChange={(e) => { setNovedad(e.target.value); if (e.target.value.trim()) setNovedadError(false); }} className={cn("bg-white/5 border text-white min-h-[90px] text-sm hover:bg-transparent", novedadError ? "border-red-500" : "border-white/10")} />
-                  </div>
-                )}
-                {isFinalState && selectedPackage.novedad && (
-                  <div className="space-y-2 pt-2 bg-white/5 p-3 rounded-lg border border-white/10">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Historial de Novedad:</p>
-                    <p className="text-sm italic text-slate-300">{selectedPackage.novedad}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-            {!isFinalState && (
-              <>
-                {selectedPackage?.estado === 'pendiente' && (
-                  <Button 
-                    className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-600" 
-                    onClick={() => handleUpdateStatus(selectedPackage.id, 'camino_a_retirar')} 
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <ArrowRightCircle className="mr-2 h-5 w-5" />}
-                    Estoy en camino a retirar
-                  </Button>
-                )}
-
-                {selectedPackage?.estado === 'camino_a_retirar' && (
-                  <Button 
-                    className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-600" 
-                    onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />}
-                    Paquete retirado de origen
-                  </Button>
-                )}
-
-                {selectedPackage?.estado === 'paquete_retirado' && (
-                  <Button 
-                    className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-600" 
-                    onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Navigation className="mr-2 h-5 w-5" />}
-                    En Transito a Destino
-                  </Button>
-                )}
-                
-                {selectedPackage?.estado === 'en_ruta' && (
-                  <Button 
-                    className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-600" 
-                    onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')} 
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPinned className="mr-2 h-5 w-5" />}
-                    Paquete llego al Destino
-                  </Button>
-                )}
-
-                {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
+              <DialogFooter className="flex flex-col gap-2 sm:flex-col pt-4 border-t border-white/5">
+                {!isFinalState && (
                   <>
-                    <Button 
-                      className="w-full bg-green-600 h-12 font-bold hover:bg-green-600" 
-                      onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
-                      disabled={updatingStatus}
-                    >
-                      {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                      ENTREGADO CON EXITO
-                    </Button>
-                    <Button 
-                      className="w-full bg-green-800 h-12 font-bold hover:bg-green-800" 
-                      onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado_novedad')} 
-                      disabled={updatingStatus}
-                    >
-                      {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
-                      ENTREGADO CON NOVEDAD
-                    </Button>
-                    <Button 
-                      className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
-                      onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
-                      disabled={updatingStatus}
-                    >
-                      {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
-                      No ejecutado
-                    </Button>
+                    {selectedPackage?.estado === 'pendiente' && (
+                      <Button 
+                        className="w-full bg-indigo-600 h-12 font-bold hover:bg-indigo-600" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'camino_a_retirar')} 
+                        disabled={updatingStatus}
+                      >
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <ArrowRightCircle className="mr-2 h-5 w-5" />}
+                        Estoy en camino a retirar
+                      </Button>
+                    )}
+
+                    {selectedPackage?.estado === 'camino_a_retirar' && (
+                      <Button 
+                        className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-600" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} 
+                        disabled={updatingStatus}
+                      >
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />}
+                        Paquete retirado de origen
+                      </Button>
+                    )}
+
+                    {selectedPackage?.estado === 'paquete_retirado' && (
+                      <Button 
+                        className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-600" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} 
+                        disabled={updatingStatus}
+                      >
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Navigation className="mr-2 h-5 w-5" />}
+                        En Transito a Destino
+                      </Button>
+                    )}
+                    
+                    {selectedPackage?.estado === 'en_ruta' && (
+                      <Button 
+                        className="w-full bg-orange-600 h-12 font-bold hover:bg-orange-600" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado')} 
+                        disabled={updatingStatus}
+                      >
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPinned className="mr-2 h-5 w-5" />}
+                        Paquete llego al Destino
+                      </Button>
+                    )}
+
+                    {(selectedPackage?.estado === 'llegado' || selectedPackage?.estado === 'en_ruta') && (
+                      <>
+                        <Button 
+                          className="w-full bg-green-600 h-12 font-bold hover:bg-green-600" 
+                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado')} 
+                          disabled={updatingStatus}
+                        >
+                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                          ENTREGADO CON EXITO
+                        </Button>
+                        <Button 
+                          className="w-full bg-green-800 h-12 font-bold hover:bg-green-800" 
+                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'entregado_novedad')} 
+                          disabled={updatingStatus}
+                        >
+                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <PackageCheck className="mr-2 h-5 w-5" />}
+                          ENTREGADO CON NOVEDAD
+                        </Button>
+                        <Button 
+                          className="w-full bg-red-600 h-12 font-bold hover:bg-red-600" 
+                          onClick={() => handleUpdateStatus(selectedPackage!.id, 'cancelado')} 
+                          disabled={updatingStatus}
+                        >
+                          {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <UserX className="mr-2 h-5 w-5" />}
+                          No ejecutado
+                        </Button>
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
-            
-            <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400 hover:bg-transparent">
-              Cerrar
-            </Button>
-          </DialogFooter>
+                
+                <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="w-full h-12 text-slate-400 hover:bg-transparent">
+                  Cerrar
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+              <Loader2 className="h-8 w-8 animate-spin mb-4" />
+              <p>Cargando detalles...</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
