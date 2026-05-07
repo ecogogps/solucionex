@@ -94,8 +94,9 @@ export default function MyPackagesPage() {
     }
   };
 
-  const activeDeliveries = allDeliveries.filter(p => p.estado !== 'entregado' && p.estado !== 'entregado_novedad' && p.estado !== 'cancelado');
-  const completedDeliveries = allDeliveries.filter(p => p.estado === 'entregado' || p.estado === 'entregado_novedad' || p.estado === 'cancelado');
+  // Se incluyen los 'cancelados' en Activos según solicitud del usuario
+  const activeDeliveries = allDeliveries.filter(p => p.estado !== 'entregado' && p.estado !== 'entregado_novedad');
+  const completedDeliveries = allDeliveries.filter(p => p.estado === 'entregado' || p.estado === 'entregado_novedad');
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
@@ -137,7 +138,7 @@ export default function MyPackagesPage() {
                 activeDeliveries.map((pkg) => (
                   <Card 
                     key={pkg.id} 
-                    className={cn("bg-white/10 border-accent/20 cursor-pointer active:scale-[0.98] transition-all", pkg.alerta_no_contesta && "animate-pulse-yellow border-yellow-500/50")}
+                    className={cn("bg-white/10 border-accent/20 cursor-pointer active:scale-[0.98] transition-all", (pkg.alerta_no_contesta || pkg.estado === 'cancelado') && "border-red-500/50")}
                     onClick={() => { setSelectedPackage(pkg); setIsDetailOpen(true); }}
                   >
                     <CardContent className="p-4">
@@ -199,6 +200,9 @@ export default function MyPackagesPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs text-slate-500 font-bold">{pkg.empresas?.nombre}</span>
                               <span className="text-[10px] text-slate-500 uppercase">Guía: {pkg.guia_numero}</span>
+                              <span className="text-[10px] text-slate-400 font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded ml-auto">
+                                #{pkg.id.substring(0, 6).toUpperCase()}
+                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
                           </div>
