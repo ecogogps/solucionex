@@ -295,6 +295,24 @@ export function OperatorPackageModal({
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
   const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
+  // WhatsApp Pre-filled message
+  const getWhatsAppUrl = (pkg: PaqueteData) => {
+    const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
+    const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ ${pkg.empresas?.nombre || ''} 
+------------------------------ 
+INGRESE SU UBICACIÓN
+📍GOOGLE MAPS📍 Para coordinar la entrega 
+
+------------------------------ 
+Total a pagar: ( ${pkg.metodo_pago} + ${pkg.valor_pedido} )
+
+¡ YA ESTAMOS EN CAMINO !
+⚡ Solucionex Delivery 
+Respaldo y Seguridad en cada entrega.`;
+
+    return `https://wa.me/593${phone}?text=${encodeURIComponent(message)}`;
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -387,7 +405,7 @@ export function OperatorPackageModal({
                     <p className="text-sm font-medium capitalize">{selectedPackage.tipo}</p>
                   </div>
                   <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> Recogida</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Clock className="h-3 w-3" /> Recogida</span>
                     <p className="text-sm font-medium">{selectedPackage.tiempo_recogida} min</p>
                   </div>
                 </div>
@@ -404,7 +422,7 @@ export function OperatorPackageModal({
                       <div className="flex items-center gap-2">
                         <a href={`tel:${selectedPackage.telefono}`} className="text-sm font-bold text-accent underline">{selectedPackage.telefono}</a>
                         <a 
-                          href={`https://wa.me/593${selectedPackage.telefono.replace(/^0/, '').replace(/\D/g, '')}`} 
+                          href={getWhatsAppUrl(selectedPackage)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="flex items-center justify-center bg-[#25D366] p-1.5 rounded-full hover:bg-[#128C7E] transition-colors"
