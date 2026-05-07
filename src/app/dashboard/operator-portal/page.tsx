@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, 
@@ -53,41 +54,14 @@ export default function SolicitudesPage() {
   const pathname = usePathname();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setUserId(session.user.id);
-        fetchData();
-      } else {
-        router.push('/');
-      }
-    };
-    getSession();
-  }, [router]);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('paquetes_realtime_solicitudes')
-      .on(
-        'postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'paquetes' 
-        }, 
-        () => {
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+  const playNotificationSound = useCallback(() => {
+    const audio = new Audio('/sounds/solicitudesnuevas.mp3');
+    audio.play().catch(error => {
+      console.warn("Autoplay de audio bloqueado por el navegador o archivo no encontrado:", error);
+    });
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('paquetes')
@@ -107,7 +81,49 @@ export default function SolicitudesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUserId(session.user.id);
+        fetchData();
+      } else {
+        router.push('/');
+      }
+    };
+    getSession();
+  }, [router, fetchData]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('paquetes_realtime_solicitudes')
+      .on(
+        'postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'paquetes' 
+        }, 
+        (payload) => {
+          // Si es una nueva inserción, reproducimos el sonido
+          if (payload.eventType === 'INSERT') {
+            playNotificationSound();
+          }
+          // También si un paquete existente vuelve a estar disponible (se le quita el operador)
+          if (payload.eventType === 'UPDATE' && !payload.new.operador_id && (payload.new.estado === 'buscando_operador' || payload.new.estado === 'pedido_listo')) {
+            playNotificationSound();
+          }
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData, playNotificationSound]);
 
   const handleAccept = async (pkg: PaqueteData) => {
     if (!userId) return;
@@ -121,6 +137,7 @@ export default function SolicitudesPage() {
         })
         .eq('id', pkg.id)
         .in('estado', ['buscando_operador', 'pedido_listo'])
+        .is('operador_id', null)
         .select();
 
       if (error) throw error;
@@ -131,7 +148,7 @@ export default function SolicitudesPage() {
 
       toast({
         title: "¡Paquete Aceptado!",
-        description: `El paquete ${pkg.guia_numero} ha sido añadido.`,
+        description: `El paquete ${pkg.guia_numero} ha sido añadido a tu lista.`,
       });
       
       router.push('/dashboard/operator-portal/my-packages');
@@ -148,25 +165,8 @@ export default function SolicitudesPage() {
   const handleRejectLocal = (id: string) => {
     setRejectedIds(prev => [...prev, id]);
     toast({
-      description: "Paquete ignorado de tu lista.",
+      description: "Paquete ignorado de tu lista local.",
     });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
-      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
-      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
-      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
-      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
-      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
-      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
-      case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Anulado - Retornar</Badge>;
-      default: return <Badge variant="outline" className="text-accent border-accent/50 bg-accent/10">Buscando Operador</Badge>;
-    }
   };
 
   const visiblePackages = availablePackages.filter(p => !rejectedIds.includes(p.id));
@@ -192,6 +192,7 @@ export default function SolicitudesPage() {
       <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">Solicitudes Disponibles</h2>
+          <p className="text-slate-400 text-sm">Escaneando pedidos en tiempo real...</p>
         </div>
 
         {loading ? (
@@ -205,6 +206,7 @@ export default function SolicitudesPage() {
               <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
                 <Package className="h-12 w-12 text-slate-500 mb-4" />
                 <h3 className="text-lg font-semibold text-white">No hay paquetes nuevos</h3>
+                <p className="text-slate-500 text-sm">Te avisaremos con un sonido cuando llegue algo.</p>
               </div>
             ) : (
               visiblePackages.map((pkg) => (
