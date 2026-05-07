@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, 
@@ -19,7 +19,10 @@ import {
   PackageCheck,
   AlertTriangle,
   RotateCcw,
-  MapPinCheck
+  MapPinCheck,
+  Volume2,
+  VolumeX,
+  BellRing
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -49,16 +52,45 @@ export default function SolicitudesPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [availablePackages, setAvailablePackages] = useState<PaqueteData[]>([]);
   const [rejectedIds, setRejectedIds] = useState<string[]>([]);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const playNotificationSound = useCallback(() => {
-    const audio = new Audio('/sounds/solicitudesnuevas.mp3');
-    audio.play().catch(error => {
-      console.warn("Autoplay de audio bloqueado por el navegador o archivo no encontrado:", error);
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/sounds/solicitudesnuevas.mp3');
+    }
+    
+    audioRef.current.play().then(() => {
+      setIsAudioEnabled(true);
+    }).catch(error => {
+      console.warn("Autoplay de audio bloqueado:", error);
+      setIsAudioEnabled(false);
     });
+  }, []);
+
+  // Truco para desbloquear audio con cualquier clic
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/sounds/solicitudesnuevas.mp3');
+      }
+      // Reproducimos silenciado para desbloquear el contexto de audio
+      audioRef.current.muted = true;
+      audioRef.current.play()
+        .then(() => {
+          audioRef.current!.muted = false;
+          setIsAudioEnabled(true);
+          window.removeEventListener('click', unlockAudio);
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener('click', unlockAudio);
+    return () => window.removeEventListener('click', unlockAudio);
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -107,11 +139,9 @@ export default function SolicitudesPage() {
           table: 'paquetes' 
         }, 
         (payload) => {
-          // Si es una nueva inserción, reproducimos el sonido
           if (payload.eventType === 'INSERT') {
             playNotificationSound();
           }
-          // También si un paquete existente vuelve a estar disponible (se le quita el operador)
           if (payload.eventType === 'UPDATE' && !payload.new.operador_id && (payload.new.estado === 'buscando_operador' || payload.new.estado === 'pedido_listo')) {
             playNotificationSound();
           }
@@ -169,6 +199,14 @@ export default function SolicitudesPage() {
     });
   };
 
+  const handleEnableAudio = () => {
+    playNotificationSound();
+    toast({
+      title: "Alertas activadas",
+      description: "Recibirás un sonido cuando lleguen nuevos pedidos.",
+    });
+  };
+
   const visiblePackages = availablePackages.filter(p => !rejectedIds.includes(p.id));
 
   return (
@@ -178,8 +216,21 @@ export default function SolicitudesPage() {
           <Truck className="h-6 w-6 text-accent" />
           <span className="font-bold text-lg">Solucionex</span>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="border-accent text-accent">Operador</Badge>
+        <div className="flex items-center gap-2">
+          {!isAudioEnabled ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEnableAudio}
+              className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold animate-pulse"
+            >
+              <VolumeX className="h-3 w-3" /> Habilitar Sonido
+            </Button>
+          ) : (
+            <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px]">
+              <Volume2 className="h-3 w-3" /> Sonido Activo
+            </Badge>
+          )}
           <Button variant="ghost" size="icon" onClick={() => {
             supabase.auth.signOut();
             router.push('/');
@@ -190,6 +241,23 @@ export default function SolicitudesPage() {
       </header>
 
       <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
+        {!isAudioEnabled && (
+          <Card className="bg-yellow-500/10 border-yellow-500/30">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <BellRing className="h-5 w-5 text-yellow-500 animate-bounce" />
+                <div className="flex flex-col">
+                  <p className="text-sm font-bold text-yellow-500">Alertas de sonido desactivadas</p>
+                  <p className="text-[10px] text-yellow-500/80">Haz clic en habilitar para escuchar nuevos pedidos.</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={handleEnableAudio} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-8 text-[11px]">
+                Activar Sonido
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">Solicitudes Disponibles</h2>
           <p className="text-slate-400 text-sm">Escaneando pedidos en tiempo real...</p>
