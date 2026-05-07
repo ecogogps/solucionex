@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, 
@@ -29,7 +30,12 @@ import {
   AlertTriangle,
   ArrowRightCircle,
   PackageCheck,
-  MapPinCheck
+  Plus,
+  Send,
+  Camera,
+  X,
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -58,6 +64,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -88,15 +97,22 @@ interface OperadorOption {
   nombres: string;
 }
 
+interface EmpresaOption {
+  id: string;
+  nombre: string;
+}
+
 export default function DashboardAdmin() {
   const [packages, setPackages] = useState<PackageData[]>([]);
   const [operadores, setOperadores] = useState<OperadorOption[]>([]);
+  const [businesses, setBusinesses] = useState<EmpresaOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const [editingPackage, setEditingPackage] = useState<PackageData | null>(null);
   const [viewingPackage, setViewingPackage] = useState<PackageData | null>(null);
@@ -108,6 +124,25 @@ export default function DashboardAdmin() {
     valor_pedido: '',
     operador_id: 'null' as string
   });
+
+  const [createFormData, setCreateFormData] = useState({
+    empresa_id: '',
+    tipo: '',
+    tiempo_recogida: '',
+    guia_numero: '',
+    valor_pedido: '',
+    metodo_pago: 'transferencia',
+    direccion: '',
+    telefono: '',
+    nota: ''
+  });
+
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -136,6 +171,29 @@ export default function DashboardAdmin() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (showCamera) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+        }
+      };
+      getCameraPermission();
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+  }, [showCamera]);
+
   const fetchData = async () => {
     try {
       const { data: pkgData, error: pkgError } = await supabase
@@ -158,11 +216,146 @@ export default function DashboardAdmin() {
       if (opError) throw opError;
       setOperadores(opData || []);
 
+      const { data: busData, error: busError } = await supabase
+        .from('empresas')
+        .select('id, nombre')
+        .eq('estado', 'activo')
+        .order('nombre', { ascending: true });
+      
+      if (busError) throw busError;
+      setBusinesses(busData || []);
+
     } catch (error: any) {
       console.error("Error fetchData:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const base64ToBlob = (base64: string, contentType: string) => {
+    const byteCharacters = atob(base64.split(',')[1]);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+    return new Blob(byteArrays, { type: contentType });
+  };
+
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        setCapturedImage(dataUrl);
+        setShowCamera(false);
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createFormData.empresa_id) {
+      toast({ variant: "destructive", title: "Error", description: "Debes seleccionar una empresa." });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      let imageUrl = null;
+
+      if (capturedImage) {
+        const blob = base64ToBlob(capturedImage, 'image/jpeg');
+        const fileName = `images/guia-${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('paquetes')
+          .upload(fileName, blob, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600'
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('paquetes')
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
+      }
+
+      const { error: insertError } = await supabase
+        .from('paquetes')
+        .insert([{
+          empresa_id: createFormData.empresa_id,
+          tipo: createFormData.tipo,
+          tiempo_recogida: parseInt(createFormData.tiempo_recogida),
+          guia_numero: createFormData.guia_numero,
+          imagen_url: imageUrl,
+          valor_pedido: parseFloat(createFormData.valor_pedido),
+          metodo_pago: createFormData.metodo_pago,
+          direccion: createFormData.direccion,
+          telefono: createFormData.telefono,
+          nota: createFormData.nota,
+          estado: 'buscando_operador'
+        }]);
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Solicitud registrada",
+        description: `El paquete ${createFormData.guia_numero} ha sido procesado.`,
+      });
+      
+      setIsCreateDialogOpen(false);
+      resetCreateForm();
+      fetchData();
+
+    } catch (error: any) {
+      console.error("Error al enviar solicitud:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "No se pudo registrar la solicitud."
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setCreateFormData({
+      empresa_id: '',
+      tipo: '',
+      tiempo_recogida: '',
+      guia_numero: '',
+      valor_pedido: '',
+      metodo_pago: 'transferencia',
+      direccion: '',
+      telefono: '',
+      nota: ''
+    });
+    setCapturedImage(null);
   };
 
   const handleSave = async () => {
@@ -297,6 +490,9 @@ export default function DashboardAdmin() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-accent text-primary hover:bg-accent/90 font-bold">
+              <Plus className="h-4 w-4 mr-2" /> Nuevo Paquete
+            </Button>
           </div>
         </header>
 
@@ -397,6 +593,193 @@ export default function DashboardAdmin() {
           )}
         </div>
 
+        {/* DIALOG DE CREACIÓN (MISMA LÓGICA QUE EMPRESA + SELECTOR DE EMPRESA) */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white text-base flex items-center gap-2">
+                <PlusCircle className="h-5 w-5 text-accent" /> Datos del Paquete (Nueva Solicitud)
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateSubmit} className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Empresa Solicitante</Label>
+                  <Select 
+                    value={createFormData.empresa_id} 
+                    onValueChange={(v) => setCreateFormData({...createFormData, empresa_id: v})}
+                    required
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Seleccionar empresa" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                      {businesses.map((bus) => (
+                        <SelectItem key={bus.id} value={bus.id}>{bus.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Tipo de Paquete</Label>
+                  <Select 
+                    value={createFormData.tipo} 
+                    onValueChange={(v) => setCreateFormData({...createFormData, tipo: v})}
+                    required
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Seleccionar tamaño" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                      <SelectItem value="pequeño">Pequeño</SelectItem>
+                      <SelectItem value="mediano">Mediano</SelectItem>
+                      <SelectItem value="grande">Grande</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Tiempo de Recogida</Label>
+                  <Select 
+                    value={createFormData.tiempo_recogida} 
+                    onValueChange={(v) => setCreateFormData({...createFormData, tiempo_recogida: v})}
+                    required
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Tiempo estimado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                      <SelectItem value="5">5 minutos</SelectItem>
+                      <SelectItem value="10">10 minutos</SelectItem>
+                      <SelectItem value="15">15 minutos</SelectItem>
+                      <SelectItem value="20">20 minutos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-guia" className="text-slate-300">Guía Nº</Label>
+                  <Input 
+                    id="create-guia"
+                    className="bg-white/5 border-white/10 text-white" 
+                    value={createFormData.guia_numero}
+                    onChange={(e) => setCreateFormData({...createFormData, guia_numero: e.target.value})}
+                    placeholder="Ej: GU-001"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Imagen de guía</Label>
+                  <div className="flex flex-col gap-2">
+                    {capturedImage ? (
+                      <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
+                        <img src={capturedImage} alt="Guía" className="w-full h-full object-contain" />
+                        <button 
+                          type="button"
+                          onClick={() => setCapturedImage(null)}
+                          className="absolute top-2 right-2 bg-red-500/80 p-1 rounded-full text-white hover:bg-red-500"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                          onClick={() => setShowCamera(true)}
+                        >
+                          <Camera className="mr-2 h-4 w-4" /> Foto
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <ImageIcon className="mr-2 h-4 w-4" /> Subir
+                        </Button>
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-slate-300">Método de Pago</Label>
+                  <RadioGroup value={createFormData.metodo_pago} onValueChange={(v) => setCreateFormData({...createFormData, metodo_pago: v})} className="flex gap-4 pt-1">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="transferencia" id="create-transferencia" className="border-accent text-accent" />
+                      <Label htmlFor="create-transferencia" className="cursor-pointer text-sm">Transf.</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="efectivo" id="create-efectivo" className="border-accent text-accent" />
+                      <Label htmlFor="create-efectivo" className="cursor-pointer text-sm">Efec.</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="create-valor" className="text-slate-300">Valor Pedido ($)</Label>
+                  <Input id="create-valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={createFormData.valor_pedido} onChange={(e) => setCreateFormData({...createFormData, valor_pedido: e.target.value})} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-telf" className="text-slate-300">Teléfono</Label>
+                  <Input id="create-telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={createFormData.telefono} onChange={(e) => setCreateFormData({...createFormData, telefono: e.target.value.replace(/\D/g, '')})} required />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="create-dir" className="text-slate-300">Dirección</Label>
+                <Input id="create-dir" className="bg-white/5 border-white/10 text-white" value={createFormData.direccion} onChange={(e) => setCreateFormData({...createFormData, direccion: e.target.value})} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="create-nota" className="text-slate-300">Nota</Label>
+                <Textarea id="create-nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={createFormData.nota} onChange={(e) => setCreateFormData({...createFormData, nota: e.target.value})} />
+              </div>
+
+              <DialogFooter className="pt-4 border-t border-white/5">
+                <Button variant="ghost" onClick={() => setIsCreateDialogOpen(false)} className="text-slate-400">Cancelar</Button>
+                <Button type="submit" className="bg-accent text-primary hover:bg-accent/90 font-bold px-8" disabled={isSaving}>
+                  {isSaving ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4" /> Enviar Solicitud</>}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* DIALOG DE CÁMARA PARA CREACIÓN */}
+        <Dialog open={showCamera} onOpenChange={setShowCamera}>
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+            <DialogHeader><DialogTitle>Capturar Guía</DialogTitle></DialogHeader>
+            <div className="relative">
+              <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+              {hasCameraPermission === false && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6 text-center">
+                  <Alert variant="destructive" className="max-w-xs">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Acceso Requerido</AlertTitle>
+                    <AlertDescription>Por favor permite el acceso a la cámara.</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </div>
+            <canvas ref={canvasRef} className="hidden" />
+            <DialogFooter className="flex flex-row justify-center gap-2">
+              <Button variant="ghost" onClick={() => setShowCamera(false)}>Cancelar</Button>
+              <Button onClick={takePhoto} disabled={!hasCameraPermission} className="bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* DIALOG DE EDICIÓN */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-lg">
             <DialogHeader>
@@ -477,6 +860,7 @@ export default function DashboardAdmin() {
           </DialogContent>
         </Dialog>
 
+        {/* DIALOG DE VISTA DE DETALLES */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
