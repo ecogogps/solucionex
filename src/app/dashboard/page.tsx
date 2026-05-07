@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -31,6 +30,7 @@ import {
   ArrowRightCircle,
   PackageCheck,
   Plus,
+  PlusCircle,
   Send,
   Camera,
   X,
@@ -856,6 +856,30 @@ export default function DashboardAdmin() {
                 {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
                 Guardar Cambios
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* DIALOG DE CÁMARA PARA CREACIÓN */}
+        <Dialog open={showCamera} onOpenChange={setShowCamera}>
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+            <DialogHeader><DialogTitle>Capturar Guía</DialogTitle></DialogHeader>
+            <div className="relative">
+              <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+              {hasCameraPermission === false && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6 text-center">
+                  <Alert variant="destructive" className="max-w-xs">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Acceso Requerido</AlertTitle>
+                    <AlertDescription>Por favor permite el acceso a la cámara.</AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </div>
+            <canvas ref={canvasRef} className="hidden" />
+            <DialogFooter className="flex flex-row justify-center gap-2">
+              <Button variant="ghost" onClick={() => setShowCamera(false)}>Cancelar</Button>
+              <Button onClick={takePhoto} disabled={!hasCameraPermission} className="bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
