@@ -14,15 +14,9 @@ import {
   MapPin, 
   Building2,
   Clock,
-  MapPinned,
-  ArrowRightCircle,
-  PackageCheck,
-  AlertTriangle,
-  RotateCcw,
-  MapPinCheck,
   Volume2,
   VolumeX,
-  BellRing
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -72,13 +66,12 @@ export default function SolicitudesPage() {
     });
   }, []);
 
-  // Truco para desbloquear audio con cualquier clic
+  // Desbloqueo silencioso con cualquier clic en el documento
   useEffect(() => {
     const unlockAudio = () => {
       if (!audioRef.current) {
         audioRef.current = new Audio('/sounds/solicitudesnuevas.mp3');
       }
-      // Reproducimos silenciado para desbloquear el contexto de audio
       audioRef.current.muted = true;
       audioRef.current.play()
         .then(() => {
@@ -103,7 +96,7 @@ export default function SolicitudesPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Error fetching available packages:", JSON.stringify(error, null, 2));
+        console.error("Error fetching available packages:", error);
         return;
       }
 
@@ -194,17 +187,10 @@ export default function SolicitudesPage() {
 
   const handleRejectLocal = (id: string) => {
     setRejectedIds(prev => [...prev, id]);
-    toast({
-      description: "Paquete ignorado de tu lista local.",
-    });
   };
 
-  const handleEnableAudio = () => {
+  const handleManualUnlock = () => {
     playNotificationSound();
-    toast({
-      title: "Alertas activadas",
-      description: "Recibirás un sonido cuando lleguen nuevos pedidos.",
-    });
   };
 
   const visiblePackages = availablePackages.filter(p => !rejectedIds.includes(p.id));
@@ -221,10 +207,10 @@ export default function SolicitudesPage() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleEnableAudio}
-              className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold animate-pulse"
+              onClick={handleManualUnlock}
+              className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold"
             >
-              <VolumeX className="h-3 w-3" /> Habilitar Sonido
+              <VolumeX className="h-3 w-3" /> Audio Bloqueado
             </Button>
           ) : (
             <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px]">
@@ -241,23 +227,6 @@ export default function SolicitudesPage() {
       </header>
 
       <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
-        {!isAudioEnabled && (
-          <Card className="bg-yellow-500/10 border-yellow-500/30">
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <BellRing className="h-5 w-5 text-yellow-500 animate-bounce" />
-                <div className="flex flex-col">
-                  <p className="text-sm font-bold text-yellow-500">Alertas de sonido desactivadas</p>
-                  <p className="text-[10px] text-yellow-500/80">Haz clic en habilitar para escuchar nuevos pedidos.</p>
-                </div>
-              </div>
-              <Button size="sm" onClick={handleEnableAudio} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-8 text-[11px]">
-                Activar Sonido
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">Solicitudes Disponibles</h2>
           <p className="text-slate-400 text-sm">Escaneando pedidos en tiempo real...</p>
