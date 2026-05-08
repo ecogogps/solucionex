@@ -63,9 +63,14 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   if (!pkg) return null;
 
   const hasAchieved = (state: string) => pkg?.paquetes_historial?.some((h: any) => h.estado === state);
-  const canEditDetails = !['llegado_a_origen', 'paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(pkg.estado);
+  
+  // Se ha modificado para que 'llegado_a_origen' NO bloquee la edición
+  const canEditDetails = !['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(pkg.estado);
+  
   const canRequestReturnToOrigin = !['entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved('anulado_retornar');
-  const canShowPedidoListo = !['llegado_a_origen', 'paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved('pedido_listo');
+  
+  // Se ha modificado para que 'llegado_a_origen' NO bloquee el botón de pedido listo
+  const canShowPedidoListo = !['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved('pedido_listo');
 
   const executeUpdate = async (updateData: any, successMessage: string) => {
     setIsUpdating(true);
