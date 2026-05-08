@@ -310,7 +310,7 @@ Total a pagar: ( ${pkg.metodo_pago} + ${pkg.valor_pedido} )
 ⚡ Solucionex Delivery 
 Respaldo y Seguridad en cada entrega.`;
 
-    return `https://wa.me/593${phone}?text=${encodeURIComponent(message)}`;
+    return `https://web.whatsapp.com/send?phone=593${phone}&text=${encodeURIComponent(message)}`;
   };
 
   return (

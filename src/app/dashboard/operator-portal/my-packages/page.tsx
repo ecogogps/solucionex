@@ -96,7 +96,16 @@ export default function MyPackagesPage() {
 
   // Se incluyen los 'cancelados' en Activos según solicitud del usuario
   const activeDeliveries = allDeliveries.filter(p => p.estado !== 'entregado' && p.estado !== 'entregado_novedad');
-  const completedDeliveries = allDeliveries.filter(p => p.estado === 'entregado' || p.estado === 'entregado_novedad');
+  
+  // Filtrar completados solo para los realizados el día de hoy
+  const completedDeliveries = allDeliveries.filter(p => {
+    const isCompleted = p.estado === 'entregado' || p.estado === 'entregado_novedad';
+    if (!isCompleted) return false;
+    
+    const pkgDate = new Date(p.created_at);
+    const today = new Date();
+    return pkgDate.toDateString() === today.toDateString();
+  });
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
@@ -123,7 +132,7 @@ export default function MyPackagesPage() {
                 <Package className="h-4 w-4" /> Activos ({activeDeliveries.length})
               </TabsTrigger>
               <TabsTrigger value="entregados" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold gap-2">
-                <History className="h-4 w-4" /> Entregados ({completedDeliveries.length})
+                <History className="h-4 w-4" /> Hoy ({completedDeliveries.length})
               </TabsTrigger>
             </TabsList>
 
@@ -181,8 +190,8 @@ export default function MyPackagesPage() {
               {completedDeliveries.length === 0 ? (
                 <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
                   <History className="h-12 w-12 text-slate-500 mb-4" />
-                  <h3 className="text-lg font-semibold text-white">Historial vacío</h3>
-                  <p className="text-slate-400 text-sm mt-1">Tus entregas finalizadas aparecerán aquí.</p>
+                  <h3 className="text-lg font-semibold text-white">Historial de hoy vacío</h3>
+                  <p className="text-slate-400 text-sm mt-1">Tus entregas finalizadas hoy aparecerán aquí.</p>
                 </div>
               ) : (
                 completedDeliveries.map((pkg) => (
