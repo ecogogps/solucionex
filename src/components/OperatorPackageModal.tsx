@@ -38,6 +38,7 @@ export interface PaqueteData {
   nota?: string;
   novedad?: string;
   imagen_url?: string;
+  imagen_paquete_retirado?: string;
   created_at: string;
   alerta_no_contesta?: boolean;
   alerta_cambio_pago?: boolean;
@@ -74,6 +75,7 @@ export function OperatorPackageModal({
   const[isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
   const[newPaymentMethod, setNewPaymentMethod] = useState('');
   const [paymentImage, setPaymentImage] = useState<string | null>(null);
+  const [cameraMode, setCameraMode] = useState<'pago' | 'retiro' | null>(null);
   const[showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -98,6 +100,7 @@ export function OperatorPackageModal({
       setPendingReleaseReason('');
       setPaymentImage(null);
       setNewPaymentMethod('');
+      setCameraMode(null);
     }
   },[isOpen, selectedPackage]);
 
@@ -128,6 +131,35 @@ export function OperatorPackageModal({
       if (userId) onUpdate();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error al actualizar" });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const processRetiroStatusWithPhoto = async (photoBase64: string) => {
+    if (!selectedPackage) return;
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(photoBase64);
+      const blob = await response.blob();
+      const fileName = `image-paquete-retirado/retiro-${selectedPackage.id}-${Date.now()}.jpg`;
+      
+      const { error: uploadError } = await supabase.storage.from('paquetes').upload(fileName, blob);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('paquetes').getPublicUrl(fileName);
+      
+      const { error: updateError } = await supabase.from('paquetes').update({ 
+        estado: 'paquete_retirado',
+        imagen_paquete_retirado: publicUrl 
+      }).eq('id', selectedPackage.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: "Paquete retirado", description: "Estado y foto de retiro registrados exitosamente." });
+      if (userId) onUpdate();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo procesar el retiro." });
     } finally {
       setUpdatingStatus(false);
     }
@@ -232,29 +264,30 @@ export function OperatorPackageModal({
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d')?.drawImage(video, 0, 0);
-      setPaymentImage(canvas.toDataURL('image/jpeg'));
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      
+      if (cameraMode === 'pago') {
+        setPaymentImage(dataUrl);
+      } else if (cameraMode === 'retiro') {
+        processRetiroStatusWithPhoto(dataUrl);
+      }
+      
       setShowCamera(false);
     }
   };
 
-  // Convertidor de nota a listado de items
   const renderNota = (notaText?: string) => {
     if (!notaText) return null;
     
     const lines = notaText.split(/\r?\n/);
-    
-    // Si contiene guiones y está en la misma línea ej. "-arroz -pan -tomate"
     if (lines.length === 1 && notaText.includes('-')) {
-      // Divide manteniendo el patrón de guiones que tienen espacio antes o están al principio
       const parts = notaText.split(/(?=(?:^|\s)-)/).map(p => p.trim()).filter(Boolean);
-      
       if (parts.length > 1 && parts.some(p => p.startsWith('-'))) {
         return (
           <ul className="space-y-1 mt-1">
             {parts.map((p, i) => {
               const content = p.replace(/^-/, '').trim();
               if (!content) return null;
-              
               return p.startsWith('-') ? (
                 <li key={i} className="flex items-start gap-2 text-sm italic text-slate-300">
                   <span className="text-accent mt-[4px] text-[10px]">●</span>
@@ -268,17 +301,13 @@ export function OperatorPackageModal({
         );
       }
     }
-
-    // Default (Multilínea o texto normal)
     return (
       <div className="space-y-1 mt-1">
         {lines.map((line, i) => {
           const trimmedLine = line.trim();
           if (!trimmedLine) return null;
-          
           const isListItem = trimmedLine.startsWith('-');
           const content = trimmedLine.replace(/^-/, '').trim();
-          
           return isListItem ? (
             <div key={i} className="flex items-start gap-2 text-sm italic text-slate-300">
               <span className="text-accent mt-[4px] text-[10px]">●</span>
@@ -295,7 +324,6 @@ export function OperatorPackageModal({
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
   const canShowLiberationButtons = selectedPackage && !['llegado_a_origen', 'paquete_retirado', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
-  // WhatsApp Pre-filled message
   const getWhatsAppUrl = (pkg: PaqueteData) => {
     const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
     const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ ${pkg.empresas?.nombre || ''} 
@@ -309,8 +337,7 @@ Total a pagar: ( ${pkg.metodo_pago} + ${pkg.valor_pedido} )
 ¡ YA ESTAMOS EN CAMINO !
 ⚡ Solucionex Delivery 
 Respaldo y Seguridad en cada entrega.`;
-
-    return `https://web.whatsapp.com/send?phone=593${phone}&text=${encodeURIComponent(message)}`;
+    return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -332,7 +359,6 @@ Respaldo y Seguridad en cada entrega.`;
                     </div>
                     <p className="text-xs text-slate-400 mt-1">{isMounted ? new Date(selectedPackage.created_at).toLocaleDateString() : ''}</p>
                   </div>
-
                   {getStatusBadge(selectedPackage.estado)}
                 </div>
 
@@ -460,6 +486,21 @@ Respaldo y Seguridad en cada entrega.`;
                       </div>
                     </div>
                   )}
+
+                  {selectedPackage.imagen_paquete_retirado && (
+                    <div className="mt-4 border border-white/10 rounded-lg p-3 bg-white/5">
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-2 flex items-center gap-1">
+                        <ImageIcon className="w-4 h-4 text-accent" /> Evidencia de Retiro
+                      </p>
+                      <div className="relative rounded-lg overflow-hidden bg-black/50 flex justify-center">
+                        <img 
+                          src={selectedPackage.imagen_paquete_retirado} 
+                          alt="Retiro de paquete" 
+                          className="max-h-56 w-auto object-contain rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
                   
                   {pendingAction && (
                     <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -510,7 +551,7 @@ Respaldo y Seguridad en cada entrega.`;
                     )}
 
                     {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
-                      <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} disabled={updatingStatus}>
+                      <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => { setCameraMode('retiro'); setShowCamera(true); }} disabled={updatingStatus}>
                         {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />} Paquete retirado de origen
                       </Button>
                     )}
@@ -592,7 +633,7 @@ Respaldo y Seguridad en cada entrega.`;
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => setShowCamera(true)}><Camera className="h-5 w-5" /> Usar Cámara</Button>
+                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => { setCameraMode('pago'); setShowCamera(true); }}><Camera className="h-5 w-5" /> Usar Cámara</Button>
                   <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => fileInputRef.current?.click()}><Upload className="h-5 w-5" /> Adjuntar Imagen</Button>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
                 </div>

@@ -87,6 +87,7 @@ interface PackageData {
   nota?: string;
   novedad?: string;
   imagen_url?: string;
+  imagen_paquete_retirado?: string;
   tiempo_recogida?: number;
   empresas?: { nombre: string };
   operadores?: { nombres: string };
@@ -594,7 +595,7 @@ export default function DashboardAdmin() {
           )}
         </div>
 
-        {/* DIALOG DE CREACIÓN (MISMA LÓGICA QUE EMPRESA + SELECTOR DE EMPRESA) */}
+        {/* DIALOG DE CREACIÓN */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -968,6 +969,23 @@ export default function DashboardAdmin() {
                         <Image 
                           src={viewingPackage.imagen_url} 
                           alt="Imagen Guía" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingPackage.imagen_paquete_retirado && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <Package className="w-3 h-3 text-accent" /> Evidencia de Retiro (Origen)
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_paquete_retirado} 
+                          alt="Evidencia Retiro" 
                           fill 
                           className="object-contain"
                           unoptimized
