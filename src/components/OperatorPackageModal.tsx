@@ -104,6 +104,37 @@ export function OperatorPackageModal({
     }
   },[isOpen, selectedPackage]);
 
+  // Lógica para inicializar/detener la cámara
+  useEffect(() => {
+    if (showCamera) {
+      const startCamera = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.error("Error accessing camera:", err);
+          toast({ 
+            variant: "destructive", 
+            title: "Error de cámara", 
+            description: "No se pudo acceder a la cámara del navegador. Por favor verifica los permisos." 
+          });
+          setShowCamera(false);
+        }
+      };
+      startCamera();
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [showCamera, toast]);
+
   const hasAchieved = (state: string) => {
     return selectedPackage?.paquetes_historial?.some(h => h.estado === state);
   };
@@ -670,7 +701,15 @@ Respaldo y Seguridad en cada entrega.`;
       <Dialog open={showCamera} onOpenChange={setShowCamera}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
           <DialogHeader><DialogTitle>Tomar Foto</DialogTitle></DialogHeader>
-          <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline onCanPlay={() => videoRef.current?.play()} />
+          <div className="relative overflow-hidden rounded-md bg-black">
+            <video 
+              ref={videoRef} 
+              className="w-full aspect-video object-cover" 
+              autoPlay 
+              muted 
+              playsInline 
+            />
+          </div>
           <canvas ref={canvasRef} className="hidden" />
           <DialogFooter className="flex flex-col gap-2 sm:flex-col">
             <Button onClick={takePhoto} className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
