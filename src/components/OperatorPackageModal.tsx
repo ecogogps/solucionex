@@ -353,7 +353,9 @@ export function OperatorPackageModal({
   };
 
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
-  const canShowLiberationButtons = selectedPackage && !['llegado_a_origen', 'paquete_retirado', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
+  
+  // Modificado para que los botones de liberación salgan en llegada a origen y retiro
+  const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   const getWhatsAppUrl = (pkg: PaqueteData) => {
     const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
