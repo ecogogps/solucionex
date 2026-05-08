@@ -66,7 +66,6 @@ export default function SolicitudesPage() {
     });
   }, []);
 
-  // Desbloqueo silencioso con cualquier clic en el documento
   useEffect(() => {
     const unlockAudio = () => {
       if (!audioRef.current) {
@@ -176,9 +175,10 @@ export default function SolicitudesPage() {
       
       router.push('/dashboard/operator-portal/my-packages');
     } catch (error: any) {
+      // Supabase captura el mensaje de RAISE EXCEPTION del trigger en error.message
       toast({
         variant: "destructive",
-        title: "No disponible",
+        title: "Atención",
         description: error.message || "No se pudo aceptar el pedido en este momento.",
       });
       fetchData();
