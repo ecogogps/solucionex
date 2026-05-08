@@ -430,6 +430,7 @@ export default function DashboardAdmin() {
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50"><Truck className="w-3 h-3 mr-1"/> En Transito a Destino</Badge>;
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50"><MapPinned className="w-3 h-3 mr-1"/> Paquete llego al Destino</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50"><ArrowRightCircle className="w-3 h-3 mr-1"/> En camino a retirar</Badge>;
+      case 'llegado_a_origen': return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50"><MapPin className="w-3 h-3 mr-1"/> Llegado a origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50"><Package className="w-3 h-3 mr-1"/> Paquete retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50"><AlertTriangle className="w-3 h-3 mr-1"/> Demorado Operador</Badge>;
@@ -755,30 +756,6 @@ export default function DashboardAdmin() {
           </DialogContent>
         </Dialog>
 
-        {/* DIALOG DE CÁMARA PARA CREACIÓN */}
-        <Dialog open={showCamera} onOpenChange={setShowCamera}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
-            <DialogHeader><DialogTitle>Capturar Guía</DialogTitle></DialogHeader>
-            <div className="relative">
-              <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
-              {hasCameraPermission === false && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6 text-center">
-                  <Alert variant="destructive" className="max-w-xs">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Acceso Requerido</AlertTitle>
-                    <AlertDescription>Por favor permite el acceso a la cámara.</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-            </div>
-            <canvas ref={canvasRef} className="hidden" />
-            <DialogFooter className="flex flex-row justify-center gap-2">
-              <Button variant="ghost" onClick={() => setShowCamera(false)}>Cancelar</Button>
-              <Button onClick={takePhoto} disabled={!hasCameraPermission} className="bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         {/* DIALOG DE EDICIÓN */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-lg">
@@ -836,6 +813,7 @@ export default function DashboardAdmin() {
                       <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
                       <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
                       <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
+                      <SelectItem value="llegado_a_origen">Llegado a origen</SelectItem>
                       <SelectItem value="demorado_despacho">Demorado Despacho</SelectItem>
                       <SelectItem value="demorado_operador">Demorado Operador</SelectItem>
                       <SelectItem value="paquete_retirado">Paquete retirado de origen</SelectItem>

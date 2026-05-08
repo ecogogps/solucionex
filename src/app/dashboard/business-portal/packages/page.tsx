@@ -83,6 +83,7 @@ export default function BusinessPackagesPage() {
       case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Llegó al Destino</Badge>;
       case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Tránsito</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
+      case 'llegado_a_origen': return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50">Llegado a origen</Badge>;
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
@@ -95,7 +96,6 @@ export default function BusinessPackagesPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden print:bg-white print:text-black">
-      {/* SIDEBAR ... (Sin cambios) */}
       <aside className="hidden lg:flex w-64 bg-black/20 border-r border-white/10 flex-col p-6 shadow-2xl print:hidden">
         <div className="flex items-center gap-3 mb-10"><Truck className="h-8 w-8 text-accent" /><span className="text-xl font-bold tracking-tight">Solucionex</span></div>
         <nav className="flex-1 space-y-2">
@@ -133,7 +133,6 @@ export default function BusinessPackagesPage() {
                     className={cn("bg-white/5 border-white/10 transition-all cursor-pointer group", (pkg.alerta_no_contesta || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40")}
                     onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
                   >
-                    {/* ... (Contenido de la Card, sin cambios) ... */}
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2"><p className="font-bold text-white">Guía: {pkg.guia_numero}</p>{getStatusBadge(pkg.estado)}</div>

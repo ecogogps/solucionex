@@ -293,7 +293,7 @@ export function OperatorPackageModal({
   };
 
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
-  const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
+  const canShowLiberationButtons = selectedPackage && !['llegado_a_origen', 'paquete_retirado', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   // WhatsApp Pre-filled message
   const getWhatsAppUrl = (pkg: PaqueteData) => {
@@ -503,7 +503,13 @@ Respaldo y Seguridad en cada entrega.`;
                       </Button>
                     )}
 
-                    {(selectedPackage?.estado === 'camino_a_retirar' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('camino_a_retirar'))) && !hasAchieved('paquete_retirado') && (
+                    {(selectedPackage?.estado === 'camino_a_retirar' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('camino_a_retirar'))) && !hasAchieved('llegado_a_origen') && (
+                      <Button className="w-full bg-amber-600 h-12 font-bold hover:bg-amber-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado_a_origen')} disabled={updatingStatus}>
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPin className="mr-2 h-5 w-5" />} Llegado a origen
+                      </Button>
+                    )}
+
+                    {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
                       <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'paquete_retirado')} disabled={updatingStatus}>
                         {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />} Paquete retirado de origen
                       </Button>

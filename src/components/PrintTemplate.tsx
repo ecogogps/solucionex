@@ -24,6 +24,7 @@ const statusMap: Record<string, string> = {
   'en_ruta': 'En Transito a Destino',
   'llegado': 'Paquete llego al Destino',
   'camino_a_retirar': 'Estoy en camino a retirar',
+  'llegado_a_origen': 'Llegado a origen',
   'paquete_retirado': 'Paquete retirado de origen',
   'demorado_despacho': 'Demorado Despacho',
   'demorado_operador': 'Demorado Operador',
