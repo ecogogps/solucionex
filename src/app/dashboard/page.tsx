@@ -123,7 +123,8 @@ export default function DashboardAdmin() {
     direccion: '', 
     estado: '',
     valor_pedido: '',
-    operador_id: 'null' as string
+    operador_id: 'null' as string,
+    nota: ''
   });
 
   const [createFormData, setCreateFormData] = useState({
@@ -371,7 +372,8 @@ export default function DashboardAdmin() {
           direccion: formData.direccion,
           estado: formData.estado,
           valor_pedido: parseFloat(formData.valor_pedido),
-          operador_id: formData.operador_id === 'null' ? null : formData.operador_id
+          operador_id: formData.operador_id === 'null' ? null : formData.operador_id,
+          nota: formData.nota
         })
         .eq('id', editingPackage.id);
 
@@ -411,7 +413,8 @@ export default function DashboardAdmin() {
       direccion: pkg.direccion, 
       estado: pkg.estado,
       valor_pedido: pkg.valor_pedido.toString(),
-      operador_id: pkg.operador_id || 'null'
+      operador_id: pkg.operador_id || 'null',
+      nota: pkg.nota || ''
     });
     setTimeout(() => {
       setIsDialogOpen(true);
@@ -827,6 +830,19 @@ export default function DashboardAdmin() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="nota-edit" className="text-slate-400 flex items-center gap-1">
+                  <FileText className="w-3 h-3" /> Nota / Instrucciones
+                </Label>
+                <Textarea 
+                  id="nota-edit" 
+                  value={formData.nota} 
+                  onChange={(e) => setFormData({...formData, nota: e.target.value})} 
+                  className="bg-white/5 border-white/10 focus:ring-accent min-h-[80px]" 
+                  placeholder="Instrucciones adicionales para el operador..."
+                />
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0 border-t border-white/5 pt-4">

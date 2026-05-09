@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
-  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2 
+  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -37,7 +38,8 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   const[editFormData, setEditFormData] = useState({
     direccion: '',
     telefono: '',
-    metodo_pago: ''
+    metodo_pago: '',
+    nota: ''
   });
 
   const { toast } = useToast();
@@ -48,7 +50,8 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
       setEditFormData({
         direccion: pkg.direccion,
         telefono: pkg.telefono || '',
-        metodo_pago: pkg.metodo_pago
+        metodo_pago: pkg.metodo_pago,
+        nota: pkg.nota || ''
       });
     }
   }, [pkg]);
@@ -90,7 +93,8 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   const handleUpdatePackage = () => executeUpdate({
     direccion: editFormData.direccion,
     telefono: editFormData.telefono,
-    metodo_pago: editFormData.metodo_pago
+    metodo_pago: editFormData.metodo_pago,
+    nota: editFormData.nota
   }, "Los cambios se han guardado correctamente.");
 
   const handlePedidoListo = () => executeUpdate({ estado: 'pedido_listo' }, "El paquete ha sido marcado como 'Pedido listo'.");
@@ -190,6 +194,15 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-slate-400 flex items-center gap-2"><FileText className="h-3 w-3" /> Nota / Instrucciones</Label>
+                        <Textarea 
+                          value={editFormData.nota} 
+                          onChange={(e) => setEditFormData({...editFormData, nota: e.target.value})} 
+                          className="bg-white/5 border-white/10 focus-visible:ring-accent text-white min-h-[80px]" 
+                          placeholder="Instrucciones adicionales..."
+                        />
                       </div>
                     </>
                   ) : (
