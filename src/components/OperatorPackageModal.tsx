@@ -39,6 +39,8 @@ export interface PaqueteData {
   novedad?: string;
   imagen_url?: string;
   imagen_paquete_retirado?: string;
+  imagen_paquete_entregado?: string;
+  imagen_paquete_entregado_novedad?: string;
   created_at: string;
   alerta_no_contesta?: boolean;
   alerta_cambio_pago?: boolean;
@@ -75,7 +77,7 @@ export function OperatorPackageModal({
   const[isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
   const[newPaymentMethod, setNewPaymentMethod] = useState('');
   const [paymentImage, setPaymentImage] = useState<string | null>(null);
-  const [cameraMode, setCameraMode] = useState<'pago' | 'retiro' | null>(null);
+  const [cameraMode, setCameraMode] = useState<'pago' | 'retiro' | 'entrega' | 'entrega_novedad' | null>(null);
   const[showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -146,6 +148,18 @@ export function OperatorPackageModal({
       return;
     }
 
+    if (newStatus === 'entregado') {
+      setCameraMode('entrega');
+      setShowCamera(true);
+      return;
+    }
+
+    if (newStatus === 'entregado_novedad') {
+      setCameraMode('entrega_novedad');
+      setShowCamera(true);
+      return;
+    }
+
     setUpdatingStatus(true);
     try {
       const updatePayload: Record<string, any> = { estado: newStatus };
@@ -191,6 +205,49 @@ export function OperatorPackageModal({
       if (userId) onUpdate();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo procesar el retiro." });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const processEntregaStatusWithPhoto = async (photoBase64: string, status: 'entregado' | 'entregado_novedad') => {
+    if (!selectedPackage) return;
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(photoBase64);
+      const blob = await response.blob();
+      const folder = status === 'entregado' ? 'paquete-entregado' : 'paquete-entregado-novedad';
+      const fileName = `${folder}/entrega-${selectedPackage.id}-${Date.now()}.jpg`;
+      
+      const { error: uploadError } = await supabase.storage.from('paquetes').upload(fileName, blob);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('paquetes').getPublicUrl(fileName);
+      
+      const updatePayload: Record<string, any> = { 
+        estado: status,
+      };
+
+      if (status === 'entregado') {
+        updatePayload.imagen_paquete_entregado = publicUrl;
+      } else {
+        updatePayload.imagen_paquete_entregado_novedad = publicUrl;
+        updatePayload.novedad = novedad.trim();
+      }
+
+      const { error: updateError } = await supabase.from('paquetes').update(updatePayload).eq('id', selectedPackage.id);
+
+      if (updateError) throw updateError;
+
+      toast({ 
+        title: status === 'entregado' ? "Entrega exitosa" : "Entrega con novedad", 
+        description: "Estado y evidencia fotográfica registrados correctamente." 
+      });
+      
+      onOpenChange(false);
+      if (userId) onUpdate();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo registrar la entrega." });
     } finally {
       setUpdatingStatus(false);
     }
@@ -301,6 +358,10 @@ export function OperatorPackageModal({
         setPaymentImage(dataUrl);
       } else if (cameraMode === 'retiro') {
         processRetiroStatusWithPhoto(dataUrl);
+      } else if (cameraMode === 'entrega') {
+        processEntregaStatusWithPhoto(dataUrl, 'entregado');
+      } else if (cameraMode === 'entrega_novedad') {
+        processEntregaStatusWithPhoto(dataUrl, 'entregado_novedad');
       }
       
       setShowCamera(false);
@@ -354,7 +415,6 @@ export function OperatorPackageModal({
 
   const isFinalState = selectedPackage?.estado === 'cancelado' || selectedPackage?.estado === 'anulado_retornar';
   
-  // Modificado para que los botones de liberación salgan en llegada a origen y retiro
   const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   const getWhatsAppUrl = (pkg: PaqueteData) => {
@@ -534,6 +594,36 @@ Respaldo y Seguridad en cada entrega.`;
                       </div>
                     </div>
                   )}
+
+                  {selectedPackage.imagen_paquete_entregado && (
+                    <div className="mt-4 border border-white/10 rounded-lg p-3 bg-white/5">
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-2 flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4 text-green-400" /> Evidencia de Entrega
+                      </p>
+                      <div className="relative rounded-lg overflow-hidden bg-black/50 flex justify-center">
+                        <img 
+                          src={selectedPackage.imagen_paquete_entregado} 
+                          alt="Entrega de paquete" 
+                          className="max-h-56 w-auto object-contain rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPackage.imagen_paquete_entregado_novedad && (
+                    <div className="mt-4 border border-white/10 rounded-lg p-3 bg-white/5">
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-2 flex items-center gap-1">
+                        <PackageCheck className="w-4 h-4 text-green-600" /> Evidencia de Entrega Novedad
+                      </p>
+                      <div className="relative rounded-lg overflow-hidden bg-black/50 flex justify-center">
+                        <img 
+                          src={selectedPackage.imagen_paquete_entregado_novedad} 
+                          alt="Entrega novedad" 
+                          className="max-h-56 w-auto object-contain rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
                   
                   {pendingAction && (
                     <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -553,7 +643,7 @@ Respaldo y Seguridad en cada entrega.`;
                           onClick={() => handleUpdateStatus(selectedPackage.id, pendingAction)}
                           disabled={updatingStatus}
                         >
-                           Confirmar {pendingAction === 'cancelado' ? 'No Ejecutado' : 'Con Novedad'}
+                           {pendingAction === 'cancelado' ? 'Confirmar No Ejecutado' : 'Siguiente: Tomar Foto'}
                         </Button>
                       </div>
                     </div>
@@ -702,7 +792,7 @@ Respaldo y Seguridad en cada entrega.`;
       {/* MODAL DE CÁMARA */}
       <Dialog open={showCamera} onOpenChange={setShowCamera}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
-          <DialogHeader><DialogTitle>Tomar Foto</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Tomar Foto de Evidencia</DialogTitle></DialogHeader>
           <div className="relative overflow-hidden rounded-md bg-black">
             <video 
               ref={videoRef} 

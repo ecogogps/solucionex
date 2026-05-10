@@ -88,6 +88,8 @@ interface PackageData {
   novedad?: string;
   imagen_url?: string;
   imagen_paquete_retirado?: string;
+  imagen_paquete_entregado?: string;
+  imagen_paquete_entregado_novedad?: string;
   tiempo_recogida?: number;
   empresas?: { nombre: string };
   operadores?: { nombres: string };
@@ -762,7 +764,7 @@ export default function DashboardAdmin() {
 
         {/* DIALOG DE EDICIÓN */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-lg">
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-lg">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 <Edit2 className="h-5 w-5 text-accent" /> Gestionar Paquete
@@ -976,39 +978,75 @@ export default function DashboardAdmin() {
                     </div>
                   )}
 
-                  {viewingPackage.imagen_url && (
-                    <div className="space-y-2 pt-2">
-                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                        <CreditCard className="w-3 h-3" /> Imagen de Guía Física
-                      </Label>
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                        <Image 
-                          src={viewingPackage.imagen_url} 
-                          alt="Imagen Guía" 
-                          fill 
-                          className="object-contain"
-                          unoptimized
-                        />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {viewingPackage.imagen_url && (
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                          <CreditCard className="w-3 h-3" /> Imagen de Guía Física
+                        </Label>
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                          <Image 
+                            src={viewingPackage.imagen_url} 
+                            alt="Imagen Guía" 
+                            fill 
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {viewingPackage.imagen_paquete_retirado && (
-                    <div className="space-y-2 pt-2">
-                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                        <Package className="w-3 h-3 text-accent" /> Evidencia de Retiro (Origen)
-                      </Label>
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                        <Image 
-                          src={viewingPackage.imagen_paquete_retirado} 
-                          alt="Evidencia Retiro" 
-                          fill 
-                          className="object-contain"
-                          unoptimized
-                        />
+                    {viewingPackage.imagen_paquete_retirado && (
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                          <Package className="w-3 h-3 text-accent" /> Evidencia de Retiro (Origen)
+                        </Label>
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                          <Image 
+                            src={viewingPackage.imagen_paquete_retirado} 
+                            alt="Evidencia Retiro" 
+                            fill 
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {viewingPackage.imagen_paquete_entregado && (
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-green-400" /> Evidencia de Entrega
+                        </Label>
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                          <Image 
+                            src={viewingPackage.imagen_paquete_entregado} 
+                            alt="Evidencia Entrega" 
+                            fill 
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {viewingPackage.imagen_paquete_entregado_novedad && (
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                          <PackageCheck className="w-3 h-3 text-green-600" /> Evidencia Entrega Novedad
+                        </Label>
+                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                          <Image 
+                            src={viewingPackage.imagen_paquete_entregado_novedad} 
+                            alt="Evidencia Entrega Novedad" 
+                            fill 
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
