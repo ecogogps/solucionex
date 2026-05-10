@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
-  MessageSquareOff, RefreshCcw, ExternalLink, UserX
+  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,8 +13,9 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-// IMPORTA TU NUEVO COMPONENTE (Ajusta la ruta según tu estructura)
+// Componentes modales
 import { ManagePackageModal } from '@/components/ManagePackageModal';
+import { TrackingModal } from '@/components/TrackingModal';
 
 export default function BusinessPackagesPage() {
   const[fetchingPackages, setFetchingPackages] = useState(true);
@@ -22,9 +23,12 @@ export default function BusinessPackagesPage() {
   const [alertCount, setAlertCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   
-  // Estados para controlar solo la apertura y selección
+  // Estados para controlar los modales
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  const [trackingPackage, setTrackingPackage] = useState<any | null>(null);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -136,7 +140,24 @@ export default function BusinessPackagesPage() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2"><p className="font-bold text-white">Guía: {pkg.guia_numero}</p>{getStatusBadge(pkg.estado)}</div>
-                        <div className="flex items-center gap-3"><p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p><Edit2 className="h-4 w-4 text-slate-500" /></div>
+                        <div className="flex items-center gap-2">
+                           <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-accent hover:bg-accent/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrackingPackage(pkg);
+                              setIsTrackingOpen(true);
+                            }}
+                          >
+                            <MapPinned className="h-4 w-4" />
+                          </Button>
+                          <div className="flex items-center gap-2 ml-1">
+                            <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
+                            <Edit2 className="h-4 w-4 text-slate-500" />
+                          </div>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <p className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="h-3 w-3" /> {pkg.direccion}</p>
@@ -160,12 +181,18 @@ export default function BusinessPackagesPage() {
         </div>
       </main>
 
-      {/* RENDERIZAR EL NUEVO COMPONENTE MODAL AQUÍ */}
       <ManagePackageModal 
         pkg={selectedPackage} 
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
         onSuccess={() => { if (userId) fetchMisPaquetes(userId); }}
+      />
+
+      <TrackingModal 
+        isOpen={isTrackingOpen}
+        onClose={() => setIsTrackingOpen(false)}
+        paqueteId={trackingPackage?.id || ''}
+        guiaNumero={trackingPackage?.guia_numero || ''}
       />
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">

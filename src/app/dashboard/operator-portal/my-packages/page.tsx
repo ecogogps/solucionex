@@ -13,15 +13,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { OperatorPackageModal, PaqueteData } from '@/components/OperatorPackageModal';
+import { TrackingModal } from '@/components/TrackingModal';
 
 export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
   
-  // Estado para el Modal
+  // Estado para el Modal de Gestión
   const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  
+  // Estado para el Modal de Tracking
+  const [trackingPackage, setTrackingPackage] = useState<PaqueteData | null>(null);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   
   const router = useRouter();
   const pathname = usePathname();
@@ -95,10 +100,8 @@ export default function MyPackagesPage() {
     }
   };
 
-  // Se incluyen los 'cancelados' en Activos según solicitud del usuario
   const activeDeliveries = allDeliveries.filter(p => p.estado !== 'entregado' && p.estado !== 'entregado_novedad');
   
-  // Filtrar completados solo para los realizados el día de hoy
   const completedDeliveries = allDeliveries.filter(p => {
     const isCompleted = p.estado === 'entregado' || p.estado === 'entregado_novedad';
     if (!isCompleted) return false;
@@ -177,6 +180,18 @@ export default function MyPackagesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-accent hover:bg-accent/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrackingPackage(pkg);
+                              setIsTrackingOpen(true);
+                            }}
+                          >
+                            <MapPinned className="h-4 w-4" />
+                          </Button>
                           {getStatusBadge(pkg.estado)}
                           <ChevronRight className="h-4 w-4 text-slate-500" />
                         </div>
@@ -217,7 +232,19 @@ export default function MyPackagesPage() {
                             <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
                           </div>
                         </div>
-                        <div>
+                        <div className="flex items-center gap-2">
+                           <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-accent hover:bg-accent/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrackingPackage(pkg);
+                              setIsTrackingOpen(true);
+                            }}
+                          >
+                            <MapPinned className="h-4 w-4" />
+                          </Button>
                           {getStatusBadge(pkg.estado)}
                         </div>
                       </div>
@@ -242,6 +269,13 @@ export default function MyPackagesPage() {
         userId={userId}
         onUpdate={() => userId && fetchData(userId)}
         getStatusBadge={getStatusBadge}
+      />
+
+      <TrackingModal 
+        isOpen={isTrackingOpen}
+        onClose={() => setIsTrackingOpen(false)}
+        paqueteId={trackingPackage?.id || ''}
+        guiaNumero={trackingPackage?.guia_numero || ''}
       />
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
