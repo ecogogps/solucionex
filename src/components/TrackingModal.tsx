@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
-  Circle, 
   Clock, 
   MapPinned, 
   Loader2,
-  Calendar,
-  ChevronRight
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,18 +29,22 @@ interface TrackingModalProps {
   guiaNumero: string;
 }
 
-const statusMasterList = [
-  { id: 'buscando_operador', label: 'Solicitud Creada' },
-  { id: 'pendiente', label: 'Operador Asignado' },
-  { id: 'camino_a_retirar', label: 'En camino a retirar' },
-  { id: 'llegado_a_origen', label: 'Llegado a origen' },
-  { id: 'paquete_retirado', label: 'Retirado de origen' },
-  { id: 'en_ruta', label: 'En tránsito a destino' },
-  { id: 'llegado', label: 'Llegado a destino' },
-  { id: 'finalizado', label: 'Finalización de Entrega' }
-];
-
-const finalStates = ['entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'];
+const statusLabels: Record<string, string> = {
+  'buscando_operador': 'Solicitud Creada',
+  'pedido_listo': 'Pedido listo para retirar',
+  'pendiente': 'Operador asignado',
+  'camino_a_retirar': 'En camino a retirar',
+  'llegado_a_origen': 'Llegado a origen',
+  'paquete_retirado': 'Retirado de origen',
+  'en_ruta': 'En tránsito a destino',
+  'llegado': 'Llegado a destino',
+  'entregado': 'ENTREGADO CON ÉXITO',
+  'entregado_novedad': 'ENTREGADO CON NOVEDAD',
+  'cancelado': 'NO EJECUTADO',
+  'anulado_retornar': 'ANULADO - RETORNAR',
+  'demorado_despacho': 'Demorado Despacho',
+  'demorado_operador': 'Demorado Operador'
+};
 
 export function TrackingModal({ isOpen, onClose, paqueteId, guiaNumero }: TrackingModalProps) {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
@@ -85,26 +86,6 @@ export function TrackingModal({ isOpen, onClose, paqueteId, guiaNumero }: Tracki
     }).format(new Date(dateStr));
   };
 
-  const getRecordForStatus = (statusId: string) => {
-    if (statusId === 'finalizado') {
-      return history.find(h => finalStates.includes(h.estado));
-    }
-    return history.find(h => h.estado === statusId);
-  };
-
-  const getFinalStatusLabel = () => {
-    const finalRecord = history.find(h => finalStates.includes(h.estado));
-    if (!finalRecord) return "Finalización de Entrega";
-    
-    switch (finalRecord.estado) {
-      case 'entregado': return 'ENTREGADO CON ÉXITO';
-      case 'entregado_novedad': return 'ENTREGADO CON NOVEDAD';
-      case 'cancelado': return 'NO EJECUTADO';
-      case 'anulado_retornar': return 'ANULADO - RETORNAR';
-      default: return 'Finalización';
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -119,43 +100,45 @@ export function TrackingModal({ isOpen, onClose, paqueteId, guiaNumero }: Tracki
             <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
             <p className="text-slate-400 text-sm">Cargando historial...</p>
           </div>
+        ) : history.length === 0 ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <Clock className="h-10 w-10 text-slate-500 mb-2" />
+            <p className="text-slate-400">No hay registros de historial aún.</p>
+          </div>
         ) : (
           <div className="relative mt-6 pl-2 pr-2">
             {/* Línea vertical de fondo */}
             <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-white/5" />
 
             <div className="space-y-8">
-              {statusMasterList.map((status, index) => {
-                const record = getRecordForStatus(status.id);
-                const isExecuted = !!record;
-                const label = status.id === 'finalizado' ? getFinalStatusLabel() : status.label;
+              {history.map((record, index) => {
+                const label = statusLabels[record.estado] || record.estado.replace(/_/g, ' ').toUpperCase();
+                const isLast = index === history.length - 1;
 
                 return (
-                  <div key={status.id} className="relative flex items-start gap-4">
+                  <div key={record.id} className="relative flex items-start gap-4">
                     {/* Indicador de estado */}
                     <div className={cn(
                       "z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                      isExecuted 
+                      isLast 
                         ? "bg-accent border-accent text-primary" 
-                        : "bg-slate-900 border-white/10 text-slate-500"
+                        : "bg-slate-800 border-accent/30 text-accent/70"
                     )}>
-                      {isExecuted ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-3 w-3" />}
+                      <CheckCircle2 className="h-4 w-4" />
                     </div>
 
                     <div className="flex flex-col gap-1">
                       <span className={cn(
                         "text-sm font-bold tracking-tight",
-                        isExecuted ? "text-white" : "text-slate-500"
+                        isLast ? "text-white" : "text-slate-300"
                       )}>
                         {label}
                       </span>
                       
-                      {isExecuted && (
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
-                          <Clock className="h-3 w-3 text-accent/70" />
-                          {formatDateTime(record.created_at)}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                        <Clock className="h-3 w-3 text-accent/70" />
+                        {formatDateTime(record.created_at)}
+                      </div>
                     </div>
                   </div>
                 );
