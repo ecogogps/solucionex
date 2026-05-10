@@ -16,6 +16,7 @@ import Link from 'next/link';
 // Componentes modales
 import { ManagePackageModal } from '@/components/ManagePackageModal';
 import { TrackingModal } from '@/components/TrackingModal';
+import { Cronometro } from '@/components/Cronometro';
 
 export default function BusinessPackagesPage() {
   const[fetchingPackages, setFetchingPackages] = useState(true);
@@ -23,7 +24,6 @@ export default function BusinessPackagesPage() {
   const [alertCount, setAlertCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   
-  // Estados para controlar los modales
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
@@ -139,28 +139,41 @@ export default function BusinessPackagesPage() {
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2"><p className="font-bold text-white">Guía: {pkg.guia_numero}</p>{getStatusBadge(pkg.estado)}</div>
                         <div className="flex items-center gap-2">
-                           <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-accent hover:bg-accent/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTrackingPackage(pkg);
-                              setIsTrackingOpen(true);
-                            }}
-                          >
-                            <MapPinned className="h-4 w-4" />
-                          </Button>
-                          <div className="flex items-center gap-2 ml-1">
-                            <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
-                            <Edit2 className="h-4 w-4 text-slate-500" />
+                          <div className="flex flex-col">
+                            <p className="font-bold text-white">Guía: {pkg.guia_numero}</p>
+                            <p className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="h-3 w-3" /> {pkg.direccion}</p>
+                          </div>
+                          {getStatusBadge(pkg.estado)}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Cronometro 
+                            paqueteId={pkg.id} 
+                            estadoActual={pkg.estado} 
+                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                            retrasoOperador={pkg.retraso_operador_segundos} 
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackingPackage(pkg);
+                                setIsTrackingOpen(true);
+                              }}
+                            >
+                              <MapPinned className="h-4 w-4" />
+                            </Button>
+                            <div className="flex items-center gap-2 ml-1">
+                              <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
+                              <Edit2 className="h-4 w-4 text-slate-500" />
+                            </div>
                           </div>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <p className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="h-3 w-3" /> {pkg.direccion}</p>
                         <div className="flex flex-wrap gap-2 pt-1">
                           {pkg.alerta_no_contesta && <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1"><MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA</Badge>}
                           {pkg.alerta_cambio_pago && (

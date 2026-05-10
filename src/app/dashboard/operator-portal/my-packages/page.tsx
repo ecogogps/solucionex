@@ -14,17 +14,16 @@ import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { OperatorPackageModal, PaqueteData } from '@/components/OperatorPackageModal';
 import { TrackingModal } from '@/components/TrackingModal';
+import { Cronometro } from '@/components/Cronometro';
 
 export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
   
-  // Estado para el Modal de Gestión
   const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   
-  // Estado para el Modal de Tracking
   const [trackingPackage, setTrackingPackage] = useState<PaqueteData | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   
@@ -57,7 +56,7 @@ export default function MyPackagesPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [userId, selectedPackage?.id]);
+  }, [userId]);
 
   const fetchData = async (currentUserId: string) => {
     try {
@@ -87,11 +86,11 @@ export default function MyPackagesPage() {
       case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
       case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
       case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Paquete llego al Destino</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Transito a Destino</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Llegó al Destino</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Tránsito</Badge>;
       case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
       case 'llegado_a_origen': return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50">Llegado a origen</Badge>;
-      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Paquete retirado de origen</Badge>;
+      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
       case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
@@ -168,32 +167,36 @@ export default function MyPackagesPage() {
                             
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold">Guía: {pkg.guia_numero}</span>
-                              <span className="text-[10px] text-slate-400 font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">
-                                #{pkg.id.substring(0, 6).toUpperCase()}
-                              </span>
                             </div>
 
                             <div className="flex items-center gap-3 mt-1">
                               <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
-                              <span className="text-[10px] text-orange-400 flex items-center gap-1"><Clock className="h-2 w-2" /> {pkg.tiempo_recogida} min</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-accent hover:bg-accent/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTrackingPackage(pkg);
-                              setIsTrackingOpen(true);
-                            }}
-                          >
-                            <MapPinned className="h-4 w-4" />
-                          </Button>
-                          {getStatusBadge(pkg.estado)}
-                          <ChevronRight className="h-4 w-4 text-slate-500" />
+                        <div className="flex items-center gap-4">
+                          <Cronometro 
+                            paqueteId={pkg.id} 
+                            estadoActual={pkg.estado} 
+                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                            retrasoOperador={pkg.retraso_operador_segundos} 
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackingPackage(pkg);
+                                setIsTrackingOpen(true);
+                              }}
+                            >
+                              <MapPinned className="h-4 w-4" />
+                            </Button>
+                            {getStatusBadge(pkg.estado)}
+                            <ChevronRight className="h-4 w-4 text-slate-500" />
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -225,27 +228,32 @@ export default function MyPackagesPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs text-slate-500 font-bold">{pkg.empresas?.nombre}</span>
                               <span className="text-[10px] text-slate-500 uppercase">Guía: {pkg.guia_numero}</span>
-                              <span className="text-[10px] text-slate-400 font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded ml-auto">
-                                #{pkg.id.substring(0, 6).toUpperCase()}
-                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                           <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-accent hover:bg-accent/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTrackingPackage(pkg);
-                              setIsTrackingOpen(true);
-                            }}
-                          >
-                            <MapPinned className="h-4 w-4" />
-                          </Button>
-                          {getStatusBadge(pkg.estado)}
+                        <div className="flex items-center gap-4">
+                          <Cronometro 
+                            paqueteId={pkg.id} 
+                            estadoActual={pkg.estado} 
+                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                            retrasoOperador={pkg.retraso_operador_segundos} 
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackingPackage(pkg);
+                                setIsTrackingOpen(true);
+                              }}
+                            >
+                              <MapPinned className="h-4 w-4" />
+                            </Button>
+                            {getStatusBadge(pkg.estado)}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
