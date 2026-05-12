@@ -33,6 +33,8 @@ export interface PaqueteData {
   valor_pedido: number;
   metodo_pago: string;
   tiempo_recogida: number;
+  retraso_empresa_segundos?: number; 
+  retraso_operador_segundos?: number;
   empresa_id: string;
   operador_id: string | null;
   nota?: string;

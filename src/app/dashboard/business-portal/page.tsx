@@ -308,7 +308,6 @@ export default function BusinessPortalRequest() {
                           <SelectValue placeholder="Tiempo estimado" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white">
-                          <SelectItem value="5">5 minutos</SelectItem>
                           <SelectItem value="10">10 minutos</SelectItem>
                           <SelectItem value="15">15 minutos</SelectItem>
                           <SelectItem value="20">20 minutos</SelectItem>
@@ -361,7 +360,7 @@ export default function BusinessPortalRequest() {
                             >
                               <ImageIcon className="mr-2 h-4 w-4" /> Subir
                             </Button>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                            <input type="file" file-input-ref-id="fileInput" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                           </div>
                         )}
                       </div>

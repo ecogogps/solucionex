@@ -19,10 +19,10 @@ import { Cronometro } from '@/components/Cronometro';
 export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
+  const[allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
   
-  const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const[selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
+  const[isDetailOpen, setIsDetailOpen] = useState(false);
   
   const [trackingPackage, setTrackingPackage] = useState<PaqueteData | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
@@ -62,15 +62,15 @@ export default function MyPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas(nombre, direccion), paquetes_historial(estado)')
+        .select('*, empresas(nombre, direccion), paquetes_historial(estado, created_at)')
         .eq('operador_id', currentUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAllDeliveries(data || []);
+      setAllDeliveries(data ||[]);
 
       if (selectedPackage) {
-        const updatedPackage = (data || []).find(p => p.id === selectedPackage.id);
+        const updatedPackage = (data ||[]).find(p => p.id === selectedPackage.id);
         if (updatedPackage) setSelectedPackage(updatedPackage);
         else setIsDetailOpen(false);
       }
@@ -83,19 +83,19 @@ export default function MyPackagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">PEDIDO LISTO</Badge>;
-      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">ENTREGADO CON EXITO</Badge>;
-      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50">ENTREGADO CON NOVEDAD</Badge>;
-      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">Llegó al Destino</Badge>;
-      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">En Tránsito</Badge>;
-      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50">En camino a retirar</Badge>;
-      case 'llegado_a_origen': return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50">Llegado a origen</Badge>;
-      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Retirado de origen</Badge>;
-      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
-      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
-      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
-      case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Anulado - Retornar</Badge>;
-      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10">Pendiente</Badge>;
+      case 'pedido_listo': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50 text-center">PEDIDO LISTO</Badge>;
+      case 'entregado': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50 text-center">ENTREGADO CON EXITO</Badge>;
+      case 'entregado_novedad': return <Badge className="bg-green-600/20 text-green-500 border-green-600/50 text-center">ENTREGADO CON NOVEDAD</Badge>;
+      case 'llegado': return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50 text-center">Llegó al Destino</Badge>;
+      case 'en_ruta': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50 text-center">En Tránsito</Badge>;
+      case 'camino_a_retirar': return <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50 text-center">En camino a retirar</Badge>;
+      case 'llegado_a_origen': return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-center">Llegado a origen</Badge>;
+      case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-center">Retirado de origen</Badge>;
+      case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 text-center">Demorado Despacho</Badge>;
+      case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50 text-center">Demorado Operador</Badge>;
+      case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-center">No ejecutado</Badge>;
+      case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-center">Anulado - Retornar</Badge>;
+      default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10 text-center">Pendiente</Badge>;
     }
   };
 
@@ -113,10 +113,10 @@ export default function MyPackagesPage() {
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
       <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40 backdrop-blur-md">
-        <div className="flex items-center gap-2"><Truck className="h-6 w-6 text-accent" /><span className="font-bold text-lg">Solucionex</span></div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2"><Truck className="h-6 w-6 text-accent shrink-0" /><span className="font-bold text-lg truncate">Solucionex</span></div>
+        <div className="flex items-center gap-4 shrink-0">
           <Badge variant="outline" className="border-accent text-accent">Operador</Badge>
-          <Button variant="ghost" size="icon" onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="text-red-400"><LogOut className="h-5 w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="text-red-400 shrink-0"><LogOut className="h-5 w-5" /></Button>
         </div>
       </header>
 
@@ -132,10 +132,10 @@ export default function MyPackagesPage() {
           <Tabs defaultValue="activos" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 mb-6">
               <TabsTrigger value="activos" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold gap-2">
-                <Package className="h-4 w-4" /> Activos ({activeDeliveries.length})
+                <Package className="h-4 w-4 shrink-0" /> <span className="truncate">Activos ({activeDeliveries.length})</span>
               </TabsTrigger>
               <TabsTrigger value="entregados" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold gap-2">
-                <History className="h-4 w-4" /> Hoy ({completedDeliveries.length})
+                <History className="h-4 w-4 shrink-0" /> <span className="truncate">Hoy ({completedDeliveries.length})</span>
               </TabsTrigger>
             </TabsList>
 
@@ -154,38 +154,49 @@ export default function MyPackagesPage() {
                     onClick={() => { setSelectedPackage(pkg); setIsDetailOpen(true); }}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-accent/20 p-2 rounded-lg">
+                      {/* Flex responsive: Columna en movil, fila en PC */}
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        
+                        {/* Información del Paquete (Izquierda) */}
+                        <div className="flex items-start sm:items-center gap-3">
+                          <div className="bg-accent/20 p-2 rounded-lg shrink-0 mt-1 sm:mt-0">
                             <Package className="h-5 w-5 text-accent" />
                           </div>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-slate-400 font-bold">{pkg.empresas?.nombre}</span>
-                              <Badge variant="outline" className="text-[9px] h-4 border-white/10 text-accent px-1 uppercase">{pkg.tipo}</Badge>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="text-xs text-slate-400 font-bold truncate">{pkg.empresas?.nombre}</span>
+                              <Badge variant="outline" className="text-[9px] h-4 border-white/10 text-accent px-1 uppercase shrink-0">{pkg.tipo}</Badge>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold">Guía: {pkg.guia_numero}</span>
+                              <span className="text-sm font-bold truncate">Guía: {pkg.guia_numero}</span>
                             </div>
 
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
+                            <div className="flex items-start gap-1 mt-1">
+                              <MapPin className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" /> 
+                              <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <Cronometro 
-                            paqueteId={pkg.id} 
-                            estadoActual={pkg.estado} 
-                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
-                            retrasoOperador={pkg.retraso_operador_segundos} 
-                          />
-                          <div className="flex items-center gap-2">
+
+                        {/* Cronómetro y Acciones (Derecha) */}
+                        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
+                          <div className="w-full sm:w-auto">
+                            <Cronometro 
+                              paqueteId={pkg.id} 
+                              estadoActual={pkg.estado} 
+                              tiempoRecogida={pkg.tiempo_recogida}
+                              historial={pkg.paquetes_historial ||[]}
+                              retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                              retrasoOperador={pkg.retraso_operador_segundos} 
+                              modo="operador"
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setTrackingPackage(pkg);
@@ -194,10 +205,11 @@ export default function MyPackagesPage() {
                             >
                               <MapPinned className="h-4 w-4" />
                             </Button>
-                            {getStatusBadge(pkg.estado)}
-                            <ChevronRight className="h-4 w-4 text-slate-500" />
+                            <div className="shrink-0">{getStatusBadge(pkg.estado)}</div>
+                            <ChevronRight className="h-4 w-4 text-slate-500 shrink-0 hidden sm:block" />
                           </div>
                         </div>
+
                       </div>
                     </CardContent>
                   </Card>
@@ -219,31 +231,41 @@ export default function MyPackagesPage() {
                     className="bg-white/5 border-white/5 opacity-80"
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-white/10 p-2 rounded-lg">
+                      {/* Flex responsive: Columna en movil, fila en PC */}
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        
+                        <div className="flex items-start sm:items-center gap-3">
+                          <div className="bg-white/10 p-2 rounded-lg shrink-0 mt-1 sm:mt-0">
                             <Package className="h-5 w-5 text-slate-400" />
                           </div>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-slate-500 font-bold">{pkg.empresas?.nombre}</span>
-                              <span className="text-[10px] text-slate-500 uppercase">Guía: {pkg.guia_numero}</span>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="text-xs text-slate-500 font-bold truncate">{pkg.empresas?.nombre}</span>
+                              <span className="text-[10px] text-slate-500 uppercase shrink-0">Guía: {pkg.guia_numero}</span>
                             </div>
-                            <span className="text-[10px] text-slate-400 flex items-center gap-1"><MapPin className="h-2 w-2" /> {pkg.direccion}</span>
+                            <div className="flex items-start gap-1">
+                              <MapPin className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" /> 
+                              <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <Cronometro 
-                            paqueteId={pkg.id} 
-                            estadoActual={pkg.estado} 
-                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
-                            retrasoOperador={pkg.retraso_operador_segundos} 
-                          />
-                          <div className="flex items-center gap-2">
+
+                        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
+                          <div className="w-full sm:w-auto">
+                            <Cronometro 
+                              paqueteId={pkg.id} 
+                              estadoActual={pkg.estado} 
+                              tiempoRecogida={pkg.tiempo_recogida}
+                              historial={pkg.paquetes_historial ||[]}
+                              retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                              retrasoOperador={pkg.retraso_operador_segundos} 
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setTrackingPackage(pkg);
@@ -252,9 +274,10 @@ export default function MyPackagesPage() {
                             >
                               <MapPinned className="h-4 w-4" />
                             </Button>
-                            {getStatusBadge(pkg.estado)}
+                            <div className="shrink-0">{getStatusBadge(pkg.estado)}</div>
                           </div>
                         </div>
+
                       </div>
                     </CardContent>
                   </Card>
@@ -287,8 +310,8 @@ export default function MyPackagesPage() {
       />
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
-        <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
+        <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
+        <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
       </nav>
     </div>
   );
