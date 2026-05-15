@@ -628,7 +628,7 @@ Respaldo y Seguridad en cada entrega.`;
                   )}
                   
                   {pendingAction && (
-                    <div className="space-y-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-2 pt-2">
                       <Label className={cn("text-xs font-bold uppercase flex items-center gap-1", novedadError ? "text-red-400" : "text-accent")}>
                         <AlertTriangle className="w-3 h-3" /> {pendingAction === 'cancelado' ? 'Motivo de No Ejecución' : 'Detalle de Novedad'}
                       </Label>

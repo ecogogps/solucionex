@@ -127,7 +127,7 @@ export default function MyPackagesPage() {
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-accent" /></div>
+          <div className="flex flex-col items-center py-20"><Loader2 className="h-10 w-10 text-accent" /></div>
         ) : (
           <Tabs defaultValue="activos" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 mb-6">

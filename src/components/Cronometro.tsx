@@ -143,7 +143,7 @@ function ItemCronometro({
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-accent/30 bg-accent/10 text-accent min-w-[140px]">
         <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
         <div className="flex items-center gap-1 font-mono">
-          <Clock className="h-3 w-3 animate-pulse" />
+        <Clock className="h-3 w-3" /> 
           <span className="font-black text-xs">{formatTime(elapsed)}</span>
         </div>
       </div>
