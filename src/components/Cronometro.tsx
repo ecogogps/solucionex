@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ interface CronometroProps {
   paqueteId: string;
   estadoActual: string;
   tiempoRecogida: number; // minutos
-  historial: { estado: string }[];
+  historial: { estado: string; created_at?: string }[];
   retrasoEmpresa?: number; // segundos guardados en BD
   retrasoOperador?: number; // segundos guardados en BD
   modo?: 'ambos' | 'operador';
@@ -24,40 +24,64 @@ const formatTime = (totalSeconds: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
+// Cache global para evitar queries duplicados entre componentes
+const historialCache = new Map<string, { time: Date | null; fetched: number }>();
+const CACHE_TTL = 30000; // 30 seconds
+
 function useHistorialTime(paqueteId: string, estado: string, enabled: boolean) {
   const [time, setTime] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (!enabled) { setLoading(false); return; }
 
+    const cacheKey = `${paqueteId}-${estado}`;
+    const cached = historialCache.get(cacheKey);
+    
+    // Use cache if fresh
+    if (cached && (Date.now() - cached.fetched) < CACHE_TTL) {
+      setTime(cached.time);
+      setLoading(false);
+      return;
+    }
+
     const fetchTime = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('paquetes_historial')
-        .select('created_at')
-        .eq('paquete_id', paqueteId)
-        .eq('estado', estado)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (data) setTime(new Date(data.created_at));
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('paquetes_historial')
+          .select('created_at')
+          .eq('paquete_id', paqueteId)
+          .eq('estado', estado)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        const result = data ? new Date(data.created_at) : null;
+        historialCache.set(cacheKey, { time: result, fetched: Date.now() });
+        
+        if (mountedRef.current) {
+          setTime(result);
+        }
+      } catch (err) {
+        console.error('Error fetching historial time:', err);
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
+        }
+      }
     };
 
     fetchTime();
 
-    const channel = supabase
-      .channel(`hist-${paqueteId}-${estado}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'paquetes_historial',
-        filter: `paquete_id=eq.${paqueteId}`,
-      }, fetchTime)
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    // NO realtime channel here - the parent page already handles realtime updates
+    // and will re-render this component with fresh historial data
   }, [paqueteId, estado, enabled]);
 
   return { time, loading };
@@ -79,19 +103,42 @@ function ItemCronometro({
   retrasoFinal: number;
 }) {
   const [elapsed, setElapsed] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (!startTime || terminado) return;
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
+  useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (!startTime || terminado) {
+      setElapsed(0);
+      return;
+    }
+
+    // Initial calculation
     setElapsed(Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)));
 
+    // Update every 5 seconds instead of every 1 second to reduce re-renders
+    // The visual difference is negligible for a timer display
     intervalRef.current = setInterval(() => {
-      setElapsed(Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)));
-    }, 1000);
+      if (mountedRef.current) {
+        setElapsed(Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)));
+      }
+    }, 5000);
 
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [startTime, terminado]);
 
   const enRetraso = !terminado && elapsed > limiteSegundos;

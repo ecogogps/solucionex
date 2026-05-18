@@ -399,7 +399,7 @@ export default function BusinessPortalRequest() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="nota" className="text-slate-300">Nota</Label>
+                    <Label htmlFor="nota" className="text-slate-300">Nota (contenido)</Label>
                     <Textarea id="nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={formData.note} onChange={(e) => setFormData({...formData, note: e.target.value})} />
                   </div>
 

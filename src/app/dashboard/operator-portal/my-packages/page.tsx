@@ -112,7 +112,7 @@ export default function MyPackagesPage() {
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col">
-      <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40 backdrop-blur-md">
+      <header className="h-16 bg-slate-900 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40">
         <div className="flex items-center gap-2"><Truck className="h-6 w-6 text-accent shrink-0" /><span className="font-bold text-lg truncate">Solucionex</span></div>
         <div className="flex items-center gap-4 shrink-0">
           <Badge variant="outline" className="border-accent text-accent">Operador</Badge>
@@ -290,12 +290,7 @@ export default function MyPackagesPage() {
 
       <OperatorPackageModal 
         isOpen={isDetailOpen}
-        onOpenChange={(open) => {
-          setIsDetailOpen(open);
-          if (!open) {
-            setTimeout(() => { document.body.style.pointerEvents = 'auto'; }, 300);
-          }
-        }}
+        onOpenChange={setIsDetailOpen}
         selectedPackage={selectedPackage}
         userId={userId}
         onUpdate={() => userId && fetchData(userId)}
@@ -309,7 +304,7 @@ export default function MyPackagesPage() {
         guiaNumero={trackingPackage?.guia_numero || ''}
       />
 
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
+      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
         <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
       </nav>

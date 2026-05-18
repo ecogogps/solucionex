@@ -51,7 +51,7 @@ export interface PaqueteData {
     nombre: string;
     direccion: string;
   };
-  paquetes_historial?: { estado: string }[];
+  paquetes_historial?: { estado: string; created_at?: string }[];
 }
 
 interface OperatorPackageModalProps {
@@ -420,20 +420,26 @@ export function OperatorPackageModal({
   const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   const getWhatsAppUrl = (pkg: PaqueteData) => {
-    const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
-    const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ ${pkg.empresas?.nombre || ''} 
------------------------------- 
-INGRESE SU UBICACIÓN
-📍GOOGLE MAPS📍 Para coordinar la entrega 
+      const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
+      const nombreEmpresa = (pkg.empresas?.nombre || '').toUpperCase();
+      const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ [ *${nombreEmpresa}* ]
+  ------------------------------
+  *TOTAL:*
+  [ ${pkg.metodo_pago} | ${pkg.valor_pedido} ]
+  *DESTINO:*
+  ${pkg.direccion}
 
------------------------------- 
-Total a pagar: ( ${pkg.metodo_pago} + ${pkg.valor_pedido} )
+  ------------------------------
+  *Para coordinar la entrega*
+  INGRESA TU UBICACIÓN
+  📍GOOGLE MAPS📍
 
-¡ YA ESTAMOS EN CAMINO !
-⚡ Solucionex Delivery 
-Respaldo y Seguridad en cada entrega.`;
-    return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
-  };
+  ------------------------------
+  ¡ YA ESTAMOS EN CAMINO !
+  ⚡ *Solucionex Delivery*
+  Respaldo y Seguridad en cada entrega.`;
+      return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
+    };
 
   return (
     <>
@@ -732,10 +738,7 @@ Respaldo y Seguridad en cada entrega.`;
       </Dialog>
 
       {/* MODAL REPORTE CAMBIO PAGO */}
-      <Dialog open={isPaymentChangeOpen} onOpenChange={(open) => {
-        setIsPaymentChangeOpen(open);
-        if (!open) setTimeout(() => document.body.style.pointerEvents = 'auto', 300);
-      }}>
+      <Dialog open={isPaymentChangeOpen} onOpenChange={setIsPaymentChangeOpen}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
           <DialogHeader><DialogTitle>Reportar Cambio de Pago</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
@@ -773,10 +776,7 @@ Respaldo y Seguridad en cada entrega.`;
       </Dialog>
 
       {/* CONFIRMACIÓN DE LIBERACIÓN */}
-      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={(open) => {
-        setIsReleaseConfirmOpen(open);
-        if (!open) setTimeout(() => document.body.style.pointerEvents = 'auto', 300);
-      }}>
+      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={setIsReleaseConfirmOpen}>
         <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Confirmar Liberación</AlertDialogTitle>

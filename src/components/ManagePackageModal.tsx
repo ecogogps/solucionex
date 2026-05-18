@@ -56,12 +56,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     }
   }, [pkg]);
 
-  // Asegurar que se libere el puntero al desmontar o cerrar
-  useEffect(() => {
-    if (!isOpen && !isDeleteDialogOpen && !isReturnAlertOpen) {
-      setTimeout(() => { document.body.style.pointerEvents = 'auto'; }, 300);
-    }
-  }, [isOpen, isDeleteDialogOpen, isReturnAlertOpen]);
+  // Radix Dialog handles body pointer-events automatically
 
   if (!pkg) return null;
 
