@@ -62,7 +62,7 @@ export default function MyPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas(nombre, direccion), paquetes_historial(estado, created_at)')
+        .select('*, empresas(nombre, direccion), operadores(nombres), paquetes_historial(estado, created_at)')
         .eq('operador_id', currentUserId)
         .order('created_at', { ascending: false });
 

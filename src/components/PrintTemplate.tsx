@@ -13,7 +13,7 @@ interface PaquetePrintData {
   metodo_pago: string;
   nota?: string;
   novedad?: string;
-  empresas?: { nombre: string };
+  empresas?: { nombre: string; direccion?: string; ruc?: string };
   operadores?: { nombres: string };
 }
 
@@ -110,11 +110,18 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
           {/* Datos Principales */}
           <div className="flex flex-col gap-3 text-sm">
             <div className="space-y-2">
-              <div className="flex border-b border-gray-300 pb-1">
+            <div className="flex border-b border-gray-300 pb-1">
                 <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Empresa:</span>
-                <span className="font-semibold text-xs leading-tight break-words text-black">{data.empresas?.nombre || 'N/A'}</span>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-xs leading-tight break-words text-black">{data.empresas?.nombre || 'N/A'}</span>
+                  {data.empresas?.direccion && (
+                    <span className="text-[10px] leading-tight break-words text-black">{data.empresas.direccion}</span>
+                  )}
+                  {data.empresas?.ruc && (
+                    <span className="text-[10px] leading-tight break-words text-black">DOCUMENTO: {data.empresas.ruc}</span>
+                  )}
+                </div>
               </div>
-
               <div className="flex border-b border-gray-300 pb-1">
                 <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Operador:</span>
                 <span className="font-semibold text-xs leading-tight break-words text-black">{data.operadores?.nombres || 'No asignado'}</span>
@@ -185,6 +192,12 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
               )}
             </div>
           </div>
+        </div>
+        
+        <div className="text-center pt-3">
+          <span className="font-bold text-[11px] text-black">
+            Desarrollado por Tmax System V1.0
+          </span>
         </div>
 
         {/* Espacio para la cuchilla */}

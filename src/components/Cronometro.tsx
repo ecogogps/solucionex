@@ -229,9 +229,10 @@ export function Cronometro({
   const limiteSegundos = tiempoRecogida * 60;
   const mostrarEmpresa = modo === 'ambos';
 
-  // Terminado cuando paquete_retirado existe en historial
   const empresaTerminada = historial.some(h => h.estado === 'paquete_retirado');
-  const operadorTerminado = historial.some(h => h.estado === 'paquete_retirado');
+  const operadorTerminado = historial.some(
+    h => h.estado === 'no_listo' || h.estado === 'paquete_retirado'
+  );
 
   // Empresa: inicia en 'buscando_operador'
   const { time: empresaStart, loading: loadingEmpresa } = useHistorialTime(

@@ -59,7 +59,7 @@ export default function BusinessPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas (nombre), operadores (nombres), paquetes_historial (estado, created_at)')
+        .select('*, empresas (nombre, direccion, ruc), operadores (nombres), paquetes_historial (estado, created_at)')
         .eq('empresa_id', uid)
         .order('created_at', { ascending: false });
 

@@ -204,7 +204,7 @@ export default function DashboardAdmin() {
         .from('paquetes')
         .select(`
           *,
-          empresas (nombre),
+          empresas (nombre, direccion, ruc),
           operadores (nombres)
         `)
         .order('created_at', { ascending: false });

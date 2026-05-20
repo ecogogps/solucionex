@@ -37,6 +37,7 @@ export interface PaqueteData {
   retraso_operador_segundos?: number;
   empresa_id: string;
   operador_id: string | null;
+  operadores?: { nombres: string };
   nota?: string;
   novedad?: string;
   imagen_url?: string;
@@ -422,16 +423,17 @@ export function OperatorPackageModal({
   const getWhatsAppUrl = (pkg: PaqueteData) => {
       const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
       const nombreEmpresa = (pkg.empresas?.nombre || '').toUpperCase();
-      const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ [ *${nombreEmpresa}* ]
+      const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ *${nombreEmpresa}*
   ------------------------------
-  *TOTAL:*
-  [ ${pkg.metodo_pago} | ${pkg.valor_pedido} ]
-  *DESTINO:*
+  *Operador:* ${pkg.operadores?.nombres || ''}
+  *Guía N°* ${pkg.guia_numero}
+  🏢*DESTINO:*
   ${pkg.direccion}
 
   ------------------------------
-  *Para coordinar la entrega*
-  INGRESA TU UBICACIÓN
+  💰*TOTAL* ${pkg.metodo_pago} | ${pkg.valor_pedido}
+  ------------------------------
+  *INGRESA TU UBICACIÓN*
   📍GOOGLE MAPS📍
 
   ------------------------------
@@ -678,6 +680,14 @@ export function OperatorPackageModal({
                     {(selectedPackage?.estado === 'camino_a_retirar' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('camino_a_retirar'))) && !hasAchieved('llegado_a_origen') && (
                       <Button className="w-full bg-amber-600 h-12 font-bold hover:bg-amber-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'llegado_a_origen')} disabled={updatingStatus}>
                         {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <MapPin className="mr-2 h-5 w-5" />} Llegado a origen
+                      </Button>
+                    )}
+
+                    {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && 
+                     !hasAchieved('pedido_listo') && 
+                     !hasAchieved('no_listo') && (
+                      <Button className="w-full bg-red-500 h-12 font-bold hover:bg-red-600" onClick={() => handleUpdateStatus(selectedPackage.id, 'no_listo')} disabled={updatingStatus}>
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Clock className="mr-2 h-5 w-5" />} AÚN NO ESTÁ LISTO
                       </Button>
                     )}
 
