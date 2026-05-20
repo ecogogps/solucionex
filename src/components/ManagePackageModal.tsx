@@ -127,6 +127,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50">Retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50">Demorado Operador</Badge>;
+      case 'no_listo': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No listo</Badge>;
       case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">No ejecutado</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Anulado - Retornar</Badge>;
       case 'buscando_operador': return <Badge variant="outline" className="text-accent border-accent/50 text-center">Buscando Operador</Badge>;

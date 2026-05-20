@@ -683,15 +683,18 @@ export function OperatorPackageModal({
                       </Button>
                     )}
 
-                    {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && 
-                     !hasAchieved('pedido_listo') && 
-                     !hasAchieved('no_listo') && (
-                      <Button className="w-full bg-red-500 h-12 font-bold hover:bg-red-600" onClick={() => handleUpdateStatus(selectedPackage.id, 'no_listo')} disabled={updatingStatus}>
-                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Clock className="mr-2 h-5 w-5" />} AÚN NO ESTÁ LISTO
+                    {selectedPackage?.estado === 'llegado_a_origen' && 
+                    !hasAchieved('pedido_listo') && 
+                    !hasAchieved('no_listo') && (
+                      <Button className="w-full bg-red-500 h-12 font-bold hover:bg-red-600" 
+                        onClick={() => handleUpdateStatus(selectedPackage.id, 'no_listo')} 
+                        disabled={updatingStatus}>
+                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Clock className="mr-2 h-5 w-5" />} 
+                        AÚN NO ESTÁ LISTO
                       </Button>
                     )}
 
-                    {(selectedPackage?.estado === 'llegado_a_origen' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
+                    {(selectedPackage?.estado === 'llegado_a_origen' || selectedPackage?.estado === 'no_listo' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
                       <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => { setCameraMode('retiro'); setShowCamera(true); }} disabled={updatingStatus}>
                         {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />} Paquete retirado de origen
                       </Button>

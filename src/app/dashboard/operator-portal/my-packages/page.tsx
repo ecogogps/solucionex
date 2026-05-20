@@ -93,6 +93,7 @@ export default function MyPackagesPage() {
       case 'paquete_retirado': return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 text-center">Retirado de origen</Badge>;
       case 'demorado_despacho': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50 text-center">Demorado Despacho</Badge>;
       case 'demorado_operador': return <Badge className="bg-red-600/20 text-red-300 border-red-600/50 text-center">Demorado Operador</Badge>;
+      case 'no_listo': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-center">AÚN NO LISTO</Badge>;
       case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-center">No ejecutado</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-center">Anulado - Retornar</Badge>;
       default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10 text-center">Pendiente</Badge>;
