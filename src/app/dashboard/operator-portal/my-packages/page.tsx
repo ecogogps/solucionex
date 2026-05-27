@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, LogOut, Package, ClipboardCheck, Navigation, 
-  Loader2, MapPin, Clock, ChevronRight, History, MapPinned
+  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,10 +15,12 @@ import { cn } from '@/lib/utils';
 import { OperatorPackageModal, PaqueteData } from '@/components/OperatorPackageModal';
 import { TrackingModal } from '@/components/TrackingModal';
 import { Cronometro } from '@/components/Cronometro';
+import { QRScanner } from '@/components/QRScanner';
 
 export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const[allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
   
   const[selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
@@ -309,6 +311,19 @@ export default function MyPackagesPage() {
         <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
         <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
       </nav>
+      <button
+      onClick={() => setIsQRScannerOpen(true)}
+      className="fixed bottom-24 right-6 h-14 w-14 bg-accent rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-accent/90 transition-all"
+    >
+      <QrCode className="h-6 w-6 text-primary" />
+    </button>
+
+    <QRScanner
+      isOpen={isQRScannerOpen}
+      onClose={() => setIsQRScannerOpen(false)}
+      userId={userId || ''}
+      onSuccess={() => userId && fetchData(userId)}
+    />
     </div>
   );
 }

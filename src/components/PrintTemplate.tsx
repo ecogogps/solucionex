@@ -2,8 +2,10 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { QRGenerator } from '@/components/QRGenerator';
 
 interface PaquetePrintData {
+  id: string;
   guia_numero: string;
   tipo: string;
   estado: string;
@@ -143,6 +145,12 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
                   <span className="text-sm font-bold capitalize mt-1 block text-black">{data.metodo_pago}</span>
                 </div>
               </div>
+
+              {/* QR Code - Nueva Ubicación */}
+              <div className="flex flex-col items-center pt-2 mt-1">
+                <QRGenerator value={data.id} size={110} />
+                <span className="font-bold text-[9px] uppercase text-black mt-1">Escanear para Retiro</span>
+              </div>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -199,7 +207,7 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
             Desarrollado por Tmax System V1.0
           </span>
         </div>
-
+        
         {/* Espacio para la cuchilla */}
         <div style={{ height: '12mm' }}></div>
       </div>

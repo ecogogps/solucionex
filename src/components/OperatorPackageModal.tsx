@@ -184,7 +184,7 @@ export function OperatorPackageModal({
     }
   };
 
-  const processRetiroStatusWithPhoto = async (photoBase64: string) => {
+  {/*const processRetiroStatusWithPhoto = async (photoBase64: string) => {
     if (!selectedPackage) return;
     setUpdatingStatus(true);
     try {
@@ -211,7 +211,7 @@ export function OperatorPackageModal({
     } finally {
       setUpdatingStatus(false);
     }
-  };
+  };*/}
 
   const processEntregaStatusWithPhoto = async (photoBase64: string, status: 'entregado' | 'entregado_novedad') => {
     if (!selectedPackage) return;
@@ -359,8 +359,8 @@ export function OperatorPackageModal({
       
       if (cameraMode === 'pago') {
         setPaymentImage(dataUrl);
-      } else if (cameraMode === 'retiro') {
-        processRetiroStatusWithPhoto(dataUrl);
+     // } else if (cameraMode === 'retiro') {
+     //   processRetiroStatusWithPhoto(dataUrl);
       } else if (cameraMode === 'entrega') {
         processEntregaStatusWithPhoto(dataUrl, 'entregado');
       } else if (cameraMode === 'entrega_novedad') {
@@ -694,11 +694,11 @@ export function OperatorPackageModal({
                       </Button>
                     )}
 
-                    {(selectedPackage?.estado === 'llegado_a_origen' || selectedPackage?.estado === 'no_listo' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
+                    {/* {(selectedPackage?.estado === 'llegado_a_origen' || selectedPackage?.estado === 'no_listo' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
                       <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => { setCameraMode('retiro'); setShowCamera(true); }} disabled={updatingStatus}>
                         {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />} Paquete retirado de origen
                       </Button>
-                    )}
+                    )} */}
 
                     {(selectedPackage?.estado === 'paquete_retirado' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('paquete_retirado'))) && !hasAchieved('en_ruta') && (
                       <Button className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} disabled={updatingStatus}>
