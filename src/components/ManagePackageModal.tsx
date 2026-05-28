@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
-  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText 
+  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, Eye 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,19 +21,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PrintTemplate } from '@/components/PrintTemplate';
+import { Ticket } from '@/components/Ticket';
 
 // Interfaz para los props
 interface ManagePackageModalProps {
-  pkg: any | null; // Puedes exportar tu interface PaqueteData y usarla aquí
+  pkg: any | null; 
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void; // Función para recargar la lista en la página principal
+  onSuccess: () => void; 
 }
 
 export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePackageModalProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const[isReturnAlertOpen, setIsReturnAlertOpen] = useState(false);
+  const [isReturnAlertOpen, setIsReturnAlertOpen] = useState(false);
+  const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   
   const [editFormData, setEditFormData] = useState({
     direccion: '',
@@ -44,7 +46,6 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
 
   const { toast } = useToast();
 
-  // Sincronizar el formulario cuando el paquete cambia
   useEffect(() => {
     if (pkg) {
       setEditFormData({
@@ -56,18 +57,14 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     }
   }, [pkg]);
 
-  // Radix Dialog handles body pointer-events automatically
-
   if (!pkg) return null;
 
   const hasAchieved = (state: string) => pkg?.paquetes_historial?.some((h: any) => h.estado === state);
   
-  // Se ha modificado para que 'llegado_a_origen' NO bloquee la edición
   const canEditDetails = !['paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(pkg.estado);
   
   const canRequestReturnToOrigin = !['buscando_operador', 'entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved('anulado_retornar');
   
-  // Se ha modificado para que 'llegado_a_origen' NO bloquee el botón de pedido listo
   const canShowPedidoListo = !['buscando_operador', 'paquete_retirado', 'en_ruta', 'llegado', 'entregado', 'entregado_novedad', 'anulado_retornar'].includes(pkg.estado) && !hasAchieved('pedido_listo');
 
   const executeUpdate = async (updateData: any, successMessage: string) => {
@@ -138,14 +135,12 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        {/* max-h-[90dvh] y overflow-y-auto garantizan que el contenido no se pierda en celulares cortos */}
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl w-[95vw] max-h-[90dvh] overflow-y-auto rounded-xl print:bg-white print:text-black print:border-none print:shadow-none print:max-w-none print:w-full print:p-0">
           <div className="print:hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-white text-lg md:text-xl">
                 <Package className="h-5 w-5 text-accent shrink-0" /> Gestionar Paquete
               </DialogTitle>
-              {/* break-all por si el id de guía es extremadamente largo */}
               <p className="text-xs text-slate-400 font-normal break-all">Información de la Guía: {pkg.guia_numero}</p>
             </DialogHeader>
 
@@ -214,7 +209,14 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
 
             <div className="flex flex-col gap-4 mt-2 pt-4 border-t border-white/10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                <Button onClick={() => window.print()} variant="outline" className="w-full h-11 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent shadow-none"><Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir</span></Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => window.print()} variant="outline" className="flex-1 h-11 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent shadow-none">
+                    <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir</span>
+                  </Button>
+                  <Button onClick={() => setIsTicketPreviewOpen(true)} variant="outline" size="icon" className="h-11 w-11 border-accent/30 text-accent/80 hover:bg-accent/10 hover:text-accent shrink-0">
+                    <Eye className="h-5 w-5" />
+                  </Button>
+                </div>
                 {canShowPedidoListo && <Button onClick={handlePedidoListo} className="w-full h-11 bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <PackageCheck className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Pedido listo</span></Button>}
                 {canEditDetails && <Button onClick={handleUpdatePackage} className="w-full h-11 bg-accent text-primary font-bold hover:bg-accent/90 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <Save className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Guardar Cambios</span></Button>}
                 {canRequestReturnToOrigin && <Button onClick={() => setIsReturnAlertOpen(true)} variant="outline" className="w-full h-11 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <RotateCcw className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Retornar a origen</span></Button>}
@@ -226,6 +228,25 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
             </div>
           </div>
           <PrintTemplate data={pkg} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Vista Previa de Ticket */}
+      <Dialog open={isTicketPreviewOpen} onOpenChange={setIsTicketPreviewOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white p-0 sm:max-w-fit overflow-hidden">
+          <DialogHeader className="p-4 border-b border-white/10">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-accent" /> Previsualización de Ticket
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 bg-slate-950/50 flex justify-center">
+            <Ticket data={pkg} />
+          </div>
+          <div className="p-4 bg-black/20 flex justify-center">
+            <Button variant="ghost" onClick={() => setIsTicketPreviewOpen(false)} className="text-slate-400 hover:text-white">
+              Cerrar Vista
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
