@@ -148,7 +148,7 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
 
               {/* QR Code - Nueva Ubicación */}
               <div className="flex flex-col items-center pt-2 mt-1">
-                <QRGenerator value={data.id} size={110} />
+                <QRGenerator value={data.id} size={140} />
                 <span className="font-bold text-[9px] uppercase text-black mt-1">Escanear para Retiro</span>
               </div>
             </div>

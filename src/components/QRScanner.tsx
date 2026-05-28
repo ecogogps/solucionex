@@ -108,12 +108,24 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('id, guia_numero, operador_id')
+        .select('id, guia_numero, operador_id, estado')
         .eq('id', id)
         .maybeSingle();
 
       if (error || !data) {
         toast({ variant: 'destructive', title: 'QR Inválido', description: 'El paquete no existe en el sistema.' });
+        setStep('scanning');
+        return;
+      }
+
+      // Validación de estados prohibidos
+      const finalStates = ['entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'];
+      if (finalStates.includes(data.estado)) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Acción No Permitida', 
+          description: `No se puede escanear un paquete con estado: ${data.estado.replace(/_/g, ' ')}.` 
+        });
         setStep('scanning');
         return;
       }
@@ -247,10 +259,10 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
               
               {!photo && (
                 <Button 
-                  className="w-full h-14 bg-accent text-primary font-bold text-lg hover:bg-accent/90"
+                  className="w-full h-12 bg-accent text-primary font-bold text-base hover:bg-accent/90"
                   onClick={takePhotoAndConfirm}
                 >
-                  <CameraIcon className="mr-2 h-6 w-6" /> CAPTURAR Y RETIRAR
+                  <CameraIcon className="mr-2 h-5 w-5" /> Capturar y Retirar
                 </Button>
               )}
             </div>
