@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { QRGenerator } from '@/components/QRGenerator';
 import { cn } from '@/lib/utils';
 
@@ -36,112 +37,146 @@ const statusMap: Record<string, string> = {
   'buscando_operador': 'Buscando Operador',
   'pendiente': 'Pendiente',
   'cancelado': 'No ejecutado',
-  'anulado_retornar': 'Anulado - Retornar',
-  'no_listo': 'AÚN NO LISTO'
+  'anulado_retornar': 'Anulado - Retornar'
 };
 
 export function Ticket({ data, className }: TicketProps) {
   if (!data) return null;
 
   return (
-    <div className={cn("bg-white text-black p-6 font-sans shadow-lg mx-auto w-full max-w-[320px] rounded-sm", className)}>
+    <div
+      className={cn(
+        "bg-white text-black font-sans shadow-lg border border-gray-200 rounded-sm mx-auto", 
+        className
+      )}
+      style={{ width: '80mm', padding: '4mm 2mm' }}
+    >
       <div className="space-y-4">
-        {/* Header/Logo Placeholder */}
-        <div className="text-center border-b-2 border-black pb-3">
-          <div className="text-2xl font-black tracking-tighter">SOLUCIONEX</div>
-          <div className="text-[10px] font-bold uppercase">Logística y Distribución</div>
+
+        {/* Logo */}
+        <div className="flex justify-center items-center border-b-2 border-black pb-2">
+          <Image
+            src="/logo/impresion logo.png"
+            alt="Solucionex"
+            width={200}
+            height={80}
+            style={{
+              width: '45mm',
+              height: 'auto',
+              objectFit: 'contain',
+            }}
+            priority
+          />
         </div>
 
-        {/* Guía */}
-        <div className="text-center bg-gray-100 py-2 border-b border-black">
-          <div className="text-[10px] font-bold uppercase">Guía de remisión N°:</div>
-          <div className="text-xl font-mono font-bold">#{data.guia_numero}</div>
+        {/* Guía de Remisión */}
+        <div className="flex flex-col text-center bg-gray-100 p-2 border-b border-black">
+          <span className="text-xs font-bold uppercase text-black">Guía de remisión N°:</span>
+          <span className="text-2xl font-mono font-bold mt-1 text-black">#{data.guia_numero}</span>
         </div>
 
         {/* Datos Principales */}
-        <div className="space-y-2 text-[11px]">
-          <div className="flex border-b border-gray-200 pb-1">
-            <span className="w-16 shrink-0 font-bold uppercase">Empresa:</span>
-            <div className="flex flex-col">
-              <span className="font-semibold">{data.empresas?.nombre || 'N/A'}</span>
-              {data.empresas?.ruc && <span className="text-[9px]">DOC: {data.empresas.ruc}</span>}
-            </div>
-          </div>
-
-          <div className="flex border-b border-gray-200 pb-1">
-            <span className="w-16 shrink-0 font-bold uppercase">Operador:</span>
-            <span className="font-semibold">{data.operadores?.nombres || 'No asignado'}</span>
-          </div>
-
-          <div className="flex border-b border-gray-200 pb-1">
-            <span className="w-16 shrink-0 font-bold uppercase">Paquete:</span>
-            <span className="font-semibold capitalize">{data.tipo}</span>
-          </div>
-
-          {/* Box valor y pago */}
-          <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 border border-black rounded-md mt-2">
-            <div className="flex-1">
-              <span className="block font-bold uppercase text-[9px]">Valor pedido:</span>
-              <span className="text-xl font-black leading-none">${data.valor_pedido}</span>
-            </div>
-            <div className="flex-1 text-right border-l border-black pl-2">
-              <span className="block font-bold uppercase text-[9px]">Pago:</span>
-              <span className="text-xs font-bold capitalize">{data.metodo_pago}</span>
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="flex flex-col items-center pt-2">
-            <QRGenerator value={data.id} size={140} />
-            <span className="font-bold text-[8px] uppercase mt-1">Escanear para Retiro</span>
-          </div>
-
-          {/* Dirección y Teléfono */}
-          <div className="pt-2 space-y-2">
-            <div>
-              <span className="font-bold uppercase text-[9px] block">Dirección:</span>
-              <span className="text-xs leading-tight block">{data.direccion}</span>
-            </div>
-            <div className="text-center border-y border-dashed border-black py-2">
-              <span className="font-bold uppercase text-[9px] block">Teléfono:</span>
-              <span className="text-base font-black tracking-widest">{data.telefono || 'N/A'}</span>
-            </div>
-          </div>
-
-          {/* Nota */}
-          {data.nota && (
-            <div className="bg-gray-50 p-2 border border-gray-200 rounded">
-              <span className="font-bold uppercase text-[9px] block mb-1">Nota:</span>
-              <div className="text-xs font-bold leading-tight">
-                {data.nota.split(/\s*-\s*/).filter(Boolean).map((item, i) => (
-                  <div key={i}>- {item.trim()}</div>
-                ))}
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="space-y-2">
+            <div className="flex border-b border-gray-300 pb-1">
+              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Empresa:</span>
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs leading-tight break-words text-black">{data.empresas?.nombre || 'N/A'}</span>
+                {data.empresas?.direccion && (
+                  <span className="text-[10px] leading-tight break-words text-black">{data.empresas.direccion}</span>
+                )}
+                {data.empresas?.ruc && (
+                  <span className="text-[10px] leading-tight break-words text-black">DOCUMENTO: {data.empresas.ruc}</span>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Estado */}
-          <div className="pt-1">
-            <span className="font-bold uppercase text-[9px] block mb-1">Estado:</span>
-            <div className="text-[10px] font-bold uppercase bg-gray-200 px-2 py-1 rounded text-center">
-              {statusMap[data.estado] || data.estado}
+            <div className="flex border-b border-gray-300 pb-1">
+              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Operador:</span>
+              <span className="font-semibold text-xs leading-tight break-words text-black">{data.operadores?.nombres || 'No asignado'}</span>
+            </div>
+
+            <div className="flex border-b border-gray-300 pb-1">
+              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Paquete:</span>
+              <span className="font-semibold text-xs capitalize leading-tight break-words text-black">{data.tipo}</span>
+            </div>
+
+            {/* Box valor y pago */}
+            <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 border border-black rounded-lg mt-3">
+              <div className="flex-1">
+                <span className="block font-bold uppercase text-[10px] text-black">Valor pedido:</span>
+                <span className="text-2xl font-black leading-none mt-1 text-black">${data.valor_pedido}</span>
+              </div>
+              <div className="flex-1 text-right border-l border-black pl-2">
+                <span className="block font-bold uppercase text-[10px] text-black">Pago:</span>
+                <span className="text-sm font-bold capitalize mt-1 block text-black">{data.metodo_pago}</span>
+              </div>
+            </div>
+
+            {/* QR Code - Nueva Ubicación */}
+            <div className="flex flex-col items-center pt-2 mt-1">
+              <QRGenerator value={data.id} size={140} />
+              <span className="font-bold text-[9px] uppercase text-black mt-1">Escanear para Retiro</span>
             </div>
           </div>
 
-          {data.novedad && (
-            <div className="border border-red-200 p-2 bg-red-50">
-              <span className="font-bold uppercase text-[9px] text-red-600 block mb-1">Novedad:</span>
-              <p className="text-[10px] leading-tight">{data.novedad}</p>
+          <div className="space-y-3 pt-2">
+            {/* Dirección */}
+            <div className="flex flex-col">
+              <span className="font-bold uppercase text-[11px] text-black mb-0.5">Dirección:</span>
+              <span className="text-sm font-medium leading-tight text-black">{data.direccion}</span>
             </div>
-          )}
-        </div>
 
-        <div className="text-center pt-4 border-t border-gray-100">
-          <span className="font-bold text-[9px] uppercase opacity-50">
-            Tmax System V1.0
-          </span>
+            {/* Teléfono */}
+            <div className="flex flex-col text-center border-y-2 border-dashed border-black py-2 my-2">
+              <span className="font-bold uppercase text-[11px] text-black mb-1">Teléfono:</span>
+              <span className="text-lg font-black text-black tracking-widest">{data.telefono || 'N/A'}</span>
+            </div>
+
+            {/* Nota */}
+            {data.nota && (
+              <div className="flex flex-col bg-gray-50 p-2 rounded border border-gray-200">
+                <span className="font-bold uppercase text-[11px] text-black mb-0.5">Nota:</span>
+                <ul className="list-none p-0 m-0">
+                  {data.nota
+                    .split(/\s*-\s*/)
+                    .filter(Boolean)
+                    .map((item, i) => (
+                      <li key={i} className="font-bold text-base leading-tight text-black">
+                        - {item.trim()}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Estado */}
+            <div className="flex flex-col border-b border-gray-300 pb-2">
+              <span className="font-bold uppercase text-[11px] text-black mb-1">Estado del paquete:</span>
+              <span className="font-bold uppercase bg-gray-200 px-2 py-1 rounded text-xs text-center text-black">
+                {statusMap[data.estado] || data.estado}
+              </span>
+            </div>
+
+            {/* Novedad */}
+            {data.novedad && (
+              <div className="flex flex-col border border-red-200 p-2 bg-red-50">
+                <span className="font-bold uppercase text-[11px] text-red-600 mb-0.5">Novedad:</span>
+                <p className="font-medium text-xs leading-tight text-black">{data.novedad}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      <div className="text-center pt-3">
+        <span className="font-bold text-[11px] text-black">
+          Desarrollado por Tmax System V1.0
+        </span>
+      </div>
+
+      {/* Espacio para la cuchilla */}
+      <div style={{ height: '12mm' }}></div>
     </div>
   );
 }

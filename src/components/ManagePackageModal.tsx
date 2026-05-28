@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
-  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, Eye 
+  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PrintTemplate } from '@/components/PrintTemplate';
-import { Ticket } from '@/components/Ticket';
 
 // Interfaz para los props
 interface ManagePackageModalProps {
@@ -35,7 +34,6 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReturnAlertOpen, setIsReturnAlertOpen] = useState(false);
-  const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   
   const [editFormData, setEditFormData] = useState({
     direccion: '',
@@ -209,14 +207,9 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
 
             <div className="flex flex-col gap-4 mt-2 pt-4 border-t border-white/10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                <div className="flex gap-2">
-                  <Button onClick={() => window.print()} variant="outline" className="flex-1 h-11 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent shadow-none">
-                    <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir</span>
-                  </Button>
-                  <Button onClick={() => setIsTicketPreviewOpen(true)} variant="outline" size="icon" className="h-11 w-11 border-accent/30 text-accent/80 hover:bg-accent/10 hover:text-accent shrink-0">
-                    <Eye className="h-5 w-5" />
-                  </Button>
-                </div>
+                <Button onClick={() => window.print()} variant="outline" className="w-full h-11 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent shadow-none">
+                  <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir Ticket</span>
+                </Button>
                 {canShowPedidoListo && <Button onClick={handlePedidoListo} className="w-full h-11 bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <PackageCheck className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Pedido listo</span></Button>}
                 {canEditDetails && <Button onClick={handleUpdatePackage} className="w-full h-11 bg-accent text-primary font-bold hover:bg-accent/90 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <Save className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Guardar Cambios</span></Button>}
                 {canRequestReturnToOrigin && <Button onClick={() => setIsReturnAlertOpen(true)} variant="outline" className="w-full h-11 border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:text-orange-400 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <RotateCcw className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Retornar a origen</span></Button>}
@@ -228,25 +221,6 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
             </div>
           </div>
           <PrintTemplate data={pkg} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Vista Previa de Ticket */}
-      <Dialog open={isTicketPreviewOpen} onOpenChange={setIsTicketPreviewOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white p-0 sm:max-w-fit overflow-hidden">
-          <DialogHeader className="p-4 border-b border-white/10">
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-accent" /> Previsualización de Ticket
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-6 bg-slate-950/50 flex justify-center">
-            <Ticket data={pkg} />
-          </div>
-          <div className="p-4 bg-black/20 flex justify-center">
-            <Button variant="ghost" onClick={() => setIsTicketPreviewOpen(false)} className="text-slate-400 hover:text-white">
-              Cerrar Vista
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 

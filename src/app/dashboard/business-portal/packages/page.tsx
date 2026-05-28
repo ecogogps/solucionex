@@ -4,11 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
-  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned
+  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -17,6 +23,7 @@ import Link from 'next/link';
 import { ManagePackageModal } from '@/components/ManagePackageModal';
 import { TrackingModal } from '@/components/TrackingModal';
 import { Cronometro } from '@/components/Cronometro';
+import { Ticket } from '@/components/Ticket';
 
 export default function BusinessPackagesPage() {
   const [fetchingPackages, setFetchingPackages] = useState(true);
@@ -29,6 +36,9 @@ export default function BusinessPackagesPage() {
   
   const [trackingPackage, setTrackingPackage] = useState<any | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPackage, setPreviewPackage] = useState<any | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -169,18 +179,32 @@ export default function BusinessPackagesPage() {
                             />
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTrackingPackage(pkg);
-                                setIsTrackingOpen(true);
-                              }}
-                            >
-                              <MapPinned className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewPackage(pkg);
+                                  setIsPreviewOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrackingPackage(pkg);
+                                  setIsTrackingOpen(true);
+                                }}
+                              >
+                                <MapPinned className="h-4 w-4" />
+                              </Button>
+                            </div>
                             <div className="flex items-center gap-2 ml-1 shrink-0">
                               <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
                               <Edit2 className="h-4 w-4 text-slate-500" />
@@ -224,6 +248,24 @@ export default function BusinessPackagesPage() {
         paqueteId={trackingPackage?.id || ''}
         guiaNumero={trackingPackage?.guia_numero || ''}
       />
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white p-0 sm:max-w-fit overflow-hidden">
+          <DialogHeader className="p-4 border-b border-white/10">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-accent" /> Previsualización de Ticket
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 bg-slate-950/50 flex justify-center">
+            {previewPackage && <Ticket data={previewPackage} />}
+          </div>
+          <div className="p-4 bg-black/20 flex justify-center">
+            <Button variant="ghost" onClick={() => setIsPreviewOpen(false)} className="text-slate-400 hover:text-white">
+              Cerrar Vista
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}><PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span></Link>
