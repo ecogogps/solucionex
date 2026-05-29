@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, LogOut, Package, ClipboardCheck, Navigation, 
-  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode
+  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +23,7 @@ export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const [allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
+  const [allDeliveries, setAllDeliveries] = useState<any[]>([]);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   
   const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
@@ -65,17 +66,42 @@ export default function MyPackagesPage() {
 
   const fetchData = async (currentUserId: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Obtener paquetes asignados
+      const { data: assignedData, error: assignedError } = await supabase
         .from('paquetes')
         .select('*, empresas(nombre, direccion), operadores(nombres), paquetes_historial(estado, created_at)')
         .eq('operador_id', currentUserId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAllDeliveries(data || []);
+      if (assignedError) throw assignedError;
+
+      // 2. Obtener rechazos de hoy
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: rejectedData, error: rejectedError } = await supabase
+        .from('operador_rechazos')
+        .select('*, paquetes(*, empresas(nombre, direccion))')
+        .eq('operador_id', currentUserId)
+        .gte('created_at', today.toISOString());
+
+      if (rejectedError) throw rejectedError;
+
+      const formattedRejections = (rejectedData || []).map(r => ({
+        ...r.paquetes,
+        estado: 'rechazado_por_operador',
+        created_at: r.created_at, // Usar fecha del rechazo para orden
+        es_rechazo: true
+      }));
+
+      const combined = [...(assignedData || []), ...formattedRejections].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setAllDeliveries(combined);
 
       if (selectedPackage) {
-        const updatedPackage = (data || []).find(p => p.id === selectedPackage.id);
+        const updatedPackage = combined.find(p => p.id === selectedPackage.id);
         if (updatedPackage) setSelectedPackage(updatedPackage);
         else setIsDetailOpen(false);
       }
@@ -157,14 +183,15 @@ export default function MyPackagesPage() {
       case 'no_listo': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-center">AÚN NO LISTO</Badge>;
       case 'cancelado': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-center">No ejecutado</Badge>;
       case 'anulado_retornar': return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-center">Anulado - Retornar</Badge>;
+      case 'rechazado_por_operador': return <Badge className="bg-red-900/40 text-red-400 border-red-500/50 text-center uppercase">Rechazado</Badge>;
       default: return <Badge variant="outline" className="text-orange-400 border-orange-400/50 bg-orange-400/10 text-center">Pendiente</Badge>;
     }
   };
 
-  const activeDeliveries = allDeliveries.filter(p => p.estado !== 'entregado' && p.estado !== 'entregado_novedad');
+  const activeDeliveries = allDeliveries.filter(p => !p.es_rechazo && p.estado !== 'entregado' && p.estado !== 'entregado_novedad');
   
-  const completedDeliveries = allDeliveries.filter(p => {
-    const isCompleted = p.estado === 'entregado' || p.estado === 'entregado_novedad';
+  const historyDeliveries = allDeliveries.filter(p => {
+    const isCompleted = p.estado === 'entregado' || p.estado === 'entregado_novedad' || p.es_rechazo;
     if (!isCompleted) return false;
     
     const pkgDate = new Date(p.created_at);
@@ -197,7 +224,7 @@ export default function MyPackagesPage() {
                 <Package className="h-4 w-4 shrink-0" /> <span className="truncate">Activos ({activeDeliveries.length})</span>
               </TabsTrigger>
               <TabsTrigger value="entregados" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold gap-2">
-                <History className="h-4 w-4 shrink-0" /> <span className="truncate">Hoy ({completedDeliveries.length})</span>
+                <History className="h-4 w-4 shrink-0" /> <span className="truncate">Hoy ({historyDeliveries.length})</span>
               </TabsTrigger>
             </TabsList>
 
@@ -272,23 +299,23 @@ export default function MyPackagesPage() {
             </TabsContent>
 
             <TabsContent value="entregados" className="space-y-4 outline-none">
-              {completedDeliveries.length === 0 ? (
+              {historyDeliveries.length === 0 ? (
                 <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
                   <History className="h-12 w-12 text-slate-500 mb-4" />
                   <h3 className="text-lg font-semibold text-white">Historial de hoy vacío</h3>
-                  <p className="text-slate-400 text-sm mt-1">Tus entregas finalizadas hoy aparecerán aquí.</p>
+                  <p className="text-slate-400 text-sm mt-1">Tus actividades finalizadas hoy aparecerán aquí.</p>
                 </div>
               ) : (
-                completedDeliveries.map((pkg) => (
+                historyDeliveries.map((pkg) => (
                   <Card 
-                    key={pkg.id} 
-                    className="bg-white/5 border-white/5 opacity-80"
+                    key={pkg.es_rechazo ? `rechazo-${pkg.id}` : pkg.id} 
+                    className={cn("bg-white/5 border-white/5 opacity-80", pkg.es_rechazo && "border-red-500/10")}
                   >
                     <CardContent className="p-4">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start sm:items-center gap-3">
-                          <div className="bg-white/10 p-2 rounded-lg shrink-0 mt-1 sm:mt-0">
-                            <Package className="h-5 w-5 text-slate-400" />
+                          <div className={cn("p-2 rounded-lg shrink-0 mt-1 sm:mt-0", pkg.es_rechazo ? "bg-red-500/10" : "bg-white/10")}>
+                            {pkg.es_rechazo ? <XCircle className="h-5 w-5 text-red-400" /> : <Package className="h-5 w-5 text-slate-400" />}
                           </div>
                           <div className="flex flex-col min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -302,29 +329,33 @@ export default function MyPackagesPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
-                          <div className="w-full sm:w-auto">
-                            <Cronometro 
-                              paqueteId={pkg.id} 
-                              estadoActual={pkg.estado} 
-                              tiempoRecogida={pkg.tiempo_recogida}
-                              historial={pkg.paquetes_historial || []}
-                              retrasoEmpresa={pkg.retraso_empresa_segundos} 
-                              retrasoOperador={pkg.retraso_operador_segundos} 
-                            />
-                          </div>
+                          {!pkg.es_rechazo && (
+                            <div className="w-full sm:w-auto">
+                              <Cronometro 
+                                paqueteId={pkg.id} 
+                                estadoActual={pkg.estado} 
+                                tiempoRecogida={pkg.tiempo_recogida}
+                                historial={pkg.paquetes_historial || []}
+                                retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                                retrasoOperador={pkg.retraso_operador_segundos} 
+                              />
+                            </div>
+                          )}
                           <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTrackingPackage(pkg);
-                                setIsTrackingOpen(true);
-                              }}
-                            >
-                              <MapPinned className="h-4 w-4" />
-                            </Button>
+                            {!pkg.es_rechazo && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrackingPackage(pkg);
+                                  setIsTrackingOpen(true);
+                                }}
+                              >
+                                <MapPinned className="h-4 w-4" />
+                              </Button>
+                            )}
                             <div className="shrink-0">{getStatusBadge(pkg.estado)}</div>
                           </div>
                         </div>

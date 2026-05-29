@@ -85,23 +85,34 @@ export default function SolicitudesPage() {
     return () => window.removeEventListener('click', unlockAudio);
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (currentUserId: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Obtener IDs de paquetes ya rechazados por este operador
+      const { data: rejections } = await supabase
+        .from('operador_rechazos')
+        .select('paquete_id')
+        .eq('operador_id', currentUserId);
+      
+      const dbRejectedIds = (rejections || []).map(r => r.paquete_id);
+      setRejectedIds(dbRejectedIds);
+
+      // 2. Obtener paquetes disponibles (excluyendo rechazados)
+      let query = supabase
         .from('paquetes')
         .select('*, empresas(nombre, direccion)')
         .in('estado', ['buscando_operador', 'pedido_listo'])
-        .is('operador_id', null)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching available packages:", error);
-        return;
+        .is('operador_id', null);
+      
+      if (dbRejectedIds.length > 0) {
+        query = query.not('id', 'in', `(${dbRejectedIds.join(',')})`);
       }
 
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
       setAvailablePackages(data || []);
     } catch (error: any) {
-      console.error("Unexpected error:", error);
+      console.error("Error fetching available packages:", error);
     } finally {
       setLoading(false);
     }
@@ -112,7 +123,7 @@ export default function SolicitudesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUserId(session.user.id);
-        fetchData();
+        fetchData(session.user.id);
       } else {
         router.push('/');
       }
@@ -121,6 +132,8 @@ export default function SolicitudesPage() {
   }, [router, fetchData]);
 
   useEffect(() => {
+    if (!userId) return;
+
     const channel = supabase
       .channel('paquetes_realtime_solicitudes')
       .on(
@@ -137,7 +150,7 @@ export default function SolicitudesPage() {
           if (payload.eventType === 'UPDATE' && !payload.new.operador_id && (payload.new.estado === 'buscando_operador' || payload.new.estado === 'pedido_listo')) {
             playNotificationSound();
           }
-          fetchData();
+          fetchData(userId);
         }
       )
       .subscribe();
@@ -145,7 +158,7 @@ export default function SolicitudesPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchData, playNotificationSound]);
+  }, [userId, fetchData, playNotificationSound]);
 
   const handleAccept = async (pkg: PaqueteData) => {
     if (!userId) return;
@@ -175,18 +188,41 @@ export default function SolicitudesPage() {
       
       router.push('/dashboard/operator-portal/my-packages');
     } catch (error: any) {
-      // Supabase captura el mensaje de RAISE EXCEPTION del trigger en error.message
       toast({
         variant: "destructive",
         title: "Atención",
         description: error.message || "No se pudo aceptar el pedido en este momento.",
       });
-      fetchData();
+      fetchData(userId);
     }
   };
 
-  const handleRejectLocal = (id: string) => {
-    setRejectedIds(prev => [...prev, id]);
+  const handleReject = async (id: string) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('operador_rechazos')
+        .insert({
+          operador_id: userId,
+          paquete_id: id
+        });
+
+      if (error) throw error;
+
+      setRejectedIds(prev => [...prev, id]);
+      toast({
+        title: "Solicitud rechazada",
+        description: "El paquete ya no aparecerá en tus solicitudes disponibles."
+      });
+      fetchData(userId);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo registrar el rechazo."
+      });
+    }
   };
 
   const handleManualUnlock = () => {
@@ -278,7 +314,7 @@ export default function SolicitudesPage() {
                       <Button 
                         variant="ghost" 
                         className="flex-1 text-red-400 hover:bg-red-400/10 hover:text-red-400"
-                        onClick={() => handleRejectLocal(pkg.id)}
+                        onClick={() => handleReject(pkg.id)}
                       >
                         <XCircle className="w-4 h-4 mr-2" /> Rechazar
                       </Button>
