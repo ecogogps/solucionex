@@ -149,10 +149,7 @@ export default function BusinessPackagesPage() {
                     onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
                   >
                     <CardContent className="p-4">
-                      {/* Contenedor principal: Columna en móvil, Fila en pantallas grandes */}
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                        
-                        {/* Izquierda: Info de la guía y Estado */}
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                           <div className="flex flex-col min-w-0">
                             <p className="font-bold text-white truncate">Guía: {pkg.guia_numero}</p>
@@ -166,7 +163,6 @@ export default function BusinessPackagesPage() {
                           </div>
                         </div>
 
-                        {/* Derecha: Cronómetro y Botones de acción */}
                         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
                           <div className="w-full sm:w-auto">
                             <Cronometro 
@@ -206,7 +202,12 @@ export default function BusinessPackagesPage() {
                               </Button>
                             </div>
                             <div className="flex items-center gap-2 ml-1 shrink-0">
-                              <p className="text-lg font-bold text-accent">${pkg.valor_pedido}</p>
+                              <div className="flex flex-col items-end">
+                                <p className="text-lg font-bold text-accent leading-none">${pkg.valor_pedido}</p>
+                                <span className="text-[10px] font-bold text-slate-400">
+                                  {pkg.metodo_pago === 'transferencia' ? '(T)' : '(E)'}
+                                </span>
+                              </div>
                               <Edit2 className="h-4 w-4 text-slate-500" />
                             </div>
                           </div>
