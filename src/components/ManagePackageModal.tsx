@@ -55,6 +55,16 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     }
   }, [pkg]);
 
+  // Asegura la limpieza de los pointer-events en el body tras cerrar los submodales
+  useEffect(() => {
+    if (!isDeleteDialogOpen && !isReturnAlertOpen) {
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = '';
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isDeleteDialogOpen, isReturnAlertOpen]);
+
   if (!pkg) return null;
 
   const hasAchieved = (state: string) => pkg?.paquetes_historial?.some((h: any) => h.estado === state);
@@ -208,7 +218,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
             <div className="flex flex-col gap-4 mt-2 pt-4 border-t border-white/10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                 <Button onClick={() => window.print()} variant="outline" className="w-full h-11 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent shadow-none">
-                  <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir Ticket</span>
+                  <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Imprimir</span>
                 </Button>
                 {canShowPedidoListo && <Button onClick={handlePedidoListo} className="w-full h-11 bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <PackageCheck className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Pedido listo</span></Button>}
                 {canEditDetails && <Button onClick={handleUpdatePackage} className="w-full h-11 bg-accent text-primary font-bold hover:bg-accent/90 shadow-none" disabled={isUpdating}>{isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-2 shrink-0" /> : <Save className="h-4 w-4 mr-2 shrink-0" />} <span className="truncate">Guardar Cambios</span></Button>}
@@ -220,36 +230,37 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
               </div>
             </div>
           </div>
+          
           <PrintTemplate data={pkg} />
+
+          {/* Modales de Alerta anidados dentro de DialogContent para evitar el bloqueo de pointer-events */}
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent className="bg-slate-900 border-white/10 text-white w-[90vw] max-w-md rounded-xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-red-500"><Trash2 className="h-5 w-5 shrink-0" /> Confirmar Eliminación</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-400 text-sm">¿Estás seguro de que deseas ELIMINAR este paquete de forma definitiva?</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+                <AlertDialogCancel className="bg-white/5 border-white/10 text-white h-11 mt-0">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmEliminarPaquete} className="bg-red-600 hover:bg-red-700 text-white font-bold h-11">Sí, eliminar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={isReturnAlertOpen} onOpenChange={setIsReturnAlertOpen}>
+            <AlertDialogContent className="bg-slate-900 border-white/10 text-white w-[90vw] max-w-md rounded-xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-orange-400"><RotateCcw className="h-5 w-5 shrink-0" /> Retornar a Origen</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-400 text-sm">¿Estás seguro de solicitar el retorno a origen para este pedido?</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+                <AlertDialogCancel className="bg-white/5 border-white/10 text-white h-11 mt-0">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmAnularPaquete} className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-11">Sí, retornar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </DialogContent>
       </Dialog>
-
-      {/* Modales de Alerta */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-slate-900 border-white/10 text-white w-[90vw] max-w-md rounded-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-500"><Trash2 className="h-5 w-5 shrink-0" /> Confirmar Eliminación</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 text-sm">¿Estás seguro de que deseas ELIMINAR este paquete de forma definitiva?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
-            <AlertDialogCancel className="bg-white/5 border-white/10 text-white h-11 mt-0">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEliminarPaquete} className="bg-red-600 hover:bg-red-700 text-white font-bold h-11">Sí, eliminar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isReturnAlertOpen} onOpenChange={setIsReturnAlertOpen}>
-        <AlertDialogContent className="bg-slate-900 border-white/10 text-white w-[90vw] max-w-md rounded-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-orange-400"><RotateCcw className="h-5 w-5 shrink-0" /> Retornar a Origen</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 text-sm">¿Estás seguro de solicitar el retorno a origen para este pedido?</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
-            <AlertDialogCancel className="bg-white/5 border-white/10 text-white h-11 mt-0">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAnularPaquete} className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-11">Sí, retornar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

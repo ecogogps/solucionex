@@ -16,21 +16,24 @@ import { OperatorPackageModal, PaqueteData } from '@/components/OperatorPackageM
 import { TrackingModal } from '@/components/TrackingModal';
 import { Cronometro } from '@/components/Cronometro';
 import { QRScanner } from '@/components/QRScanner';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MyPackagesPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const[allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
+  const [allDeliveries, setAllDeliveries] = useState<PaqueteData[]>([]);
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   
-  const[selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
-  const[isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const [trackingPackage, setTrackingPackage] = useState<PaqueteData | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     const getSession = async () => {
@@ -69,10 +72,10 @@ export default function MyPackagesPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAllDeliveries(data ||[]);
+      setAllDeliveries(data || []);
 
       if (selectedPackage) {
-        const updatedPackage = (data ||[]).find(p => p.id === selectedPackage.id);
+        const updatedPackage = (data || []).find(p => p.id === selectedPackage.id);
         if (updatedPackage) setSelectedPackage(updatedPackage);
         else setIsDetailOpen(false);
       }
@@ -81,6 +84,62 @@ export default function MyPackagesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateLocation = async () => {
+    if (!userId) return;
+    setIsUpdatingLocation(true);
+
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "No soportado",
+        description: "Tu navegador no soporta geolocalización."
+      });
+      setIsUpdatingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          const { error } = await supabase
+            .from('operador_ubicaciones')
+            .upsert({
+              operador_id: userId,
+              latitud: latitude,
+              longitud: longitude,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'operador_id' });
+
+          if (error) throw error;
+
+          toast({
+            title: "Ubicación Actualizada",
+            description: "Tu ubicación ha sido enviada al administrador."
+          });
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Error de Envío",
+            description: "No se pudo actualizar tu ubicación en el servidor."
+          });
+        } finally {
+          setIsUpdatingLocation(false);
+        }
+      },
+      (error) => {
+        toast({
+          variant: "destructive",
+          title: "Permiso Denegado",
+          description: "Habilita los permisos de ubicación en tu navegador."
+        });
+        setIsUpdatingLocation(false);
+      },
+      { enableHighAccuracy: true }
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -157,10 +216,7 @@ export default function MyPackagesPage() {
                     onClick={() => { setSelectedPackage(pkg); setIsDetailOpen(true); }}
                   >
                     <CardContent className="p-4">
-                      {/* Flex responsive: Columna en movil, fila en PC */}
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        
-                        {/* Información del Paquete (Izquierda) */}
                         <div className="flex items-start sm:items-center gap-3">
                           <div className="bg-accent/20 p-2 rounded-lg shrink-0 mt-1 sm:mt-0">
                             <Package className="h-5 w-5 text-accent" />
@@ -170,26 +226,22 @@ export default function MyPackagesPage() {
                               <span className="text-xs text-slate-400 font-bold truncate">{pkg.empresas?.nombre}</span>
                               <Badge variant="outline" className="text-[9px] h-4 border-white/10 text-accent px-1 uppercase shrink-0">{pkg.tipo}</Badge>
                             </div>
-                            
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold truncate">Guía: {pkg.guia_numero}</span>
                             </div>
-
                             <div className="flex items-start gap-1 mt-1">
                               <MapPin className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" /> 
                               <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
                             </div>
                           </div>
                         </div>
-
-                        {/* Cronómetro y Acciones (Derecha) */}
                         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
                           <div className="w-full sm:w-auto">
                             <Cronometro 
                               paqueteId={pkg.id} 
                               estadoActual={pkg.estado} 
                               tiempoRecogida={pkg.tiempo_recogida}
-                              historial={pkg.paquetes_historial ||[]}
+                              historial={pkg.paquetes_historial || []}
                               retrasoEmpresa={pkg.retraso_empresa_segundos} 
                               retrasoOperador={pkg.retraso_operador_segundos} 
                               modo="operador"
@@ -212,7 +264,6 @@ export default function MyPackagesPage() {
                             <ChevronRight className="h-4 w-4 text-slate-500 shrink-0 hidden sm:block" />
                           </div>
                         </div>
-
                       </div>
                     </CardContent>
                   </Card>
@@ -234,9 +285,7 @@ export default function MyPackagesPage() {
                     className="bg-white/5 border-white/5 opacity-80"
                   >
                     <CardContent className="p-4">
-                      {/* Flex responsive: Columna en movil, fila en PC */}
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        
                         <div className="flex items-start sm:items-center gap-3">
                           <div className="bg-white/10 p-2 rounded-lg shrink-0 mt-1 sm:mt-0">
                             <Package className="h-5 w-5 text-slate-400" />
@@ -252,14 +301,13 @@ export default function MyPackagesPage() {
                             </div>
                           </div>
                         </div>
-
                         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
                           <div className="w-full sm:w-auto">
                             <Cronometro 
                               paqueteId={pkg.id} 
                               estadoActual={pkg.estado} 
                               tiempoRecogida={pkg.tiempo_recogida}
-                              historial={pkg.paquetes_historial ||[]}
+                              historial={pkg.paquetes_historial || []}
                               retrasoEmpresa={pkg.retraso_empresa_segundos} 
                               retrasoOperador={pkg.retraso_operador_segundos} 
                             />
@@ -280,7 +328,6 @@ export default function MyPackagesPage() {
                             <div className="shrink-0">{getStatusBadge(pkg.estado)}</div>
                           </div>
                         </div>
-
                       </div>
                     </CardContent>
                   </Card>
@@ -307,23 +354,36 @@ export default function MyPackagesPage() {
         guiaNumero={trackingPackage?.guia_numero || ''}
       />
 
+      {/* Botones Flotantes */}
+      <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-50">
+        <button
+          onClick={updateLocation}
+          disabled={isUpdatingLocation}
+          className="h-14 w-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-all text-accent"
+          title="Actualizar mi ubicación"
+        >
+          {isUpdatingLocation ? <Loader2 className="h-6 w-6 animate-spin" /> : <Navigation className="h-6 w-6" />}
+        </button>
+      </div>
+
+      <button
+        onClick={() => setIsQRScannerOpen(true)}
+        className="fixed bottom-24 right-6 h-14 w-14 bg-accent rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-accent/90 transition-all"
+      >
+        <QrCode className="h-6 w-6 text-primary" />
+      </button>
+
+      <QRScanner
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        userId={userId || ''}
+        onSuccess={() => userId && fetchData(userId)}
+      />
+
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
         <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
       </nav>
-      <button
-      onClick={() => setIsQRScannerOpen(true)}
-      className="fixed bottom-24 right-6 h-14 w-14 bg-accent rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-accent/90 transition-all"
-    >
-      <QrCode className="h-6 w-6 text-primary" />
-    </button>
-
-    <QRScanner
-      isOpen={isQRScannerOpen}
-      onClose={() => setIsQRScannerOpen(false)}
-      userId={userId || ''}
-      onSuccess={() => userId && fetchData(userId)}
-    />
     </div>
   );
 }

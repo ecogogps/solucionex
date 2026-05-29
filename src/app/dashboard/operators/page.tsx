@@ -17,7 +17,8 @@ import {
   UserCheck,
   BadgeCheck,
   CreditCard,
-  Key
+  Key,
+  Navigation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -247,6 +248,11 @@ export default function OperatorsPage() {
           <Link href="/dashboard/operators">
             <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
               <UserCheck className="h-5 w-5 text-accent" /> Operadores
+            </Button>
+          </Link>
+          <Link href="/dashboard/tracking">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Navigation className="h-5 w-5" /> Ubicación Operador
             </Button>
           </Link>
         </nav>
