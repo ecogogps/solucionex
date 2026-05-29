@@ -62,29 +62,59 @@ export default function TrackingPage() {
 
   const fetchUbicaciones = async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Obtener ubicaciones base de la tabla
+      const { data: rawData, error: locError } = await supabase
         .from('operador_ubicaciones')
-        .select('*, operadores(nombres)')
+        .select('*')
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (locError) throw locError;
 
-      // Geocodificación inversa simple para cada ubicación
-      const enrichedData = await Promise.all((data || []).map(async (u: any) => {
+      if (!rawData || rawData.length === 0) {
+        setUbicaciones([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Obtener nombres de operadores (Join manual en memoria ya que la FK en DB apunta a auth.users)
+      const operatorIds = Array.from(new Set(rawData.map(u => u.operador_id)));
+      const { data: operatorsData, error: opError } = await supabase
+        .from('operadores')
+        .select('id, nombres')
+        .in('id', operatorIds);
+
+      // Mapeamos los nombres por ID para acceso rápido
+      const opMap = (operatorsData || []).reduce((acc: Record<string, string>, op) => {
+        acc[op.id] = op.nombres;
+        return acc;
+      }, {});
+
+      // 3. Geocodificación inversa y enriquecimiento de datos
+      const enrichedData = await Promise.all(rawData.map(async (u: any) => {
+        let address = `${u.latitud}, ${u.longitud}`;
         try {
+          // Nominatim requiere User-Agent y tiene límites de frecuencia
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SolucionexApp/1.0' }
           });
-          const geo = await res.json();
-          return { ...u, address: geo.display_name || `${u.latitud}, ${u.longitud}` };
-        } catch {
-          return { ...u, address: `${u.latitud}, ${u.longitud}` };
+          if (res.ok) {
+            const geo = await res.json();
+            address = geo.display_name || address;
+          }
+        } catch (err) {
+          console.warn(`Error en geocodificación para registro ${u.id}:`, err);
         }
+
+        return { 
+          ...u, 
+          address,
+          operadores: { nombres: opMap[u.operador_id] || 'Operador Desconocido' }
+        };
       }));
 
       setUbicaciones(enrichedData);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
+    } catch (error: any) {
+      console.error("Error fetching locations:", error.message || error);
     } finally {
       setLoading(false);
     }
