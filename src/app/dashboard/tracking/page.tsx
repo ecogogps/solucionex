@@ -13,7 +13,9 @@ import {
   LogOut,
   Package,
   Building2,
-  UserCheck
+  UserCheck,
+  Search,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -43,6 +45,7 @@ interface UbicacionData {
 export default function TrackingPage() {
   const [ubicaciones, setUbicaciones] = useState<UbicacionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -93,7 +96,6 @@ export default function TrackingPage() {
       const enrichedData = await Promise.all(rawData.map(async (u: any) => {
         let address = `${u.latitud}, ${u.longitud}`;
         try {
-          // Nominatim requiere User-Agent y tiene límites de frecuencia
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.latitud}&lon=${u.longitud}&zoom=18&addressdetails=1`, {
             headers: { 'User-Agent': 'SolucionexApp/1.0' }
           });
@@ -124,6 +126,10 @@ export default function TrackingPage() {
     await supabase.auth.signOut();
     router.push('/');
   };
+
+  const filteredUbicaciones = ubicaciones.filter(u => 
+    u.operadores?.nombres.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background flex text-white">
@@ -164,6 +170,15 @@ export default function TrackingPage() {
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
           <h2 className="text-xl font-bold text-white">Monitoreo de Operadores</h2>
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              placeholder="Buscar por operador..." 
+              className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </header>
 
         <div className="p-8">
@@ -172,11 +187,11 @@ export default function TrackingPage() {
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
               <p>Cargando ubicaciones...</p>
             </div>
-          ) : ubicaciones.length === 0 ? (
+          ) : filteredUbicaciones.length === 0 ? (
             <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
               <Navigation className="h-12 w-12 text-slate-500 mb-4" />
               <h3 className="text-lg font-semibold text-white">Sin datos de ubicación</h3>
-              <p className="text-slate-400">Los operadores aún no han compartido su ubicación.</p>
+              <p className="text-slate-400">No se encontraron resultados para tu búsqueda.</p>
             </div>
           ) : (
             <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
@@ -190,7 +205,7 @@ export default function TrackingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ubicaciones.map((u) => (
+                  {filteredUbicaciones.map((u) => (
                     <TableRow key={u.id} className="border-white/10 hover:bg-white/5">
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -207,9 +222,19 @@ export default function TrackingPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-xs text-slate-400">
-                          <Clock className="w-3 h-3 text-accent" />
-                          {new Date(u.updated_at).toLocaleTimeString()}
+                        <div className="flex flex-col gap-1 text-slate-400">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Clock className="w-3 h-3 text-accent" />
+                            {new Date(u.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px]">
+                            <Calendar className="w-3 h-3 text-slate-500" />
+                            {new Date(u.updated_at).toLocaleDateString('es-EC', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric' 
+                            })}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
