@@ -442,14 +442,16 @@ export function OperatorPackageModal({
 
                 {!isFinalState && !pendingAction && (
                   <div className="flex flex-col gap-2">
-                    <Button 
-                      variant="outline" 
-                      className={cn("h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent", selectedPackage.alerta_no_contesta ? "bg-yellow-600 text-white" : "text-yellow-500 hover:text-yellow-500")} 
-                      onClick={toggleNoContesta} 
-                      disabled={updatingStatus}
-                    >
-                      <MessageSquareOff className="w-5 h-5" /> {selectedPackage.alerta_no_contesta ? "Alerta Activada" : "Cliente no contesta"}
-                    </Button>
+                    {!selectedPackage.alerta_no_contesta && (
+                      <Button 
+                        variant="outline" 
+                        className="h-12 w-full gap-2 border-yellow-500/50 hover:bg-transparent text-yellow-500 hover:text-yellow-500" 
+                        onClick={toggleNoContesta} 
+                        disabled={updatingStatus}
+                      >
+                        <MessageSquareOff className="w-5 h-5" /> Cliente no contesta
+                      </Button>
+                    )}
                     <Button 
                       variant="outline" 
                       className="h-12 w-full gap-2 border-blue-500/50 text-blue-400 hover:bg-transparent hover:text-blue-400" 

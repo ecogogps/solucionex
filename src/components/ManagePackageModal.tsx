@@ -100,7 +100,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
 
   const handlePedidoListo = () => executeUpdate({ estado: 'pedido_listo' }, "El paquete ha sido marcado como 'Pedido listo'.");
 
-  const handleVuelvaALlamar = () => executeUpdate({ alerta_no_contesta: false }, "Se ha notificado al operador para un nuevo intento de contacto.");
+  const handleVuelvaALlamar = () => executeUpdate({ alerta_no_contesta: false }, "Alerta inactiva");
   
   const confirmAnularPaquete = () => {
     setIsReturnAlertOpen(false);
