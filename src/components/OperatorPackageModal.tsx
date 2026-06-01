@@ -168,6 +168,11 @@ export function OperatorPackageModal({
       const updatePayload: Record<string, any> = { estado: newStatus };
       if (novedad.trim()) updatePayload.novedad = novedad.trim();
 
+      // Clear alerts on final status
+      if (['entregado', 'entregado_novedad', 'cancelado'].includes(newStatus)) {
+        updatePayload.alerta_no_contesta = false;
+      }
+
       const { error } = await supabase.from('paquetes').update(updatePayload).eq('id', pkgId);
       if (error) throw error;
 
@@ -183,35 +188,6 @@ export function OperatorPackageModal({
       setUpdatingStatus(false);
     }
   };
-
-  {/*const processRetiroStatusWithPhoto = async (photoBase64: string) => {
-    if (!selectedPackage) return;
-    setUpdatingStatus(true);
-    try {
-      const response = await fetch(photoBase64);
-      const blob = await response.blob();
-      const fileName = `image-paquete-retirado/retiro-${selectedPackage.id}-${Date.now()}.jpg`;
-      
-      const { error: uploadError } = await supabase.storage.from('paquetes').upload(fileName, blob);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('paquetes').getPublicUrl(fileName);
-      
-      const { error: updateError } = await supabase.from('paquetes').update({ 
-        estado: 'paquete_retirado',
-        imagen_paquete_retirado: publicUrl 
-      }).eq('id', selectedPackage.id);
-
-      if (updateError) throw updateError;
-
-      toast({ title: "Paquete retirado", description: "Estado y foto de retiro registrados exitosamente." });
-      if (userId) onUpdate();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo procesar el retiro." });
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };*/}
 
   const processEntregaStatusWithPhoto = async (photoBase64: string, status: 'entregado' | 'entregado_novedad') => {
     if (!selectedPackage) return;
@@ -229,6 +205,7 @@ export function OperatorPackageModal({
       
       const updatePayload: Record<string, any> = { 
         estado: status,
+        alerta_no_contesta: false // Clear alert on delivery
       };
 
       if (status === 'entregado') {
@@ -359,8 +336,6 @@ export function OperatorPackageModal({
       
       if (cameraMode === 'pago') {
         setPaymentImage(dataUrl);
-     // } else if (cameraMode === 'retiro') {
-     //   processRetiroStatusWithPhoto(dataUrl);
       } else if (cameraMode === 'entrega') {
         processEntregaStatusWithPhoto(dataUrl, 'entregado');
       } else if (cameraMode === 'entrega_novedad') {
@@ -693,12 +668,6 @@ export function OperatorPackageModal({
                         AÚN NO ESTÁ LISTO
                       </Button>
                     )}
-
-                    {/* {(selectedPackage?.estado === 'llegado_a_origen' || selectedPackage?.estado === 'no_listo' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('llegado_a_origen'))) && !hasAchieved('paquete_retirado') && (
-                      <Button className="w-full bg-cyan-600 h-12 font-bold hover:bg-cyan-700" onClick={() => { setCameraMode('retiro'); setShowCamera(true); }} disabled={updatingStatus}>
-                        {updatingStatus ? <Loader2 className="animate-spin mr-2" /> : <Package className="mr-2 h-5 w-5" />} Paquete retirado de origen
-                      </Button>
-                    )} */}
 
                     {(selectedPackage?.estado === 'paquete_retirado' || (selectedPackage?.estado === 'pedido_listo' && hasAchieved('paquete_retirado'))) && !hasAchieved('en_ruta') && (
                       <Button className="w-full bg-blue-600 h-12 font-bold hover:bg-blue-700" onClick={() => handleUpdateStatus(selectedPackage.id, 'en_ruta')} disabled={updatingStatus}>

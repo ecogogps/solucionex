@@ -57,32 +57,36 @@ export default function SolicitudesPage() {
     if (!audioRef.current) {
       audioRef.current = new Audio('/sounds/solicitudesnuevas.mp3');
     }
-    
-    audioRef.current.play().then(() => {
-      setIsAudioEnabled(true);
-    }).catch(error => {
-      console.warn("Autoplay de audio bloqueado:", error);
-      setIsAudioEnabled(false);
-    });
+    audioRef.current.muted = false;
+    audioRef.current.play().catch(() => {});
   }, []);
-
+  
   useEffect(() => {
-    const unlockAudio = () => {
-      if (!audioRef.current) {
-        audioRef.current = new Audio('/sounds/solicitudesnuevas.mp3');
-      }
-      audioRef.current.muted = true;
-      audioRef.current.play()
-        .then(() => {
-          audioRef.current!.muted = false;
-          setIsAudioEnabled(true);
-          window.removeEventListener('click', unlockAudio);
-        })
-        .catch(() => {});
-    };
-
-    window.addEventListener('click', unlockAudio);
-    return () => window.removeEventListener('click', unlockAudio);
+    const audio = new Audio('/sounds/solicitudesnuevas.mp3');
+    audioRef.current = audio;
+  
+    // Verifica al montar si Chrome ya permite autoplay
+    audio.muted = true;
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.muted = false;
+        setIsAudioEnabled(true); // Chrome lo permite, oculta el botón
+      })
+      .catch(() => {
+        setIsAudioEnabled(false); // Bloqueado, muestra el botón
+        // Fallback: desbloquear en primer click
+        const unlock = () => {
+          audio.muted = true;
+          audio.play().then(() => {
+            audio.muted = false;
+            setIsAudioEnabled(true);
+            window.removeEventListener('click', unlock);
+          }).catch(() => {});
+        };
+        window.addEventListener('click', unlock);
+        return () => window.removeEventListener('click', unlock);
+      });
   }, []);
 
   const fetchData = useCallback(async (currentUserId: string) => {

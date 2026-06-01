@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
-  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText 
+  Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, PhoneForwarded 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -98,10 +98,12 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   }, "Los cambios se han guardado correctamente.");
 
   const handlePedidoListo = () => executeUpdate({ estado: 'pedido_listo' }, "El paquete ha sido marcado como 'Pedido listo'.");
+
+  const handleVuelvaALlamar = () => executeUpdate({ alerta_no_contesta: false }, "Se ha notificado al operador para un nuevo intento de contacto.");
   
   const confirmAnularPaquete = () => {
     setIsReturnAlertOpen(false);
-    executeUpdate({ estado: 'anulado_retornar' }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
+    executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
   };
 
   const confirmEliminarPaquete = async () => {
@@ -167,6 +169,25 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
                   <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
                 </div>
               </div>
+
+              {pkg.alerta_no_contesta && (
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 text-yellow-500">
+                    <MessageSquareOff className="h-6 w-6 animate-bounce" />
+                    <div>
+                      <p className="text-sm font-bold">CLIENTE NO CONTESTA</p>
+                      <p className="text-[10px] opacity-80">El operador reportó problemas para contactar.</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleVuelvaALlamar} 
+                    className="w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700 text-white font-bold gap-2 text-xs"
+                    disabled={isUpdating}
+                  >
+                    <PhoneForwarded className="h-3.5 w-3.5" /> Vuelva a llamar
+                  </Button>
+                </div>
+              )}
 
               {!canRequestReturnToOrigin && !canEditDetails ? (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">

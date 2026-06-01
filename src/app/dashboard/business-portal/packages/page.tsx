@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
-  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye
+  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +30,7 @@ export default function BusinessPackagesPage() {
   const [misPaquetes, setMisPaquetes] = useState<any[]>([]);
   const [alertCount, setAlertCount] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,6 +43,41 @@ export default function BusinessPackagesPage() {
 
   const pathname = usePathname();
   const router = useRouter();
+  const audioAlertRef = useRef<HTMLAudioElement | null>(null);
+
+  const playNoContestaSound = useCallback(() => {
+    if (!audioAlertRef.current) {
+      audioAlertRef.current = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    }
+    audioAlertRef.current.muted = false;
+    audioAlertRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
+  }, []);
+
+  // Unlock audio logic similar to operator portal
+  useEffect(() => {
+    const audio = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    audioAlertRef.current = audio;
+    audio.muted = true;
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.muted = false;
+        setIsAudioEnabled(true);
+      })
+      .catch(() => {
+        setIsAudioEnabled(false);
+        const unlock = () => {
+          audio.muted = true;
+          audio.play().then(() => {
+            audio.muted = false;
+            setIsAudioEnabled(true);
+            window.removeEventListener('click', unlock);
+          }).catch(() => {});
+        };
+        window.addEventListener('click', unlock);
+        return () => window.removeEventListener('click', unlock);
+      });
+  }, []);
 
   useEffect(() => {
     const getSession = async () => {
@@ -59,11 +95,21 @@ export default function BusinessPackagesPage() {
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel('paquetes_empresa_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'paquetes', filter: `empresa_id=eq.${userId}` }, () => fetchMisPaquetes(userId))
+      .channel('paquetes_empresa_realtime_alerts')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'paquetes', 
+        filter: `empresa_id=eq.${userId}` 
+      }, (payload) => {
+        if (payload.eventType === 'UPDATE' && payload.new.alerta_no_contesta && !payload.old.alerta_no_contesta) {
+          playNoContestaSound();
+        }
+        fetchMisPaquetes(userId);
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId]);
+  }, [userId, playNoContestaSound]);
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
@@ -76,7 +122,7 @@ export default function BusinessPackagesPage() {
       if (error) throw error;
       const packages = data ||[];
       setMisPaquetes(packages);
-      setAlertCount(packages.filter(p => p.alerta_no_contesta || p.alerta_cambio_pago).length);
+      setAlertCount(packages.filter(p => p.alerta_no_contesta).length);
 
       if (selectedPackage) {
         const updated = packages.find(p => p.id === selectedPackage.id);
@@ -124,9 +170,25 @@ export default function BusinessPackagesPage() {
       </aside>
 
       <main className="flex-1 h-screen overflow-y-auto pb-24 lg:pb-8 print:hidden">
-        <header className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 bg-slate-900 sticky top-0 z-40">
-          <div className="flex items-center gap-2"><Truck className="h-6 w-6 text-accent" /><span className="font-bold">Solucionex</span></div>
-          <div className="text-xs font-medium text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">Portal Empresa</div>
+        <header className="h-16 flex items-center justify-between px-6 bg-slate-900 border-b border-white/10 sticky top-0 z-40">
+          <div className="flex items-center gap-2 lg:hidden"><Truck className="h-6 w-6 text-accent" /><span className="font-bold">Solucionex</span></div>
+          <div className="hidden lg:block text-xs font-medium text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">Portal Empresa</div>
+          <div className="flex items-center gap-2">
+            {!isAudioEnabled ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={playNoContestaSound}
+                className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold"
+              >
+                <VolumeX className="h-3 w-3" /> Audio Bloqueado
+              </Button>
+            ) : (
+              <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px]">
+                <Volume2 className="h-3 w-3" /> Sonido Activo
+              </Badge>
+            )}
+          </div>
         </header>
 
         <div className="p-4 lg:p-8 flex justify-center">
@@ -145,7 +207,10 @@ export default function BusinessPackagesPage() {
                 {misPaquetes.map((pkg) => (
                   <Card 
                     key={pkg.id} 
-                    className={cn("bg-white/5 border-white/10 transition-all cursor-pointer group", (pkg.alerta_no_contesta || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40")}
+                    className={cn(
+                      "bg-white/5 border-white/10 transition-all cursor-pointer group", 
+                      (pkg.alerta_no_contesta || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40"
+                    )}
                     onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
                   >
                     <CardContent className="p-4">
@@ -217,7 +282,11 @@ export default function BusinessPackagesPage() {
 
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2 pt-1">
-                          {pkg.alerta_no_contesta && <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1"><MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA</Badge>}
+                          {pkg.alerta_no_contesta && (
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
+                              <MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA
+                            </Badge>
+                          )}
                           {pkg.alerta_cambio_pago && (
                             <div className="flex items-center gap-2">
                               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50 text-[10px] gap-1"><RefreshCcw className="w-3 h-3" /> CAMBIO DE PAGO</Badge>

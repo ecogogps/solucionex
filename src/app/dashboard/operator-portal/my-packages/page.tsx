@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, LogOut, Package, ClipboardCheck, Navigation, 
-  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle
+  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle, ArrowRightCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export default function MyPackagesPage() {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [allDeliveries, setAllDeliveries] = useState<any[]>([]);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+  const [updatingPackageId, setUpdatingPackageId] = useState<string | null>(null);
   
   const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -109,6 +110,33 @@ export default function MyPackagesPage() {
       console.error("Error fetchData:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartRetire = async (pkgId: string) => {
+    setUpdatingPackageId(pkgId);
+    try {
+      const { error } = await supabase
+        .from('paquetes')
+        .update({ estado: 'camino_a_retirar' })
+        .eq('id', pkgId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Estado actualizado",
+        description: "Ahora estás en camino a retirar el paquete."
+      });
+
+      if (userId) fetchData(userId);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error al actualizar",
+        description: "No se pudo actualizar el estado."
+      });
+    } finally {
+      setUpdatingPackageId(null);
     }
   };
 
@@ -275,6 +303,27 @@ export default function MyPackagesPage() {
                             />
                           </div>
                           <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
+                            {/* Botón "Estoy en camino a retirar" condicional */}
+                            {((pkg.estado === 'pendiente' || pkg.estado === 'pedido_listo') && 
+                              !pkg.paquetes_historial?.some((h: any) => h.estado === 'camino_a_retirar')) && (
+                              <Button 
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-1 text-xs px-3 h-8 shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartRetire(pkg.id);
+                                }}
+                                disabled={updatingPackageId !== null}
+                              >
+                                {updatingPackageId === pkg.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <ArrowRightCircle className="h-3.5 w-3.5" />
+                                )}
+                                <span className="hidden xs:inline">Estoy en camino</span>
+                              </Button>
+                            )}
+
                             <Button 
                               variant="ghost" 
                               size="icon" 
