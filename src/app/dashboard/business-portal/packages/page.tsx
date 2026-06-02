@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
-  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX
+  MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX,
+  PhoneOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +45,7 @@ export default function BusinessPackagesPage() {
   const pathname = usePathname();
   const router = useRouter();
   const audioAlertRef = useRef<HTMLAudioElement | null>(null);
+  const audioNumeroEquivocadoRef = useRef<HTMLAudioElement | null>(null);
 
   const playNoContestaSound = useCallback(() => {
     if (!audioAlertRef.current) {
@@ -53,23 +55,34 @@ export default function BusinessPackagesPage() {
     audioAlertRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
   }, []);
 
+  const playNumeroEquivocadoSound = useCallback(() => {
+    if (!audioNumeroEquivocadoRef.current) {
+      audioNumeroEquivocadoRef.current = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+    }
+    audioNumeroEquivocadoRef.current.muted = false;
+    audioNumeroEquivocadoRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
+  }, []);
+
   // Unlock audio logic similar to operator portal
   useEffect(() => {
-    const audio = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
-    audioAlertRef.current = audio;
-    audio.muted = true;
-    audio.play()
+    const audio1 = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    const audio2 = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+    audioAlertRef.current = audio1;
+    audioNumeroEquivocadoRef.current = audio2;
+    
+    audio1.muted = true;
+    audio1.play()
       .then(() => {
-        audio.pause();
-        audio.muted = false;
+        audio1.pause();
+        audio1.muted = false;
         setIsAudioEnabled(true);
       })
       .catch(() => {
         setIsAudioEnabled(false);
         const unlock = () => {
-          audio.muted = true;
-          audio.play().then(() => {
-            audio.muted = false;
+          audio1.muted = true;
+          audio1.play().then(() => {
+            audio1.muted = false;
             setIsAudioEnabled(true);
             window.removeEventListener('click', unlock);
           }).catch(() => {});
@@ -102,14 +115,21 @@ export default function BusinessPackagesPage() {
         table: 'paquetes', 
         filter: `empresa_id=eq.${userId}` 
       }, (payload) => {
-        if (payload.eventType === 'UPDATE' && payload.new.alerta_no_contesta && !payload.old.alerta_no_contesta) {
-          playNoContestaSound();
+        if (payload.eventType === 'UPDATE') {
+          // Alerta No Contesta
+          if (payload.new.alerta_no_contesta && !payload.old.alerta_no_contesta) {
+            playNoContestaSound();
+          }
+          // Alerta Número Equivocado
+          if (payload.new.alerta_numero_equivocado && !payload.old.alerta_numero_equivocado) {
+            playNumeroEquivocadoSound();
+          }
         }
         fetchMisPaquetes(userId);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId, playNoContestaSound]);
+  }, [userId, playNoContestaSound, playNumeroEquivocadoSound]);
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
@@ -122,7 +142,7 @@ export default function BusinessPackagesPage() {
       if (error) throw error;
       const packages = data ||[];
       setMisPaquetes(packages);
-      setAlertCount(packages.filter(p => p.alerta_no_contesta).length);
+      setAlertCount(packages.filter(p => p.alerta_no_contesta || p.alerta_numero_equivocado).length);
 
       if (selectedPackage) {
         const updated = packages.find(p => p.id === selectedPackage.id);
@@ -209,7 +229,7 @@ export default function BusinessPackagesPage() {
                     key={pkg.id} 
                     className={cn(
                       "bg-white/5 border-white/10 transition-all cursor-pointer group", 
-                      (pkg.alerta_no_contesta || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40"
+                      (pkg.alerta_no_contesta || pkg.alerta_numero_equivocado || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40"
                     )}
                     onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
                   >
@@ -287,6 +307,11 @@ export default function BusinessPackagesPage() {
                               <MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA
                             </Badge>
                           )}
+                          {pkg.alerta_numero_equivocado && (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[10px] gap-1 animate-pulse">
+                              <PhoneOff className="w-3 h-3" /> NÚMERO EQUIVOCADO
+                            </Badge>
+                          )}
                           {pkg.alerta_cambio_pago && (
                             <div className="flex items-center gap-2">
                               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50 text-[10px] gap-1"><RefreshCcw className="w-3 h-3" /> CAMBIO DE PAGO</Badge>
@@ -339,7 +364,7 @@ export default function BusinessPackagesPage() {
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}><PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span></Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5" /><span className="text-[10px] font-bold">Paquetes</span>{alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}{pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</Link>
+        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 /><span className="text-[10px] font-bold">Paquetes</span>{alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}{pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</Link>
         <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400"><LogOut className="h-5 w-5" /> Cerrar Sesión</button>
       </nav>
     </div>

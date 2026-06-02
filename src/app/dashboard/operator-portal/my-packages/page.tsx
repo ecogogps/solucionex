@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Truck, LogOut, Package, ClipboardCheck, Navigation, 
-  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle, ArrowRightCircle
+  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle, ArrowRightCircle,
+  PhoneForwarded
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,12 +59,26 @@ export default function MyPackagesPage() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'paquetes', filter: `operador_id=eq.${userId}` }, 
-        () => { fetchData(userId); }
+        (payload: any) => {
+          // Detectamos si la empresa activó la solicitud de reintento
+          if (
+            payload.new && 
+            payload.new.vuelve_a_llamar === true && 
+            (!payload.old || payload.old.vuelve_a_llamar === false)
+          ) {
+            toast({
+              title: "¡Vuelve a llamar al cliente!",
+              description: `Guía: ${payload.new.guia_numero}. La empresa confirmó que reintentes el contacto.`,
+              variant: "default"
+            });
+          }
+          fetchData(userId);
+        }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [userId]);
+  }, [userId, toast]);
 
   const fetchData = async (currentUserId: string) => {
     try {
@@ -287,7 +302,15 @@ export default function MyPackagesPage() {
                             <div className="flex items-start gap-1 mt-1">
                               <MapPin className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" /> 
                               <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
-                            </div>
+                              </div>
+
+                            {pkg.vuelve_a_llamar && (
+                              <div className="mt-2 flex">
+                                <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
+                                  <PhoneForwarded className="w-3 h-3" /> REINTENTAR LLAMADA
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
   Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, PhoneForwarded,
-  MessageSquareOff
+  MessageSquareOff, PhoneOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -100,11 +100,19 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
 
   const handlePedidoListo = () => executeUpdate({ estado: 'pedido_listo' }, "El paquete ha sido marcado como 'Pedido listo'.");
 
-  const handleVuelvaALlamar = () => executeUpdate({ alerta_no_contesta: false }, "Alerta inactiva");
+  const handleVuelvaALlamar = () => executeUpdate({ 
+    alerta_no_contesta: false, 
+    vuelve_a_llamar: true 
+  }, "Alerta inactiva");
+
+  const handleActualizarTelefono = () => executeUpdate({
+    telefono: editFormData.telefono,
+    alerta_numero_equivocado: false
+  }, "Teléfono actualizado y alerta resuelta.");
   
   const confirmAnularPaquete = () => {
     setIsReturnAlertOpen(false);
-    executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
+    executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false, alerta_numero_equivocado: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
   };
 
   const confirmEliminarPaquete = async () => {
@@ -187,6 +195,33 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
                   >
                     <PhoneForwarded className="h-3.5 w-3.5" /> Vuelva a llamar
                   </Button>
+                </div>
+              )}
+
+              {pkg.alerta_numero_equivocado && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+                  <div className="flex items-center gap-3 text-red-500">
+                    <PhoneOff className="h-6 w-6 animate-pulse" />
+                    <div>
+                      <p className="text-sm font-bold">NÚMERO EQUIVOCADO</p>
+                      <p className="text-[10px] opacity-80">El operador reportó que el número de teléfono es incorrecto.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={editFormData.telefono} 
+                      onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})} 
+                      className="bg-white/5 border-red-500/30 text-white flex-1"
+                      placeholder="Nuevo teléfono..."
+                    />
+                    <Button 
+                      onClick={handleActualizarTelefono} 
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                      disabled={isUpdating}
+                    >
+                      Actualizar
+                    </Button>
+                  </div>
                 </div>
               )}
 
