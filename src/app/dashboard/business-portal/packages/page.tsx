@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
   MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX,
-  PhoneOff
+  Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,7 +45,7 @@ export default function BusinessPackagesPage() {
   const pathname = usePathname();
   const router = useRouter();
   const audioAlertRef = useRef<HTMLAudioElement | null>(null);
-  const audioNumeroEquivocadoRef = useRef<HTMLAudioElement | null>(null);
+  const audioWrongNumRef = useRef<HTMLAudioElement | null>(null);
 
   const playNoContestaSound = useCallback(() => {
     if (!audioAlertRef.current) {
@@ -56,40 +56,55 @@ export default function BusinessPackagesPage() {
   }, []);
 
   const playNumeroEquivocadoSound = useCallback(() => {
-    if (!audioNumeroEquivocadoRef.current) {
-      audioNumeroEquivocadoRef.current = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+    if (!audioWrongNumRef.current) {
+      audioWrongNumRef.current = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
     }
-    audioNumeroEquivocadoRef.current.muted = false;
-    audioNumeroEquivocadoRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
+    audioWrongNumRef.current.muted = false;
+    audioWrongNumRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
   }, []);
 
-  // Unlock audio logic similar to operator portal
+  // Unlock audio logic for both sounds
   useEffect(() => {
-    const audio1 = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
-    const audio2 = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
-    audioAlertRef.current = audio1;
-    audioNumeroEquivocadoRef.current = audio2;
-    
-    audio1.muted = true;
-    audio1.play()
-      .then(() => {
-        audio1.pause();
-        audio1.muted = false;
+    const audioNoContesta = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    const audioWrongNum = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+    audioAlertRef.current = audioNoContesta;
+    audioWrongNumRef.current = audioWrongNum;
+
+    audioNoContesta.muted = true;
+    audioWrongNum.muted = true;
+
+    const unlockAudios = async () => {
+      try {
+        await audioNoContesta.play();
+        audioNoContesta.pause();
+        audioNoContesta.muted = false;
+
+        await audioWrongNum.play();
+        audioWrongNum.pause();
+        audioWrongNum.muted = false;
+
         setIsAudioEnabled(true);
-      })
-      .catch(() => {
+      } catch {
         setIsAudioEnabled(false);
-        const unlock = () => {
-          audio1.muted = true;
-          audio1.play().then(() => {
-            audio1.muted = false;
-            setIsAudioEnabled(true);
-            window.removeEventListener('click', unlock);
-          }).catch(() => {});
-        };
-        window.addEventListener('click', unlock);
-        return () => window.removeEventListener('click', unlock);
-      });
+      }
+    };
+
+    unlockAudios();
+
+    const handleUserGesture = () => {
+      audioNoContesta.muted = true;
+      audioWrongNum.muted = true;
+      Promise.all([
+        audioNoContesta.play().then(() => { audioNoContesta.muted = false; }),
+        audioWrongNum.play().then(() => { audioWrongNum.muted = false; })
+      ]).then(() => {
+        setIsAudioEnabled(true);
+        window.removeEventListener('click', handleUserGesture);
+      }).catch(() => {});
+    };
+
+    window.addEventListener('click', handleUserGesture);
+    return () => window.removeEventListener('click', handleUserGesture);
   }, []);
 
   useEffect(() => {
@@ -114,13 +129,11 @@ export default function BusinessPackagesPage() {
         schema: 'public', 
         table: 'paquetes', 
         filter: `empresa_id=eq.${userId}` 
-      }, (payload) => {
+      }, (payload: any) => {
         if (payload.eventType === 'UPDATE') {
-          // Alerta No Contesta
           if (payload.new.alerta_no_contesta && !payload.old.alerta_no_contesta) {
             playNoContestaSound();
           }
-          // Alerta Número Equivocado
           if (payload.new.alerta_numero_equivocado && !payload.old.alerta_numero_equivocado) {
             playNumeroEquivocadoSound();
           }
@@ -198,7 +211,7 @@ export default function BusinessPackagesPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={playNoContestaSound}
+                onClick={() => setIsAudioEnabled(true)}
                 className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold"
               >
                 <VolumeX className="h-3 w-3" /> Audio Bloqueado
@@ -229,7 +242,7 @@ export default function BusinessPackagesPage() {
                     key={pkg.id} 
                     className={cn(
                       "bg-white/5 border-white/10 transition-all cursor-pointer group", 
-                      (pkg.alerta_no_contesta || pkg.alerta_numero_equivocado || pkg.alerta_cambio_pago) && "animate-pulse-yellow border-yellow-500/40"
+                      (pkg.alerta_no_contesta || pkg.alerta_cambio_pago || pkg.alerta_numero_equivocado) && "animate-pulse-yellow border-yellow-500/40"
                     )}
                     onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
                   >
@@ -309,7 +322,7 @@ export default function BusinessPackagesPage() {
                           )}
                           {pkg.alerta_numero_equivocado && (
                             <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[10px] gap-1 animate-pulse">
-                              <PhoneOff className="w-3 h-3" /> NÚMERO EQUIVOCADO
+                              <Phone className="w-3 h-3" /> NÚMERO EQUIVOCADO
                             </Badge>
                           )}
                           {pkg.alerta_cambio_pago && (
@@ -364,7 +377,12 @@ export default function BusinessPackagesPage() {
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
         <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}><PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span></Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 /><span className="text-[10px] font-bold">Paquetes</span>{alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}{pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</Link>
+        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
+          <Package className="h-5 w-5" />
+          <span className="text-[10px] font-bold">Paquetes</span>
+          {alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}
+          {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
+        </Link>
         <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400"><LogOut className="h-5 w-5" /> Cerrar Sesión</button>
       </nav>
     </div>

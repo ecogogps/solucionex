@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
   Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, PhoneForwarded,
-  MessageSquareOff, PhoneOff
+  MessageSquareOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -105,14 +105,16 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     vuelve_a_llamar: true 
   }, "Alerta inactiva");
 
-  const handleActualizarTelefono = () => executeUpdate({
-    telefono: editFormData.telefono,
-    alerta_numero_equivocado: false
-  }, "Teléfono actualizado y alerta resuelta.");
+  const handleActualizarTelefonoAlerta = () => {
+    executeUpdate({
+      telefono: editFormData.telefono,
+      alerta_numero_equivocado: false
+    }, "Teléfono actualizado y alerta de número equivocado desactivada.");
+  };
   
   const confirmAnularPaquete = () => {
     setIsReturnAlertOpen(false);
-    executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false, alerta_numero_equivocado: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
+    executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
   };
 
   const confirmEliminarPaquete = async () => {
@@ -199,27 +201,30 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
               )}
 
               {pkg.alerta_numero_equivocado && (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
-                  <div className="flex items-center gap-3 text-red-500">
-                    <PhoneOff className="h-6 w-6 animate-pulse" />
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex flex-col gap-3">
+                  <div className="flex items-center gap-3 text-red-400">
+                    <Phone className="h-6 w-6 animate-bounce shrink-0" />
                     <div>
                       <p className="text-sm font-bold">NÚMERO EQUIVOCADO</p>
-                      <p className="text-[10px] opacity-80">El operador reportó que el número de teléfono es incorrecto.</p>
+                      <p className="text-[10px] opacity-80">El operador reportó que el número de contacto es incorrecto. Por favor actualízalo.</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Input 
-                      value={editFormData.telefono} 
-                      onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})} 
-                      className="bg-white/5 border-red-500/30 text-white flex-1"
-                      placeholder="Nuevo teléfono..."
-                    />
-                    <Button 
-                      onClick={handleActualizarTelefono} 
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                  <div className="flex flex-col sm:flex-row items-end gap-2 w-full pt-1">
+                    <div className="flex-1 w-full space-y-1">
+                      <Label className="text-[10px] text-slate-400">Confirmar número correcto</Label>
+                      <Input
+                        value={editFormData.telefono}
+                        onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
+                        placeholder="Escribe el número correcto..."
+                        className="bg-white/5 border-white/10 text-white h-9 focus-visible:ring-red-500"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleActualizarTelefonoAlerta}
+                      className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold gap-2 text-xs h-9 px-4 shrink-0"
                       disabled={isUpdating}
                     >
-                      Actualizar
+                      <Save className="h-3.5 w-3.5" /> Actualizar
                     </Button>
                   </div>
                 </div>

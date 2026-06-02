@@ -7,8 +7,7 @@ import {
   Phone, FileText, Image as ImageIcon, AlertTriangle, Loader2, 
   ArrowRightCircle, Navigation, MapPinned, CheckCircle2, 
   PackageCheck, UserX, Camera, X, Upload,
-  PhoneForwarded,
-  PhoneOff
+  PhoneForwarded
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -49,8 +48,8 @@ export interface PaqueteData {
   created_at: string;
   alerta_no_contesta?: boolean;
   alerta_cambio_pago?: boolean;
-  alerta_numero_equivocado?: boolean;
   vuelve_a_llamar?: boolean;
+  alerta_numero_equivocado?: boolean;
   imagen_pago_url?: string;
   empresas?: {
     nombre: string;
@@ -174,11 +173,11 @@ export function OperatorPackageModal({
 
       // Si el operador cambia o avanza el estado, removemos el flag de volver a llamar
       updatePayload.vuelve_a_llamar = false;
+      updatePayload.alerta_numero_equivocado = false;
 
       // Clear alerts on final status
       if (['entregado', 'entregado_novedad', 'cancelado'].includes(newStatus)) {
         updatePayload.alerta_no_contesta = false;
-        updatePayload.alerta_numero_equivocado = false;
       }
 
       const { error } = await supabase.from('paquetes').update(updatePayload).eq('id', pkgId);
@@ -214,8 +213,8 @@ export function OperatorPackageModal({
       const updatePayload: Record<string, any> = { 
         estado: status,
         alerta_no_contesta: false,
-        alerta_numero_equivocado: false,
-        vuelve_a_llamar: false // Clear alert on delivery
+        vuelve_a_llamar: false, // Clear alert on delivery
+        alerta_numero_equivocado: false
       };
 
       if (status === 'entregado') {
@@ -260,8 +259,8 @@ export function OperatorPackageModal({
           operador_id: null,
           novedad: pendingReleaseReason,
           alerta_no_contesta: false,
-          alerta_numero_equivocado: false,
-          alerta_cambio_pago: false
+          alerta_cambio_pago: false,
+          alerta_numero_equivocado: false
         })
         .eq('id', selectedPackage.id);
 
@@ -303,10 +302,10 @@ export function OperatorPackageModal({
     setUpdatingStatus(true);
     try {
       const newValue = !selectedPackage.alerta_numero_equivocado;
-      await supabase.from('paquetes').update({ 
-        alerta_numero_equivocado: newValue 
+      await supabase.from('paquetes').update({
+        alerta_numero_equivocado: newValue
       }).eq('id', selectedPackage.id);
-      toast({ title: newValue ? "Alerta enviada" : "Alerta desactivada" });
+      toast({ title: newValue ? "Alerta de número equivocado activada" : "Alerta desactivada" });
       if (userId) onUpdate();
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error" });
@@ -486,13 +485,13 @@ export function OperatorPackageModal({
                     )}
                     
                     {!selectedPackage.alerta_numero_equivocado && (
-                      <Button 
-                        variant="outline" 
-                        className="h-12 w-full gap-2 border-red-500/50 hover:bg-transparent text-red-500 hover:text-red-500" 
-                        onClick={toggleNumeroEquivocado} 
+                      <Button
+                        variant="outline"
+                        className="h-12 w-full gap-2 border-red-500/50 hover:bg-transparent text-red-500 hover:text-red-500"
+                        onClick={toggleNumeroEquivocado}
                         disabled={updatingStatus}
                       >
-                        <PhoneOff className="w-5 h-5" /> Número equivocado
+                        <Phone className="w-5 h-5 animate-pulse" /> Número equivocado
                       </Button>
                     )}
 
@@ -586,7 +585,8 @@ export function OperatorPackageModal({
                     </div>
                   </div>
 
-                  {selectedPackage.vuelve_a_llamar && (
+                                    {/* NUEVA UBICACIÓN: Mostrar banner si vuelve_a_llamar es true */}
+                                    {selectedPackage.vuelve_a_llamar && (
                     <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-3 text-yellow-500 animate-pulse">
                       <PhoneForwarded className="h-6 w-6 shrink-0 text-yellow-500" />
                       <div>
