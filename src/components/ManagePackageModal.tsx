@@ -108,10 +108,10 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   const handleActualizarTelefonoAlerta = () => {
     executeUpdate({
       telefono: editFormData.telefono,
-      alerta_numero_equivocado: false
-    }, "Teléfono actualizado y alerta de número equivocado desactivada.");
+      alerta_numero_equivocado: false,
+      alerta_numero_actualizado: true // <-- Enciende la alerta de regreso para el operador
+    }, "Teléfono actualizado. Se solicitó al operador que vuelva a llamar.");
   };
-  
   const confirmAnularPaquete = () => {
     setIsReturnAlertOpen(false);
     executeUpdate({ estado: 'anulado_retornar', alerta_no_contesta: false }, "El estado se ha actualizado a 'Anulado - Retornar a origen'.");
@@ -166,20 +166,24 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-slate-500"><Calendar className="w-3 h-3 shrink-0" /> Registro</div>
-                  <div className="text-sm font-medium">{new Date(pkg.created_at).toLocaleDateString()}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-slate-500"><Hash className="w-3 h-3 shrink-0" /> Estado Actual</div>
-                  <div className="flex flex-wrap">{getStatusBadge(pkg.estado)}</div>
-                </div>
-                <div className="space-y-2 sm:col-span-2 pt-2 border-t border-white/5">
-                  <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
-                  <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-slate-500"><Calendar className="w-3 h-3 shrink-0" /> Registro</div>
+                <div className="text-sm font-medium">{new Date(pkg.created_at).toLocaleDateString()}</div>
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-slate-500"><Hash className="w-3 h-3 shrink-0" /> Estado Actual</div>
+                <div className="flex flex-wrap">{getStatusBadge(pkg.estado)}</div>
+              </div>
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs text-slate-500"><Phone className="w-3 h-3 shrink-0" /> Teléfono</div>
+                <div className="text-sm font-medium truncate">{pkg.telefono || 'No registrado'}</div>
+              </div>
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
+                <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
+              </div>
+            </div>
 
               {pkg.alerta_no_contesta && (
                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, 
@@ -36,7 +36,10 @@ import {
   X,
   Image as ImageIcon,
   AlertCircle,
-  Navigation
+  Navigation,
+  Volume2,
+  VolumeX,
+  FileDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -72,6 +75,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface PackageData {
   id: string;
@@ -94,6 +99,7 @@ interface PackageData {
   tiempo_recogida?: number;
   empresas?: { nombre: string };
   operadores?: { nombres: string };
+  alerta_danio_reasignacion?: boolean;
 }
 
 interface OperadorOption {
@@ -113,6 +119,7 @@ export default function DashboardAdmin() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -148,9 +155,41 @@ export default function DashboardAdmin() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioAlertRef = useRef<HTMLAudioElement | null>(null);
   
+  const packagesRef = useRef<PackageData[]>([]);
+  useEffect(() => {
+    packagesRef.current = packages;
+  }, [packages]);
+
   const router = useRouter();
   const { toast } = useToast();
+
+  const playAlertSound = useCallback(() => {
+    if (!audioAlertRef.current) {
+      audioAlertRef.current = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    }
+    audioAlertRef.current.muted = false;
+    audioAlertRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
+  }, []);
+
+  useEffect(() => {
+    const audioObj = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
+    audioAlertRef.current = audioObj;
+    audioObj.muted = true;
+
+    const checkAutoplayPermission = async () => {
+      try {
+        await audioObj.play();
+        audioObj.pause();
+        audioObj.muted = false;
+        setIsAudioEnabled(true);
+      } catch {
+        setIsAudioEnabled(false);
+      }
+    };
+    checkAutoplayPermission();
+  }, []);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -166,7 +205,13 @@ export default function DashboardAdmin() {
     
     const channel = supabase
       .channel('admin_packages_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'paquetes' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'paquetes' }, (payload: any) => {
+        if (payload.eventType === 'UPDATE') {
+          const prevPkg = packagesRef.current.find(p => p.id === payload.new.id);
+          if (payload.new.alerta_danio_reasignacion === true && (!prevPkg || !prevPkg.alerta_danio_reasignacion)) {
+            playAlertSound();
+          }
+        }
         fetchData();
       })
       .subscribe();
@@ -174,7 +219,7 @@ export default function DashboardAdmin() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [router, playAlertSound]);
 
   useEffect(() => {
     if (showCamera) {
@@ -235,6 +280,56 @@ export default function DashboardAdmin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToPDF = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayPackages = packages.filter(pkg => {
+      const pkgDate = new Date(pkg.created_at);
+      pkgDate.setHours(0, 0, 0, 0);
+      return pkgDate.getTime() === today.getTime();
+    });
+
+    if (todayPackages.length === 0) {
+      toast({ title: "Sin datos", description: "No hay paquetes registrados el día de hoy." });
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const dateStr = today.toLocaleDateString('es-EC');
+
+    doc.setFontSize(18);
+    doc.text(`Reporte de Paquetes - ${dateStr}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text('Generado por Solucionex Delivery', 14, 22);
+
+    const tableRows = todayPackages.map(pkg => [
+      pkg.empresas?.nombre || 'N/A',
+      pkg.operadores?.nombres || 'Sin asignar',
+      pkg.tipo,
+      pkg.guia_numero,
+      `$${pkg.valor_pedido}`,
+      pkg.metodo_pago,
+      pkg.direccion,
+      pkg.telefono || 'N/A'
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Empresa', 'Operador', 'Tipo', 'Guía', 'Valor', 'Pago', 'Dirección', 'Teléfono']],
+      body: tableRows,
+      theme: 'grid',
+      headStyles: { fillColor: [13, 13, 84], textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        6: { cellWidth: 50 } // Ajuste para la columna de dirección
+      }
+    });
+
+    doc.save(`reporte-paquetes-${dateStr}.pdf`);
+    toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
   };
 
   const base64ToBlob = (base64: string, contentType: string) => {
@@ -363,21 +458,42 @@ export default function DashboardAdmin() {
     setCapturedImage(null);
   };
 
+  const handleInactivarAlerta = async (pkgId: string) => {
+    try {
+      const { error } = await supabase
+        .from('paquetes')
+        .update({ alerta_danio_reasignacion: false })
+        .eq('id', pkgId);
+
+      if (error) throw error;
+      toast({ title: "Alerta desactivada", description: "La alerta ha sido inactivada correctamente." });
+      fetchData();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error al inactivar", description: error.message });
+    }
+  };
+
   const handleSave = async () => {
     if (!editingPackage) return;
     
     setIsSaving(true);
     try {
+      const updatePayload: Record<string, any> = {
+        guia_numero: formData.guia_numero,
+        direccion: formData.direccion,
+        estado: formData.estado,
+        valor_pedido: parseFloat(formData.valor_pedido),
+        operador_id: formData.operador_id === 'null' ? null : formData.operador_id,
+        nota: formData.nota
+      };
+
+      if (formData.estado === 'entregado' || formData.estado === 'entregado_novedad') {
+        updatePayload.alerta_danio_reasignacion = false;
+      }
+
       const { error } = await supabase
         .from('paquetes')
-        .update({
-          guia_numero: formData.guia_numero,
-          direccion: formData.direccion,
-          estado: formData.estado,
-          valor_pedido: parseFloat(formData.valor_pedido),
-          operador_id: formData.operador_id === 'null' ? null : formData.operador_id,
-          nota: formData.nota
-        })
+        .update(updatePayload)
         .eq('id', editingPackage.id);
 
       if (error) throw error;
@@ -494,15 +610,29 @@ export default function DashboardAdmin() {
         <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
           <h2 className="text-xl font-bold text-white">Gestión Paquetes</h2>
           <div className="flex items-center gap-4">
-            <div className="relative w-72">
+            <div className="flex items-center gap-2">
+              {!isAudioEnabled ? (
+                <Badge variant="outline" className="border-yellow-500/50 text-yellow-500 gap-1 text-[10px] py-1 cursor-pointer" onClick={() => setIsAudioEnabled(true)}>
+                  <VolumeX className="h-3 w-3" /> Sonido Silenciado
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px] py-1">
+                  <Volume2 className="h-3 w-3" /> Sonido Activo
+                </Badge>
+              )}
+            </div>
+            <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
-                placeholder="Buscar por guía o empresa..." 
+                placeholder="Buscar guía o empresa..." 
                 className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <Button onClick={exportToPDF} variant="outline" className="border-accent text-accent hover:bg-accent/10 font-bold gap-2">
+              <FileDown className="h-4 w-4" /> Exportar Hoy
+            </Button>
             <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-accent text-primary hover:bg-accent/90 font-bold">
               <Plus className="h-4 w-4 mr-2" /> Nuevo Paquete
             </Button>
@@ -565,7 +695,27 @@ export default function DashboardAdmin() {
                          </div>
                       </TableCell>
                       <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
-                      <TableCell>{getStatusBadge(pkg.estado)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1.5 items-start">
+                          {getStatusBadge(pkg.estado)}
+                          
+                          {pkg.alerta_danio_reasignacion && (
+                            <div className="flex flex-col gap-1 items-start mt-0.5">
+                              <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[9px] px-1 py-0 animate-pulse">
+                                  DAÑO / REASIGNACIÓN
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 text-[9px] hover:bg-white/10 text-yellow-500 hover:text-yellow-400 px-1.5 border border-yellow-500/30 font-bold"
+                                onClick={() => handleInactivarAlerta(pkg.id)}
+                              >
+                                Inactivar Alerta
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button 
@@ -587,6 +737,16 @@ export default function DashboardAdmin() {
                               >
                                 <Edit2 className="h-4 w-4 text-blue-400" /> Gestionar
                               </DropdownMenuItem>
+                              
+                              {pkg.alerta_danio_reasignacion && (
+                                <DropdownMenuItem 
+                                  className="gap-2 text-yellow-500 cursor-pointer"
+                                  onClick={() => handleInactivarAlerta(pkg.id)}
+                                >
+                                  <AlertTriangle className="h-4 w-4" /> Inactivar Alerta
+                                </DropdownMenuItem>
+                              )}
+                              
                               <DropdownMenuSeparator className="bg-white/10" />
                               <DropdownMenuItem 
                                 className="gap-2 text-red-400 cursor-pointer"

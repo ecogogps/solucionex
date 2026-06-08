@@ -60,7 +60,7 @@ export default function MyPackagesPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'paquetes', filter: `operador_id=eq.${userId}` }, 
         (payload: any) => {
-          // Detectamos si la empresa activó la solicitud de reintento
+          // Detectamos si la empresa activó la solicitud de reintento de "vuelve_a_llamar"
           if (
             payload.new && 
             payload.new.vuelve_a_llamar === true && 
@@ -69,6 +69,19 @@ export default function MyPackagesPage() {
             toast({
               title: "¡Vuelve a llamar al cliente!",
               description: `Guía: ${payload.new.guia_numero}. La empresa confirmó que reintentes el contacto.`,
+              variant: "default"
+            });
+          }
+
+          // NUEVA DETECCIÓN: Alerta de Número Actualizado
+          if (
+            payload.new && 
+            payload.new.alerta_numero_actualizado === true && 
+            (!payload.old || payload.old.alerta_numero_actualizado === false)
+          ) {
+            toast({
+              title: "¡Número Actualizado! Vuelve a llamar",
+              description: `Guía: ${payload.new.guia_numero}. Teléfono nuevo: ${payload.new.telefono}.`,
               variant: "default"
             });
           }
@@ -304,10 +317,19 @@ export default function MyPackagesPage() {
                               <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
                               </div>
 
-                            {pkg.vuelve_a_llamar && (
+                              {pkg.vuelve_a_llamar && (
                               <div className="mt-2 flex">
                                 <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
                                   <PhoneForwarded className="w-3 h-3" /> REINTENTAR LLAMADA
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* NUEVO BADGE: Número actualizado */}
+                            {pkg.alerta_numero_actualizado && (
+                              <div className="mt-2 flex">
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/50 text-[10px] gap-1 animate-pulse">
+                                  <PhoneForwarded className="w-3 h-3" /> NÚMERO ACTUALIZADO (LLAMAR)
                                 </Badge>
                               </div>
                             )}

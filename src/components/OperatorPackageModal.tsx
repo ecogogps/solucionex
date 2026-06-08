@@ -50,6 +50,7 @@ export interface PaqueteData {
   alerta_cambio_pago?: boolean;
   vuelve_a_llamar?: boolean;
   alerta_numero_equivocado?: boolean;
+  alerta_numero_actualizado?: boolean;
   imagen_pago_url?: string;
   empresas?: {
     nombre: string;
@@ -77,14 +78,14 @@ export function OperatorPackageModal({
 }: OperatorPackageModalProps) {
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
-  const[updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Estados de sub-modales y flujos
-  const[isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
-  const[newPaymentMethod, setNewPaymentMethod] = useState('');
+  const [isPaymentChangeOpen, setIsPaymentChangeOpen] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [paymentImage, setPaymentImage] = useState<string | null>(null);
   const [cameraMode, setCameraMode] = useState<'pago' | 'retiro' | 'entrega' | 'entrega_novedad' | null>(null);
-  const[showCamera, setShowCamera] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +93,7 @@ export function OperatorPackageModal({
   const [isReleaseConfirmOpen, setIsReleaseConfirmOpen] = useState(false);
   const [pendingReleaseReason, setPendingReleaseReason] = useState('');
 
-  const[novedad, setNovedad] = useState('');
+  const [novedad, setNovedad] = useState('');
   const [novedadError, setNovedadError] = useState(false);
   const [pendingAction, setPendingAction] = useState<'entregado_novedad' | 'cancelado' | null>(null);
 
@@ -110,7 +111,17 @@ export function OperatorPackageModal({
       setNewPaymentMethod('');
       setCameraMode(null);
     }
-  },[isOpen, selectedPackage]);
+  }, [isOpen, selectedPackage]);
+
+  // Asegura la limpieza de los pointer-events en el body tras cerrar los submodales
+  useEffect(() => {
+    if (!isPaymentChangeOpen && !isReleaseConfirmOpen && !showCamera) {
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = '';
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isPaymentChangeOpen, isReleaseConfirmOpen, showCamera]);
 
   // Lógica para inicializar/detener la cámara
   useEffect(() => {
@@ -171,11 +182,10 @@ export function OperatorPackageModal({
       const updatePayload: Record<string, any> = { estado: newStatus };
       if (novedad.trim()) updatePayload.novedad = novedad.trim();
 
-      // Si el operador cambia o avanza el estado, removemos el flag de volver a llamar
       updatePayload.vuelve_a_llamar = false;
       updatePayload.alerta_numero_equivocado = false;
+      updatePayload.alerta_numero_actualizado = false;
 
-      // Clear alerts on final status
       if (['entregado', 'entregado_novedad', 'cancelado'].includes(newStatus)) {
         updatePayload.alerta_no_contesta = false;
       }
@@ -184,7 +194,7 @@ export function OperatorPackageModal({
       if (error) throw error;
 
       toast({ title: "Estado actualizado" });
-      const finalStates =['entregado', 'entregado_novedad', 'cancelado'];
+      const finalStates = ['entregado', 'entregado_novedad', 'cancelado'];
       if (finalStates.includes(newStatus)) {
         onOpenChange(false);
       }
@@ -213,8 +223,9 @@ export function OperatorPackageModal({
       const updatePayload: Record<string, any> = { 
         estado: status,
         alerta_no_contesta: false,
-        vuelve_a_llamar: false, // Clear alert on delivery
-        alerta_numero_equivocado: false
+        vuelve_a_llamar: false, 
+        alerta_numero_equivocado: false,
+        alerta_numero_actualizado: false
       };
 
       if (status === 'entregado') {
@@ -260,7 +271,8 @@ export function OperatorPackageModal({
           novedad: pendingReleaseReason,
           alerta_no_contesta: false,
           alerta_cambio_pago: false,
-          alerta_numero_equivocado: false
+          alerta_numero_equivocado: false,
+          alerta_danio_reasignacion: true
         })
         .eq('id', selectedPackage.id);
 
@@ -286,7 +298,8 @@ export function OperatorPackageModal({
       const newValue = !selectedPackage.alerta_no_contesta;
       await supabase.from('paquetes').update({ 
         alerta_no_contesta: newValue,
-        vuelve_a_llamar: false // Al volver a reportar, limpiamos la bandera
+        vuelve_a_llamar: false, 
+        alerta_numero_actualizado: false
       }).eq('id', selectedPackage.id);
       toast({ title: newValue ? "Alerta activada" : "Alerta desactivada" });
       if (userId) onUpdate();
@@ -303,7 +316,8 @@ export function OperatorPackageModal({
     try {
       const newValue = !selectedPackage.alerta_numero_equivocado;
       await supabase.from('paquetes').update({
-        alerta_numero_equivocado: newValue
+        alerta_numero_equivocado: newValue,
+        alerta_numero_actualizado: false
       }).eq('id', selectedPackage.id);
       toast({ title: newValue ? "Alerta de número equivocado activada" : "Alerta desactivada" });
       if (userId) onUpdate();
@@ -426,27 +440,27 @@ export function OperatorPackageModal({
   const canShowLiberationButtons = selectedPackage && !['llegado', 'entregado', 'entregado_novedad', 'cancelado', 'anulado_retornar'].includes(selectedPackage.estado);
 
   const getWhatsAppUrl = (pkg: PaqueteData) => {
-      const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
-      const nombreEmpresa = (pkg.empresas?.nombre || '').toUpperCase();
-      const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ *${nombreEmpresa}*
-  ------------------------------
-  *Operador:* ${pkg.operadores?.nombres || ''}
-  *Guía N°* ${pkg.guia_numero}
-  🏢*DESTINO:*
-  ${pkg.direccion}
+    const phone = pkg.telefono.replace(/^0/, '').replace(/\D/g, '');
+    const nombreEmpresa = (pkg.empresas?.nombre || '').toUpperCase();
+    const message = `Solucionex: ⚠️ Tienes un paquete por recibir de ➡️ *${nombreEmpresa}*
+------------------------------
+*Operador:* ${pkg.operadores?.nombres || ''}
+*Guía N°* ${pkg.guia_numero}
+🏢*DESTINO:*
+${pkg.direccion}
 
-  ------------------------------
-  💰*TOTAL* ${pkg.metodo_pago} | ${pkg.valor_pedido}
-  ------------------------------
-  *INGRESA TU UBICACIÓN*
-  📍GOOGLE MAPS📍
+------------------------------
+💰*TOTAL* ${pkg.metodo_pago} | ${pkg.valor_pedido}
+------------------------------
+*INGRESA TU UBICACIÓN*
+📍GOOGLE MAPS📍
 
-  ------------------------------
-  ¡ YA ESTAMOS EN CAMINO !
-  ⚡ *Solucionex Delivery*
-  Respaldo y Seguridad en cada entrega.`;
-      return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
-    };
+------------------------------
+¡ YA ESTAMOS EN CAMINO !
+⚡ *Solucionex Delivery*
+Respaldo y Seguridad en cada entrega.`;
+    return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
+  };
 
   return (
     <>
@@ -491,7 +505,7 @@ export function OperatorPackageModal({
                         onClick={toggleNumeroEquivocado}
                         disabled={updatingStatus}
                       >
-                        <Phone className="w-5 h-5 animate-pulse" /> Número equivocado
+                        <Phone className="w-5 h-5" /> Número equivocado
                       </Button>
                     )}
 
@@ -585,13 +599,22 @@ export function OperatorPackageModal({
                     </div>
                   </div>
 
-                                    {/* NUEVA UBICACIÓN: Mostrar banner si vuelve_a_llamar es true */}
-                                    {selectedPackage.vuelve_a_llamar && (
+                  {selectedPackage.vuelve_a_llamar && (
                     <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-3 text-yellow-500 animate-pulse">
                       <PhoneForwarded className="h-6 w-6 shrink-0 text-yellow-500" />
                       <div>
                         <p className="text-sm font-bold">REINTENTAR LLAMADA</p>
                         <p className="text-[10px] opacity-80">La empresa solicita de forma urgente que intentes contactar de nuevo al cliente.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPackage.alerta_numero_actualizado && (
+                    <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3 text-green-400 animate-pulse">
+                      <PhoneForwarded className="h-6 w-6 shrink-0 text-green-400" />
+                      <div>
+                        <p className="text-sm font-bold">NÚMERO ACTUALIZADO (VOLVER A LLAMAR)</p>
+                        <p className="text-[10px] opacity-80">La empresa corrigió el teléfono. Por favor, vuelve a intentar la llamada con el cliente.</p>
                       </div>
                     </div>
                   )}
@@ -772,81 +795,84 @@ export function OperatorPackageModal({
               <p>Cargando detalles...</p>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
 
-      {/* MODAL REPORTE CAMBIO PAGO */}
-      <Dialog open={isPaymentChangeOpen} onOpenChange={setIsPaymentChangeOpen}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
-          <DialogHeader><DialogTitle>Reportar Cambio de Pago</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nuevo Método de Pago</Label>
-              <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
-                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-white/10 text-white">
-                  <SelectItem value="transferencia">Transferencia</SelectItem>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Evidencia de Pago</Label>
-              {paymentImage ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10">
-                  <img src={paymentImage} alt="Preview" className="w-full h-full object-contain" />
-                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => setPaymentImage(null)}><X className="h-4 w-4" /></Button>
+          {/* SUB-MODALES ANIDADOS DENTRO DE DIALOGCONTENT PRINCIPAL PARA EVITAR BLOQUEOS */}
+          
+          {/* MODAL REPORTE CAMBIO PAGO */}
+          <Dialog open={isPaymentChangeOpen} onOpenChange={setIsPaymentChangeOpen}>
+            <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+              <DialogHeader><DialogTitle>Reportar Cambio de Pago</DialogTitle></DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Nuevo Método de Pago</Label>
+                  <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
+                    <SelectTrigger className="bg-white/5 border-white/10"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      <SelectItem value="transferencia">Transferencia</SelectItem>
+                      <SelectItem value="efectivo">Efectivo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => { setCameraMode('pago'); setShowCamera(true); }}><Camera className="h-5 w-5" /> Usar Cámara</Button>
-                  <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => fileInputRef.current?.click()}><Upload className="h-5 w-5" /> Adjuntar Imagen</Button>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+                <div className="space-y-2">
+                  <Label>Evidencia de Pago</Label>
+                  {paymentImage ? (
+                    <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10">
+                      <img src={paymentImage} alt="Preview" className="w-full h-full object-contain" />
+                      <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => setPaymentImage(null)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => { setCameraMode('pago'); setShowCamera(true); }}><Camera className="h-5 w-5" /> Usar Cámara</Button>
+                      <Button variant="outline" className="w-full h-12 bg-white/5 border-white/10 gap-2 hover:bg-white/5" onClick={() => fileInputRef.current?.click()}><Upload className="h-5 w-5" /> Adjuntar Imagen</Button>
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-            <Button className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent" onClick={submitPaymentChange} disabled={updatingStatus || !paymentImage || !newPaymentMethod}>Confirmar Cambio</Button>
-            <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setIsPaymentChangeOpen(false)}>Cancelar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </div>
+              <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+                <Button className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent" onClick={submitPaymentChange} disabled={updatingStatus || !paymentImage || !newPaymentMethod}>Confirmar Cambio</Button>
+                <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setIsPaymentChangeOpen(false)}>Cancelar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      {/* CONFIRMACIÓN DE LIBERACIÓN */}
-      <AlertDialog open={isReleaseConfirmOpen} onOpenChange={setIsReleaseConfirmOpen}>
-        <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Confirmar Liberación</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
-              ¿Estás seguro de liberar este paquete? Motivo: <span className="text-accent font-bold">{pendingReleaseReason}</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
-            <AlertDialogAction onClick={executeRelease} className="bg-red-600 hover:bg-red-700 text-white h-12 w-full">Sí, liberar paquete</AlertDialogAction>
-            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/5 h-12 w-full">Cancelar</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          {/* CONFIRMACIÓN DE LIBERACIÓN */}
+          <AlertDialog open={isReleaseConfirmOpen} onOpenChange={setIsReleaseConfirmOpen}>
+            <AlertDialogContent className="bg-slate-900 border-white/10 text-white">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-white">Confirmar Liberación</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-400">
+                  ¿Estás seguro de liberar este paquete? Motivo: <span className="text-accent font-bold">{pendingReleaseReason}</span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+                <AlertDialogAction onClick={executeRelease} className="bg-red-600 hover:bg-red-700 text-white h-12 w-full">Sí, liberar paquete</AlertDialogAction>
+                <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/5 h-12 w-full">Cancelar</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-      {/* MODAL DE CÁMARA */}
-      <Dialog open={showCamera} onOpenChange={setShowCamera}>
-        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
-          <DialogHeader><DialogTitle>Tomar Foto de Evidencia</DialogTitle></DialogHeader>
-          <div className="relative overflow-hidden rounded-md bg-black">
-            <video 
-              ref={videoRef} 
-              className="w-full aspect-video object-cover" 
-              autoPlay 
-              muted 
-              playsInline 
-            />
-          </div>
-          <canvas ref={canvasRef} className="hidden" />
-          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-            <Button onClick={takePhoto} className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
-            <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setShowCamera(false)}>Cancelar</Button>
-          </DialogFooter>
+          {/* MODAL DE CÁMARA */}
+          <Dialog open={showCamera} onOpenChange={setShowCamera}>
+            <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+              <DialogHeader><DialogTitle>Tomar Foto de Evidencia</DialogTitle></DialogHeader>
+              <div className="relative overflow-hidden rounded-md bg-black">
+                <video 
+                  ref={videoRef} 
+                  className="w-full aspect-video object-cover" 
+                  autoPlay 
+                  muted 
+                  playsInline 
+                />
+              </div>
+              <canvas ref={canvasRef} className="hidden" />
+              <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+                <Button onClick={takePhoto} className="w-full h-12 bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
+                <Button variant="ghost" className="w-full h-12 hover:bg-transparent" onClick={() => setShowCamera(false)}>Cancelar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         </DialogContent>
       </Dialog>
     </>

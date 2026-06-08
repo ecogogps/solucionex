@@ -19,6 +19,7 @@ interface TicketProps {
     novedad?: string;
     empresas?: { nombre: string; direccion?: string; ruc?: string };
     operadores?: { nombres: string };
+    created_at?: string; // Campo para fecha y hora de creación alineado con PrintTemplate
   };
   className?: string;
 }
@@ -40,8 +41,29 @@ const statusMap: Record<string, string> = {
   'anulado_retornar': 'Anulado - Retornar'
 };
 
+// Función auxiliar para dar formato de fecha DD/MM/AAAA HH:MM
+function formatFecha(fechaStr?: string): string {
+  if (!fechaStr) return '';
+  try {
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha.getTime())) return fechaStr;
+
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+
+    return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+  } catch {
+    return fechaStr;
+  }
+}
+
 export function Ticket({ data, className }: TicketProps) {
   if (!data) return null;
+
+  const fechaFormateada = formatFecha(data.created_at);
 
   return (
     <div
@@ -69,19 +91,36 @@ export function Ticket({ data, className }: TicketProps) {
           />
         </div>
 
+        {/* Versión del Sistema */}
+        <div className="text-center pt-3">
+          <span className="font-bold text-[11px] text-black">
+            Desarrollado por Tmax System V 1.1.1
+          </span>
+        </div>
+
         {/* Guía de Remisión */}
         <div className="flex flex-col text-center bg-gray-100 p-2 border-b border-black">
           <span className="text-xs font-bold uppercase text-black">Guía de remisión N°:</span>
           <span className="text-2xl font-mono font-bold mt-1 text-black">#{data.guia_numero}</span>
+          {fechaFormateada && (
+            <div className="mt-1 pt-1 border-t border-dashed border-gray-400">
+              <span className="block text-[9px] font-bold uppercase text-black">Emisión de Guía:</span>
+              <span className="block text-xs font-semibold text-black">{fechaFormateada}</span>
+            </div>
+          )}
         </div>
 
         {/* Datos Principales */}
         <div className="flex flex-col gap-3 text-sm">
           <div className="space-y-2">
+            
+            {/* Origen */}
             <div className="flex border-b border-gray-300 pb-1">
-              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Empresa:</span>
+              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Origen:</span>
               <div className="flex flex-col">
-                <span className="font-semibold text-xs leading-tight break-words text-black">{data.empresas?.nombre || 'N/A'}</span>
+                <span className="font-semibold text-xs leading-tight break-words text-black">
+                  {data.empresas?.nombre || 'N/A'}
+                </span>
                 {data.empresas?.direccion && (
                   <span className="text-[10px] leading-tight break-words text-black">{data.empresas.direccion}</span>
                 )}
@@ -91,11 +130,7 @@ export function Ticket({ data, className }: TicketProps) {
               </div>
             </div>
 
-            <div className="flex border-b border-gray-300 pb-1">
-              <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Operador:</span>
-              <span className="font-semibold text-xs leading-tight break-words text-black">{data.operadores?.nombres || 'No asignado'}</span>
-            </div>
-
+            {/* Paquete */}
             <div className="flex border-b border-gray-300 pb-1">
               <span className="w-[90px] shrink-0 font-bold uppercase text-[11px] text-black">Paquete:</span>
               <span className="font-semibold text-xs capitalize leading-tight break-words text-black">{data.tipo}</span>
@@ -113,7 +148,7 @@ export function Ticket({ data, className }: TicketProps) {
               </div>
             </div>
 
-            {/* QR Code - Nueva Ubicación */}
+            {/* QR Code */}
             <div className="flex flex-col items-center pt-2 mt-1">
               <QRGenerator value={data.id} size={140} />
               <span className="font-bold text-[9px] uppercase text-black mt-1">Escanear para Retiro</span>
@@ -121,16 +156,19 @@ export function Ticket({ data, className }: TicketProps) {
           </div>
 
           <div className="space-y-3 pt-2">
-            {/* Dirección */}
+            
+            {/* Destino */}
             <div className="flex flex-col">
-              <span className="font-bold uppercase text-[11px] text-black mb-0.5">Dirección:</span>
+              <span className="font-bold uppercase text-[11px] text-black mb-0.5">Destino:</span>
               <span className="text-sm font-medium leading-tight text-black">{data.direccion}</span>
             </div>
 
-            {/* Teléfono */}
-            <div className="flex flex-col text-center border-y-2 border-dashed border-black py-2 my-2">
-              <span className="font-bold uppercase text-[11px] text-black mb-1">Teléfono:</span>
-              <span className="text-lg font-black text-black tracking-widest">{data.telefono || 'N/A'}</span>
+            {/* Operador */}
+            <div className="flex flex-col border-t border-gray-200 pt-2">
+              <span className="font-bold uppercase text-[11px] text-black mb-0.5">Operador:</span>
+              <span className="text-sm font-semibold leading-tight text-black">
+                {data.operadores?.nombres || 'No asignado'}
+              </span>
             </div>
 
             {/* Nota */}
@@ -167,12 +205,6 @@ export function Ticket({ data, className }: TicketProps) {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="text-center pt-3">
-        <span className="font-bold text-[11px] text-black">
-          Desarrollado por Tmax System V1.0
-        </span>
       </div>
 
       {/* Espacio para la cuchilla */}

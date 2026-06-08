@@ -47,6 +47,12 @@ export default function BusinessPackagesPage() {
   const audioAlertRef = useRef<HTMLAudioElement | null>(null);
   const audioWrongNumRef = useRef<HTMLAudioElement | null>(null);
 
+  // REF: Mantiene la referencia del último estado de paquetes para comparar cambios reales
+  const misPaquetesRef = useRef<any[]>([]);
+  useEffect(() => {
+    misPaquetesRef.current = misPaquetes;
+  }, [misPaquetes]);
+
   const playNoContestaSound = useCallback(() => {
     if (!audioAlertRef.current) {
       audioAlertRef.current = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
@@ -57,28 +63,41 @@ export default function BusinessPackagesPage() {
 
   const playNumeroEquivocadoSound = useCallback(() => {
     if (!audioWrongNumRef.current) {
-      audioWrongNumRef.current = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+      audioWrongNumRef.current = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
     }
     audioWrongNumRef.current.muted = false;
     audioWrongNumRef.current.play().catch(err => console.warn("Error playing alert sound:", err));
   }, []);
 
-  // Unlock audio logic for both sounds
+  const stopNoContestaSound = useCallback(() => {
+    if (audioAlertRef.current) {
+      audioAlertRef.current.pause();
+      audioAlertRef.current.currentTime = 0; // Reinicia el audio al inicio
+    }
+  }, []);
+
+  const stopNumeroEquivocadoSound = useCallback(() => {
+    if (audioWrongNumRef.current) {
+      audioWrongNumRef.current.pause();
+      audioWrongNumRef.current.currentTime = 0; // Reinicia el audio al inicio
+    }
+  }, []);
+
+  // Inicialización silenciosa de los elementos de audio sin añadir escuchadores de clic globales
   useEffect(() => {
     const audioNoContesta = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
-    const audioWrongNum = new Audio('/sounds/NÚMERO-EQUIVOCADO.mp3');
+    const audioWrongNum = new Audio('/sounds/CLIENTE-NO-CONTESTA.mp3');
     audioAlertRef.current = audioNoContesta;
     audioWrongNumRef.current = audioWrongNum;
 
-    audioNoContesta.muted = true;
-    audioWrongNum.muted = true;
-
-    const unlockAudios = async () => {
+    const checkAutoplayPermission = async () => {
       try {
+        audioNoContesta.muted = true;
         await audioNoContesta.play();
         audioNoContesta.pause();
         audioNoContesta.muted = false;
 
+        audioWrongNum.muted = true;
         await audioWrongNum.play();
         audioWrongNum.pause();
         audioWrongNum.muted = false;
@@ -89,22 +108,7 @@ export default function BusinessPackagesPage() {
       }
     };
 
-    unlockAudios();
-
-    const handleUserGesture = () => {
-      audioNoContesta.muted = true;
-      audioWrongNum.muted = true;
-      Promise.all([
-        audioNoContesta.play().then(() => { audioNoContesta.muted = false; }),
-        audioWrongNum.play().then(() => { audioWrongNum.muted = false; })
-      ]).then(() => {
-        setIsAudioEnabled(true);
-        window.removeEventListener('click', handleUserGesture);
-      }).catch(() => {});
-    };
-
-    window.addEventListener('click', handleUserGesture);
-    return () => window.removeEventListener('click', handleUserGesture);
+    checkAutoplayPermission();
   }, []);
 
   useEffect(() => {
@@ -131,18 +135,36 @@ export default function BusinessPackagesPage() {
         filter: `empresa_id=eq.${userId}` 
       }, (payload: any) => {
         if (payload.eventType === 'UPDATE') {
-          if (payload.new.alerta_no_contesta && !payload.old.alerta_no_contesta) {
+          const prevPkg = misPaquetesRef.current.find(p => p.id === payload.new.id);
+
+          // Comprobamos si la alerta se activó pasando de false a true
+          const noContestaActivado = payload.new.alerta_no_contesta === true && (!prevPkg || !prevPkg.alerta_no_contesta);
+          const numeroEquivocadoActivado = payload.new.alerta_numero_equivocado === true && (!prevPkg || !prevPkg.alerta_numero_equivocado);
+
+          // NUEVA LÓGICA: Comprobamos si la alerta se apagó pasando de true a false
+          const noContestaDesactivado = payload.new.alerta_no_contesta === false && (prevPkg && prevPkg.alerta_no_contesta === true);
+          const numeroEquivocadoDesactivado = payload.new.alerta_numero_equivocado === false && (prevPkg && prevPkg.alerta_numero_equivocado === true);
+
+          if (noContestaActivado) {
             playNoContestaSound();
           }
-          if (payload.new.alerta_numero_equivocado && !payload.old.alerta_numero_equivocado) {
+          if (numeroEquivocadoActivado) {
             playNumeroEquivocadoSound();
+          }
+
+          // NUEVO COMPORTAMIENTO: Detener el sonido de inmediato
+          if (noContestaDesactivado) {
+            stopNoContestaSound();
+          }
+          if (numeroEquivocadoDesactivado) {
+            stopNumeroEquivocadoSound();
           }
         }
         fetchMisPaquetes(userId);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId, playNoContestaSound, playNumeroEquivocadoSound]);
+  }, [userId, playNoContestaSound, playNumeroEquivocadoSound, stopNoContestaSound, stopNumeroEquivocadoSound]); // <-- Incluir dependencias de stop
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
@@ -153,7 +175,7 @@ export default function BusinessPackagesPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      const packages = data ||[];
+      const packages = data || [];
       setMisPaquetes(packages);
       setAlertCount(packages.filter(p => p.alerta_no_contesta || p.alerta_numero_equivocado).length);
 
