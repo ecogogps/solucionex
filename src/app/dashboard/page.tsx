@@ -75,8 +75,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { exportPackagesToPDF } from '@/components/Package-report';
 
 interface PackageData {
   id: string;
@@ -282,54 +281,13 @@ export default function DashboardAdmin() {
     }
   };
 
-  const exportToPDF = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const todayPackages = packages.filter(pkg => {
-      const pkgDate = new Date(pkg.created_at);
-      pkgDate.setHours(0, 0, 0, 0);
-      return pkgDate.getTime() === today.getTime();
-    });
-
-    if (todayPackages.length === 0) {
-      toast({ title: "Sin datos", description: "No hay paquetes registrados el día de hoy." });
-      return;
+  const handleExportPDF = () => {
+    const result = exportPackagesToPDF(packages);
+    if (!result.success) {
+      toast({ title: "Sin datos", description: result.message });
+    } else {
+      toast({ title: "PDF Generado", description: result.message });
     }
-
-    const doc = new jsPDF({ orientation: 'landscape' });
-    const dateStr = today.toLocaleDateString('es-EC');
-
-    doc.setFontSize(18);
-    doc.text(`Reporte de Paquetes - ${dateStr}`, 14, 15);
-    doc.setFontSize(10);
-    doc.text('Generado por Solucionex Delivery', 14, 22);
-
-    const tableRows = todayPackages.map(pkg => [
-      pkg.empresas?.nombre || 'N/A',
-      pkg.operadores?.nombres || 'Sin asignar',
-      pkg.tipo,
-      pkg.guia_numero,
-      `$${pkg.valor_pedido}`,
-      pkg.metodo_pago,
-      pkg.direccion,
-      pkg.telefono || 'N/A'
-    ]);
-
-    autoTable(doc, {
-      startY: 28,
-      head: [['Empresa', 'Operador', 'Tipo', 'Guía', 'Valor', 'Pago', 'Dirección', 'Teléfono']],
-      body: tableRows,
-      theme: 'grid',
-      headStyles: { fillColor: [13, 13, 84], textColor: [255, 255, 255] },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        6: { cellWidth: 50 } // Ajuste para la columna de dirección
-      }
-    });
-
-    doc.save(`reporte-paquetes-${dateStr}.pdf`);
-    toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
   };
 
   const base64ToBlob = (base64: string, contentType: string) => {
@@ -630,7 +588,7 @@ export default function DashboardAdmin() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button onClick={exportToPDF} variant="outline" className="border-accent text-accent hover:bg-accent/10 font-bold gap-2">
+            <Button onClick={handleExportPDF} variant="outline" className="border-accent text-accent hover:bg-accent/10 font-bold gap-2">
               <FileDown className="h-4 w-4" /> Exportar Hoy
             </Button>
             <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-accent text-primary hover:bg-accent/90 font-bold">
