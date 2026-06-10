@@ -194,7 +194,7 @@ export default function PublicTrackingPage() {
                   <p className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1 mb-1">
                     <DollarSign className="w-3 h-3" /> Valor Pedido
                   </p>
-                  <p className="text-xl font-black text-accent">${paquete.valor_pedido}</p>
+                  <p className="text-xl font-black text-accent">${paquete.valor_pedido?.toFixed(2)}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                   <p className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1 mb-1">
@@ -206,11 +206,24 @@ export default function PublicTrackingPage() {
 
               {/* Nota */}
               {paquete.nota && (
-                <div className="bg-white/5 p-4 rounded-xl border-l-2 border-accent/50 flex items-start gap-4">
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-start gap-4">
                   <FileText className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
-                  <div>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Instrucciones / Contenido</p>
-                    <p className="text-sm italic text-slate-300 mt-1">{paquete.nota}</p>
+                  <div className="w-full">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Nota</p>
+                    <div className="mt-1">
+                      {paquete.nota.includes('-') ? (
+                        <ul className="list-none p-0 m-0 space-y-1">
+                          {paquete.nota.split('-').filter(Boolean).map((part: string, i: number) => (
+                            <li key={i} className="text-sm italic text-slate-300 flex items-start gap-2">
+                              <span className="shrink-0">-</span>
+                              <span>{part.trim()}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm italic text-slate-300">{paquete.nota}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
