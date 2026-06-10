@@ -39,7 +39,6 @@ export const exportPackagesToPDF = (packages: PackageData[]) => {
   doc.setFontSize(18);
   doc.text(`Reporte de Paquetes - ${dateStr}`, 14, 15);
   doc.setFontSize(10);
-  doc.text('Reporte Oficial de Entregas', 14, 22);
 
   const tableRows = todayPackages.map(pkg => [
     pkg.empresas?.nombre || 'N/A',

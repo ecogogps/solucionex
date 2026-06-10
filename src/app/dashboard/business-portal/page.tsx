@@ -245,6 +245,17 @@ export default function BusinessPortalRequest() {
               <Package className={cn("h-5 w-5", pathname === '/dashboard/business-portal/packages' && "text-accent")} /> Mis Paquetes
             </Button>
           </Link>
+          <Link href="/dashboard/business-portal/logo">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full justify-start gap-3 transition-all",
+                pathname === '/dashboard/business-portal/logo' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <ImageIcon className={cn("h-5 w-5", pathname === '/dashboard/business-portal/logo' && "text-accent")} /> Logo Empresa
+            </Button>
+          </Link>
         </nav>
         <div className="pt-6 border-t border-white/10">
           <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => {
@@ -437,15 +448,20 @@ export default function BusinessPortalRequest() {
       </Dialog>
 
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
+        <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
           <PlusCircle className="h-5 w-5" />
           <span className="text-[10px] font-bold">Solicitud</span>
           {pathname === '/dashboard/business-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
         </Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
+        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
           <Package className="h-5 w-5" />
           <span className="text-[10px] font-bold">Paquetes</span>
           {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
+        </Link>
+        <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
+          <ImageIcon className="h-5 w-5" />
+          <span className="text-[10px] font-bold">Logo</span>
+          {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
         </Link>
         <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400">
           <LogOut className="h-5 w-5" />

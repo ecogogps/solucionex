@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { 
   Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
   MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX,
-  Phone
+  Phone, Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -220,6 +220,11 @@ export default function BusinessPackagesPage() {
             <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white"><Package className="h-5 w-5 text-accent" /> Mis Paquetes</Button>
             {alertCount > 0 && <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}
           </Link>
+          <Link href="/dashboard/business-portal/logo">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <ImageIcon className="h-5 w-5" /> Logo Empresa
+            </Button>
+          </Link>
         </nav>
         <Button variant="ghost" className="w-full justify-start gap-3 text-red-400" onClick={() => { supabase.auth.signOut(); router.push('/'); }}><LogOut className="h-5 w-5" /> Cerrar Sesión</Button>
       </aside>
@@ -404,6 +409,11 @@ export default function BusinessPackagesPage() {
           <span className="text-[10px] font-bold">Paquetes</span>
           {alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}
           {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
+        </Link>
+        <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
+          <ImageIcon className="h-5 w-5" />
+          <span className="text-[10px] font-bold">Logo</span>
+          {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
         </Link>
         <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400"><LogOut className="h-5 w-5" /> Cerrar Sesión</button>
       </nav>
