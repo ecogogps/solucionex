@@ -55,6 +55,7 @@ export interface PaqueteData {
   empresas?: {
     nombre: string;
     direccion: string;
+    telefono?: string;
   };
   paquetes_historial?: { estado: string; created_at?: string }[];
 }
@@ -541,13 +542,32 @@ Respaldo y Seguridad en cada entrega.`;
                   </div>
                 )}
 
-                <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-accent shrink-0" />
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
-                      <p className="text-sm font-bold">{selectedPackage.empresas?.nombre}</p>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-5 w-5 text-accent shrink-0" />
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase">Empresa Solicitante</p>
+                        <p className="text-sm font-bold">{selectedPackage.empresas?.nombre}</p>
+                      </div>
                     </div>
+                    
+                    {/* Botón de llamada a la empresa */}
+                    {selectedPackage.empresas?.telefono && (
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-9 w-9 border-white/10 text-accent hover:bg-white/10 shrink-0" 
+                        asChild
+                      >
+                        <a 
+                          href={`tel:${selectedPackage.empresas.telefono}`} 
+                          title={`Llamar a ${selectedPackage.empresas.nombre}`}
+                        >
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
 

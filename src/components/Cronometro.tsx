@@ -144,6 +144,9 @@ function ItemCronometro({
   const enRetraso = !terminado && elapsed > limiteSegundos;
   const retrasoEnVivo = enRetraso ? elapsed - limiteSegundos : 0;
 
+  // Cálculo de la cuenta regresiva (se usará solo antes de entrar en retraso)
+  const tiempoRestante = Math.max(0, limiteSegundos - elapsed);
+
   if (loading) {
     return (
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 min-w-[140px]">
@@ -153,7 +156,7 @@ function ItemCronometro({
     );
   }
 
-  // Terminado: resultado final desde BD
+  // Terminado: resultado final desde BD 
   if (terminado) {
     const hayRetraso = retrasoFinal > 0;
     return (
@@ -184,14 +187,15 @@ function ItemCronometro({
     );
   }
 
-  // Corriendo dentro del límite
+  // Corriendo dentro del límite: MUESTRA CUENTA REGRESIVA
   if (!enRetraso) {
     return (
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-accent/30 bg-accent/10 text-accent min-w-[140px]">
         <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
         <div className="flex items-center gap-1 font-mono">
-        <Clock className="h-3 w-3" /> 
-          <span className="font-black text-xs">{formatTime(elapsed)}</span>
+          <Clock className="h-3 w-3" /> 
+          {/* Aquí se usa tiempoRestante para la cuenta regresiva */}
+          <span className="font-black text-xs">{formatTime(tiempoRestante)}</span>
         </div>
       </div>
     );
@@ -204,6 +208,7 @@ function ItemCronometro({
         <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
         <div className="flex items-center gap-1 font-mono">
           <Clock className="h-3 w-3" />
+          {/* Se conserva 'elapsed' para mostrar el tiempo total transcurrido acumulado */}
           <span className="font-black text-xs">{formatTime(elapsed)}</span>
         </div>
       </div>
@@ -211,6 +216,7 @@ function ItemCronometro({
         <span className="text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
           <AlertTriangle className="h-2.5 w-2.5" /> Retraso
         </span>
+      
         <span className="font-black text-[10px] font-mono">+{formatTime(retrasoEnVivo)}</span>
       </div>
     </div>

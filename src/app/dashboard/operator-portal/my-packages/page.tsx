@@ -95,22 +95,22 @@ export default function MyPackagesPage() {
 
   const fetchData = async (currentUserId: string) => {
     try {
-      // 1. Obtener paquetes asignados
+      // 1. Obtener paquetes asignados (agregado "telefono" en empresas)
       const { data: assignedData, error: assignedError } = await supabase
         .from('paquetes')
-        .select('*, empresas(nombre, direccion), operadores(nombres), paquetes_historial(estado, created_at)')
+        .select('*, empresas(nombre, direccion, telefono), operadores(nombres), paquetes_historial(estado, created_at)')
         .eq('operador_id', currentUserId)
         .order('created_at', { ascending: false });
 
       if (assignedError) throw assignedError;
 
-      // 2. Obtener rechazos de hoy
+      // 2. Obtener rechazos de hoy (agregado "telefono" en empresas)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const { data: rejectedData, error: rejectedError } = await supabase
         .from('operador_rechazos')
-        .select('*, paquetes(*, empresas(nombre, direccion))')
+        .select('*, paquetes(*, empresas(nombre, direccion, telefono))')
         .eq('operador_id', currentUserId)
         .gte('created_at', today.toISOString());
 

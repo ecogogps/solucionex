@@ -235,7 +235,7 @@ export default function BusinessLogoPage() {
 
                   <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
                     <p className="text-xs text-blue-300 leading-relaxed italic">
-                      * El logo será visible en tus tickets de impresión y portal de seguimiento. Se recomienda una imagen cuadrada con fondo transparente o blanco.
+                      * El logo será visible en tus tickets. Debe ser color negro.
                     </p>
                   </div>
                 </CardContent>
