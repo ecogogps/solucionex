@@ -109,7 +109,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     executeUpdate({
       telefono: editFormData.telefono,
       alerta_numero_equivocado: false,
-      alerta_numero_actualizado: true // <-- Enciende la alerta de regreso para el operador
+      alerta_numero_actualizado: true 
     }, "Teléfono actualizado. Se solicitó al operador que vuelva a llamar.");
   };
   const confirmAnularPaquete = () => {
@@ -153,6 +153,37 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     }
   };
 
+  const formatTimeEcuador = (dateStr: string) => {
+    return new Intl.DateTimeFormat('es-EC', {
+      timeZone: 'America/Guayaquil',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(new Date(dateStr));
+  };
+
+  const getDuration = () => {
+    const finalStates = ['entregado', 'entregado_novedad', 'cancelado'];
+    if (!pkg || !finalStates.includes(pkg.estado)) return null;
+    
+    const finalRecord = pkg.paquetes_historial
+      ?.filter((h: any) => finalStates.includes(h.estado))
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+    if (!finalRecord || !pkg.created_at) return null;
+
+    const start = new Date(pkg.created_at).getTime();
+    const end = new Date(finalRecord.created_at).getTime();
+    const diffMs = end - start;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 0) return '0 min';
+    if (diffMins < 60) return `${diffMins} min`;
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hrs}h ${mins}m`;
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -166,24 +197,31 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-slate-500"><Calendar className="w-3 h-3 shrink-0" /> Registro</div>
-                <div className="text-sm font-medium">{new Date(pkg.created_at).toLocaleDateString()}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><Calendar className="w-3 h-3 shrink-0" /> Registro</div>
+                  <div className="text-sm font-medium flex flex-wrap items-center gap-2">
+                    <span>{new Date(pkg.created_at).toLocaleDateString()} {formatTimeEcuador(pkg.created_at)}</span>
+                    {getDuration() && (
+                      <Badge variant="outline" className="text-[10px] border-accent/20 text-accent/80 font-bold px-1.5 h-5 bg-accent/5">
+                        {getDuration()}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><Hash className="w-3 h-3 shrink-0" /> Estado Actual</div>
+                  <div className="flex flex-wrap">{getStatusBadge(pkg.estado)}</div>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><Phone className="w-3 h-3 shrink-0" /> Teléfono</div>
+                  <div className="text-sm font-medium truncate">{pkg.telefono || 'No registrado'}</div>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
+                  <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-slate-500"><Hash className="w-3 h-3 shrink-0" /> Estado Actual</div>
-                <div className="flex flex-wrap">{getStatusBadge(pkg.estado)}</div>
-              </div>
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <div className="flex items-center gap-2 text-xs text-slate-500"><Phone className="w-3 h-3 shrink-0" /> Teléfono</div>
-                <div className="text-sm font-medium truncate">{pkg.telefono || 'No registrado'}</div>
-              </div>
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
-                <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
-              </div>
-            </div>
 
               {pkg.alerta_no_contesta && (
                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -299,7 +337,6 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
           
           <PrintTemplate data={pkg} />
 
-          {/* Modales de Alerta anidados dentro de DialogContent para evitar el bloqueo de pointer-events */}
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent className="bg-slate-900 border-white/10 text-white w-[90vw] max-w-md rounded-xl">
               <AlertDialogHeader>

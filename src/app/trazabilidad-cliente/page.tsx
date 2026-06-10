@@ -114,14 +114,14 @@ export default function PublicTrackingPage() {
           <Truck className="h-8 w-8 text-accent" />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight">Solucionex</h1>
-        <p className="text-slate-400 text-sm font-medium">Trazabilidad de Envíos</p>
+        <p className="text-slate-400 text-sm font-medium">Trazabilidad de Paquetes</p>
       </div>
 
       <div className="w-full max-w-2xl space-y-6">
         {/* Buscador */}
         <Card className="bg-white/5 border-white/10 shadow-2xl backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Consulta tu Pedido</CardTitle>
+            <CardTitle className="text-lg">Consulta</CardTitle>
             <CardDescription className="text-slate-400">Ingresa el número de guía asignado a tu paquete</CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,7 +233,7 @@ export default function PublicTrackingPage() {
       </div>
 
       <footer className="mt-auto pt-12 pb-6 text-slate-600 text-[10px] uppercase font-bold tracking-widest text-center">
-        &copy; {new Date().getFullYear()} Solucionex Delivery - Logística Inteligente
+        &copy; {new Date().getFullYear()} Tmax System
       </footer>
     </main>
   );
