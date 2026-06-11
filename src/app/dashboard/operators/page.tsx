@@ -194,7 +194,13 @@ export default function OperatorsPage() {
       }
 
       toast({ title: "Éxito", description: "Empresas asignadas correctamente al operador." });
+      
+      // Cerrar y refrescar eventos de puntero
       setIsAssignDialogOpen(false);
+      setTimeout(() => {
+        document.body.style.pointerEvents = 'auto';
+      }, 300);
+
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
@@ -254,6 +260,10 @@ export default function OperatorsPage() {
       
       fetchOperadores();
       setIsDialogOpen(false);
+      setTimeout(() => {
+        document.body.style.pointerEvents = 'auto';
+      }, 300);
+
     } catch (error: any) {
       console.error("Error al guardar:", error);
       toast({ 
@@ -576,7 +586,14 @@ export default function OperatorsPage() {
         </Dialog>
 
         {/* DIALOG ASIGNACIÓN DE EMPRESA */}
-        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <Dialog open={isAssignDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setIsAssignDialogOpen(false);
+            setTimeout(() => {
+              document.body.style.pointerEvents = 'auto';
+            }, 300);
+          }
+        }}>
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
@@ -617,11 +634,6 @@ export default function OperatorsPage() {
                         )}
                       </div>
                     </ScrollArea>
-                  </div>
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
-                    <p className="text-[10px] text-blue-300 italic">
-                      Nota: Si la empresa tiene configurado "Operadores Exclusivos", solo los operadores asignados aquí verán sus pedidos.
-                    </p>
                   </div>
                 </div>
               )}
