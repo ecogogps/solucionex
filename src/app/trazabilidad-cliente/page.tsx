@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Search, 
-  Truck, 
+  Search,
   MapPin, 
   Building2, 
   Hash, 
@@ -59,28 +58,40 @@ export default function PublicTrackingPage() {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!guiaBusqueda.trim()) return;
-
+  
     setLoading(true);
     setError(null);
     setPaquete(null);
-
+  
     try {
-      const { data, error: fetchError } = await supabase
+      const { data: rows, error: fetchError } = await supabase
         .from('paquetes')
-        .select('*, empresas (nombre, direccion)')
+        .select('*')
         .eq('guia_numero', guiaBusqueda.trim())
-        .maybeSingle();
-
+        .order('created_at', { ascending: false })
+        .limit(1);
+  
       if (fetchError) throw fetchError;
-
-      if (!data) {
+  
+      if (!rows || rows.length === 0) {
         setError('No se encontró ningún paquete con ese número de guía.');
-      } else {
-        setPaquete(data);
+        setLoading(false);
+        return;
       }
+  
+      const paqueteData = rows[0];
+  
+      const { data: empresa } = await supabase
+        .from('empresas')
+        .select('nombre, direccion, logo')
+        .eq('id', paqueteData.empresa_id)
+        .maybeSingle();
+  
+      setPaquete({ ...paqueteData, empresas: empresa });
+  
     } catch (err: any) {
-      console.error("Error en búsqueda pública:", err);
-      setError('Ocurrió un error al consultar la información. Por favor, intenta de nuevo.');
+      console.error("Error:", err);
+      setError('Ocurrió un error al consultar la información.');
     } finally {
       setLoading(false);
     }
@@ -110,10 +121,11 @@ export default function PublicTrackingPage() {
     <main className="min-h-screen bg-background text-white p-4 md:p-8 flex flex-col items-center">
       {/* Header / Logo */}
       <div className="flex flex-col items-center mb-10 text-center">
-        <div className="bg-white/10 p-3 rounded-xl shadow-lg mb-4 backdrop-blur-md">
-          <Truck className="h-8 w-8 text-accent" />
-        </div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Solucionex</h1>
+        <img 
+          src="/logo/impresion logo white.png" 
+          alt="Solucionex Logo" 
+          className="h-16 w-auto object-contain mb-3"
+        />
         <p className="text-slate-400 text-sm font-medium">Trazabilidad de Paquetes</p>
       </div>
 

@@ -19,7 +19,8 @@ import {
   MapPin,
   Key,
   Hash,
-  Navigation
+  Navigation,
+  Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -69,6 +72,18 @@ interface EmpresaData {
   guia_numero: string;
   estado: 'activo' | 'inactivo';
   created_at?: string;
+  zonas?: { zona_id: string; zonas: { id: string; nombre: string; ciudades: { id: string; nombre: string } } }[];
+}
+
+interface Ciudad {
+  id: string;
+  nombre: string;
+}
+
+interface Zona {
+  id: string;
+  nombre: string;
+  ciudad_id: string;
 }
 
 export default function CompaniesPage() {
@@ -79,6 +94,11 @@ export default function CompaniesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<EmpresaData | null>(null);
   
+  // Data for selects
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
+  const [todasZonas, setAllZonas] = useState<Zona[]>([]);
+  const [filteredZonas, setFilteredZonas] = useState<Zona[]>([]);
+  
   const [formData, setFormData] = useState({ 
     nombre: '', 
     correo: '', 
@@ -88,32 +108,74 @@ export default function CompaniesPage() {
     tipo: 'ultima_milla' as const, 
     ruc: '', 
     guia_numero: '',
-    estado: 'activo' as const 
+    estado: 'activo' as const,
+    ciudad_id: '',
+    zonas_ids: [] as string[]
   });
   
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchEmpresas();
+    fetchInitialData();
   }, []);
 
-  const fetchEmpresas = async () => {
+  useEffect(() => {
+    if (formData.ciudad_id) {
+      setFilteredZonas(todasZonas.filter(z => z.ciudad_id === formData.ciudad_id));
+    } else {
+      setFilteredZonas([]);
+    }
+  }, [formData.ciudad_id, todasZonas]);
+
+  const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch empresas with their zones and city info
+      const { data: empData, error: empError } = await supabase
         .from('empresas')
-        .select('*')
+        .select('*, empresa_zonas(zona_id, zonas(id, nombre, ciudades(id, nombre)))')
         .order('nombre', { ascending: true });
       
-      if (error) throw error;
-      setEmpresas(data || []);
+      if (empError) throw empError;
+      setEmpresas(empData || []);
+
+      // Fetch cities
+      const { data: cityData } = await supabase.from('ciudades').select('*').order('nombre');
+      setCiudades(cityData || []);
+
+      // Fetch all zones
+      const { data: zoneData } = await supabase.from('zonas').select('*').order('nombre');
+      setAllZonas(zoneData || []);
+
     } catch (error: any) {
-      console.error("Error cargando empresas:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar las empresas." });
+      console.error("Error cargando datos iniciales:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos." });
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchEmpresas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('*, empresa_zonas(zona_id, zonas(id, nombre, ciudades(id, nombre)))')
+        .order('nombre', { ascending: true });
+      if (error) throw error;
+      setEmpresas(data || []);
+    } catch (error) {
+      console.error("Error al refrescar empresas:", error);
+    }
+  };
+
+  const handleZoneToggle = (zoneId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      zonas_ids: prev.zonas_ids.includes(zoneId)
+        ? prev.zonas_ids.filter(id => id !== zoneId)
+        : [...prev.zonas_ids, zoneId]
+    }));
   };
 
   const handleSave = async () => {
@@ -154,9 +216,26 @@ export default function CompaniesPage() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Save zones relationship
+      const targetEmpresaId = editingEmpresa ? editingEmpresa.id : data.user?.id;
+      
+      if (targetEmpresaId) {
+        // Delete old zones
+        await supabase.from('empresa_zonas').delete().eq('empresa_id', targetEmpresaId);
+        
+        // Insert new zones
+        if (formData.zonas_ids.length > 0) {
+          const zonePayload = formData.zonas_ids.map(zid => ({
+            empresa_id: targetEmpresaId,
+            zona_id: zid
+          }));
+          await supabase.from('empresa_zonas').insert(zonePayload);
+        }
+      }
+
       toast({ 
         title: editingEmpresa ? "Actualizado" : "Empresa Registrada", 
-        description: editingEmpresa ? "Los datos y credenciales han sido actualizados." : "Se ha creado el usuario y el registro exitosamente." 
+        description: editingEmpresa ? "Los datos y zonas han sido actualizados." : "Se ha creado el usuario y el registro exitosamente." 
       });
       
       fetchEmpresas();
@@ -205,12 +284,30 @@ export default function CompaniesPage() {
 
   const openNewEmpresaModal = () => {
     setEditingEmpresa(null);
-    setFormData({ nombre: '', correo: '', password: '', telefono: '', direccion: '', tipo: 'ultima_milla', ruc: '', guia_numero: '', estado: 'activo' });
+    setFormData({ 
+      nombre: '', 
+      correo: '', 
+      password: '', 
+      telefono: '', 
+      direccion: '', 
+      tipo: 'ultima_milla', 
+      ruc: '', 
+      guia_numero: '', 
+      estado: 'activo',
+      ciudad_id: '',
+      zonas_ids: []
+    });
     setIsDialogOpen(true);
   };
 
-  const openEditEmpresaModal = (empresa: EmpresaData) => {
+  const openEditEmpresaModal = (empresa: any) => {
     setEditingEmpresa(empresa);
+    
+    // Extract zone IDs and detect city from existing relations
+    const currentZones = empresa.empresa_zonas || [];
+    const currentZoneIds = currentZones.map((z: any) => z.zona_id);
+    const detectedCityId = currentZones.length > 0 ? currentZones[0].zonas?.ciudades?.id : '';
+
     setFormData({ 
       nombre: empresa.nombre, 
       correo: empresa.correo, 
@@ -220,8 +317,11 @@ export default function CompaniesPage() {
       tipo: empresa.tipo, 
       ruc: empresa.ruc || '', 
       guia_numero: empresa.guia_numero || '',
-      estado: empresa.estado 
+      estado: empresa.estado,
+      ciudad_id: detectedCityId || '',
+      zonas_ids: currentZoneIds
     });
+    
     setTimeout(() => {
       setIsDialogOpen(true);
     }, 100);
@@ -302,6 +402,7 @@ export default function CompaniesPage() {
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="font-bold text-slate-300">Empresa</TableHead>
                     <TableHead className="font-bold text-slate-300">Contacto</TableHead>
+                    <TableHead className="font-bold text-slate-300">Ubicación / Zonas</TableHead>
                     <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
                     <TableHead className="font-bold text-slate-300">Tipo / Estado</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
@@ -313,60 +414,78 @@ export default function CompaniesPage() {
                       e.nombre.toLowerCase().includes(search.toLowerCase()) || 
                       e.correo.toLowerCase().includes(search.toLowerCase())
                     )
-                    .map((empresa) => (
-                    <TableRow key={empresa.id} className="border-white/10 hover:bg-white/5">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-white">{empresa.nombre}</span>
-                          <span className="text-[10px] text-slate-500 flex items-center gap-1"><MapPin className="w-2 h-2" /> {empresa.direccion}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-xs text-slate-400 gap-1">
-                          <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-accent" /> {empresa.correo}</span>
-                          <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {empresa.telefono}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-xs text-slate-300 gap-1">
-                          <span className="font-mono">RUC: {empresa.ruc || '-'}</span>
-                          <span className="font-mono text-accent">Guía: {empresa.guia_numero || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
-                            {empresa.tipo === 'ultima_milla' ? 'Última Milla' : 'Real Time'}
-                          </Badge>
-                          <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
-                            {empresa.estado}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
-                            <DropdownMenuItem 
-                              className="gap-2 cursor-pointer" 
-                              onClick={() => openEditEmpresaModal(empresa)}
-                            >
-                              <Edit2 className="h-4 w-4 text-blue-400" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/10" />
-                            <DropdownMenuItem 
-                              className="gap-2 text-red-400 cursor-pointer"
-                              onClick={() => deleteEmpresa(empresa.id)}
-                            >
-                              <Trash2 className="h-4 w-4" /> Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                    .map((empresa) => {
+                      const zonasArray = (empresa as any).empresa_zonas || [];
+                      const ciudadNombre = zonasArray.length > 0 ? zonasArray[0].zonas?.ciudades?.nombre : 'Sin ciudad';
+                      const numZonas = zonasArray.length;
+
+                      return (
+                        <TableRow key={empresa.id} className="border-white/10 hover:bg-white/5">
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-white">{empresa.nombre}</span>
+                              <span className="text-[10px] text-slate-500 flex items-center gap-1"><MapPin className="w-2 h-2" /> {empresa.direccion}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col text-xs text-slate-400 gap-1">
+                              <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-accent" /> {empresa.correo}</span>
+                              <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {empresa.telefono}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-white">
+                                <Globe className="w-3 h-3 text-accent" /> {ciudadNombre}
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge variant="outline" className="text-[9px] border-white/5 bg-white/5 text-slate-400">
+                                  {numZonas} {numZonas === 1 ? 'Zona' : 'Zonas'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col text-xs text-slate-300 gap-1">
+                              <span className="font-mono">RUC: {empresa.ruc || '-'}</span>
+                              <span className="font-mono text-accent">Guía: {empresa.guia_numero || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
+                                {empresa.tipo === 'ultima_milla' ? 'Última Milla' : 'Real Time'}
+                              </Badge>
+                              <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
+                                {empresa.estado}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
+                                <DropdownMenuItem 
+                                  className="gap-2 cursor-pointer" 
+                                  onClick={() => openEditEmpresaModal(empresa)}
+                                >
+                                  <Edit2 className="h-4 w-4 text-blue-400" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-white/10" />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-red-400 cursor-pointer"
+                                  onClick={() => deleteEmpresa(empresa.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" /> Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </div>
@@ -381,7 +500,7 @@ export default function CompaniesPage() {
             }, 300);
           }
         }}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white">
                 {editingEmpresa ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
@@ -466,6 +585,51 @@ export default function CompaniesPage() {
                   </Select>
                 </div>
               </div>
+
+              {/* ASOCIACIÓN CIUDAD Y ZONAS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
+                <div className="grid gap-2">
+                  <Label className="text-accent flex items-center gap-1"><Globe className="w-3 h-3" /> Seleccionar Ciudad</Label>
+                  <Select value={formData.ciudad_id} onValueChange={(v) => setFormData({...formData, ciudad_id: v, zonas_ids: []})}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Elegir ciudad..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      {ciudades.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Zonas de Cobertura ({formData.zonas_ids.length})</Label>
+                  <div className="bg-white/5 border border-white/10 rounded-md p-2">
+                    {formData.ciudad_id ? (
+                      <ScrollArea className="h-32">
+                        <div className="space-y-2 pr-4">
+                          {filteredZonas.map(z => (
+                            <div key={z.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`zone-${z.id}`} 
+                                checked={formData.zonas_ids.includes(z.id)}
+                                onCheckedChange={() => handleZoneToggle(z.id)}
+                                className="border-white/20 data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                              />
+                              <label htmlFor={`zone-${z.id}`} className="text-xs font-medium leading-none cursor-pointer">
+                                {z.nombre}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <p className="text-[10px] text-slate-500 italic py-8 text-center">Selecciona una ciudad primero</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="direccion">Dirección Fiscal</Label>
                 <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
