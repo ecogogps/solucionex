@@ -187,7 +187,7 @@ export default function PublicTrackingPage() {
                   className="border-accent/30 text-accent hover:bg-accent/10 h-7 gap-1 text-[10px] font-bold"
                   onClick={() => setIsTrackingOpen(true)}
                 >
-                  <MapPinned className="h-3 w-3" /> Ver Historial
+                  <MapPinned className="h-3 w-3" /> Trazabilidad
                 </Button>
               </div>
             </CardHeader>
