@@ -11,7 +11,8 @@ import {
   FileText, 
   Package,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  MapPinned
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,12 +20,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { TrackingModal } from '@/components/TrackingModal';
 
 export default function PublicTrackingPage() {
   const [guiaBusqueda, setGuiaBusqueda] = useState('');
   const [loading, setLoading] = useState(false);
   const [paquete, setPaquete] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   // Suscripción en tiempo real para el paquete encontrado
   useEffect(() => {
@@ -178,6 +181,14 @@ export default function PublicTrackingPage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 {getStatusBadge(paquete.estado)}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-accent/30 text-accent hover:bg-accent/10 h-7 gap-1 text-[10px] font-bold"
+                  onClick={() => setIsTrackingOpen(true)}
+                >
+                  <MapPinned className="h-3 w-3" /> Ver Historial
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -247,6 +258,15 @@ export default function PublicTrackingPage() {
       <footer className="mt-auto pt-12 pb-6 text-slate-600 text-[10px] uppercase font-bold tracking-widest text-center">
         &copy; {new Date().getFullYear()} Tmax System
       </footer>
+
+      {paquete && (
+        <TrackingModal 
+          isOpen={isTrackingOpen}
+          onClose={() => setIsTrackingOpen(false)}
+          paqueteId={paquete.id}
+          guiaNumero={paquete.guia_numero}
+        />
+      )}
     </main>
   );
 }
