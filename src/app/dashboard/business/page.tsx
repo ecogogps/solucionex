@@ -657,11 +657,9 @@ export default function CompaniesPage() {
                   />
                   <div className="grid gap-1.5 leading-none">
                     <label htmlFor="operadores_exclusivos" className="text-sm font-bold text-accent flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4" /> Operadores Exclusivos
+                      <ShieldCheck className="w-4 h-4" /> NATIVO ACTIVO / Operación Exclusiva
                     </label>
-                    <p className="text-[10px] text-slate-400 italic">
-                      Activa esto si quieres que solo operadores asignados específicamente puedan ver tus pedidos.
-                    </p>
+  
                   </div>
                 </div>
 
