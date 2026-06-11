@@ -21,7 +21,8 @@ import {
   Hash,
   Navigation,
   Globe,
-  Settings
+  Settings,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,7 @@ interface EmpresaData {
   ruc: string;
   guia_numero: string;
   estado: 'activo' | 'inactivo';
+  operadores_exclusivos: boolean;
   created_at?: string;
   zonas?: { zona_id: string; zonas: { id: string; nombre: string; ciudades: { id: string; nombre: string } } }[];
 }
@@ -110,6 +112,7 @@ export default function CompaniesPage() {
     ruc: '', 
     guia_numero: '',
     estado: 'activo' as const,
+    operadores_exclusivos: false,
     ciudad_id: '',
     zonas_ids: [] as string[]
   });
@@ -206,7 +209,8 @@ export default function CompaniesPage() {
           tipo: formData.tipo,
           ruc: formData.ruc,
           guia_numero: formData.guia_numero,
-          estado: formData.estado
+          estado: formData.estado,
+          operadores_exclusivos: formData.operadores_exclusivos
         }
       };
 
@@ -295,6 +299,7 @@ export default function CompaniesPage() {
       ruc: '', 
       guia_numero: '', 
       estado: 'activo',
+      operadores_exclusivos: false,
       ciudad_id: '',
       zonas_ids: []
     });
@@ -319,6 +324,7 @@ export default function CompaniesPage() {
       ruc: empresa.ruc || '', 
       guia_numero: empresa.guia_numero || '',
       estado: empresa.estado,
+      operadores_exclusivos: empresa.operadores_exclusivos || false,
       ciudad_id: detectedCityId || '',
       zonas_ids: currentZoneIds
     });
@@ -410,7 +416,7 @@ export default function CompaniesPage() {
                     <TableHead className="font-bold text-slate-300">Contacto</TableHead>
                     <TableHead className="font-bold text-slate-300">Ciudad / Zonas</TableHead>
                     <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
-                    <TableHead className="font-bold text-slate-300">Tipo / Estado</TableHead>
+                    <TableHead className="font-bold text-slate-300">Tipo / Seguridad</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -462,9 +468,14 @@ export default function CompaniesPage() {
                               <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
                                 {empresa.tipo === 'ultima_milla' ? 'Última Milla' : 'Real Time'}
                               </Badge>
-                              <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
-                                {empresa.estado}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
+                                  {empresa.estado}
+                                </Badge>
+                                {empresa.operadores_exclusivos && (
+                                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[9px] px-1 py-0">Exclusivo</Badge>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -636,9 +647,28 @@ export default function CompaniesPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="flex items-center space-x-2 bg-white/5 p-3 rounded-lg border border-white/10">
+                  <Checkbox 
+                    id="operadores_exclusivos" 
+                    checked={formData.operadores_exclusivos}
+                    onCheckedChange={(checked) => setFormData({...formData, operadores_exclusivos: !!checked})}
+                    className="border-accent data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label htmlFor="operadores_exclusivos" className="text-sm font-bold text-accent flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" /> Operadores Exclusivos
+                    </label>
+                    <p className="text-[10px] text-slate-400 italic">
+                      Activa esto si quieres que solo operadores asignados específicamente puedan ver tus pedidos.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="direccion">Dirección Fiscal/Física</Label>
+                  <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+                </div>
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">

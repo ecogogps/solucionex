@@ -19,7 +19,9 @@ import {
   CreditCard,
   Key,
   Navigation,
-  Settings
+  Settings,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +56,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -69,13 +73,26 @@ interface OperadorData {
   created_at?: string;
 }
 
+interface EmpresaOption {
+  id: string;
+  nombre: string;
+}
+
 export default function OperatorsPage() {
   const [operadores, setOperadores] = useState<OperadorData[]>([]);
+  const [allBusinesses, setAllBusinesses] = useState<EmpresaOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
+  
+  // Modals state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  
   const [editingOperador, setEditingOperador] = useState<OperadorData | null>(null);
+  const [selectedOperatorForAssign, setSelectedOperatorForAssign] = useState<OperadorData | null>(null);
+  const [assignedBusinessIds, setAssignedBusinessIds] = useState<string[]>([]);
+  const [fetchingAssignments, setFetchingAssignments] = useState(false);
   
   const [formData, setFormData] = useState({ 
     nombres: '', 
@@ -92,6 +109,7 @@ export default function OperatorsPage() {
 
   useEffect(() => {
     fetchOperadores();
+    fetchBusinesses();
   }, []);
 
   const fetchOperadores = async () => {
@@ -109,6 +127,78 @@ export default function OperatorsPage() {
       toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los operadores." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBusinesses = async () => {
+    try {
+      const { data } = await supabase
+        .from('empresas')
+        .select('id, nombre')
+        .eq('estado', 'activo')
+        .order('nombre');
+      setAllBusinesses(data || []);
+    } catch (err) {
+      console.error("Error fetching businesses:", err);
+    }
+  };
+
+  const handleOpenAssignModal = async (op: OperadorData) => {
+    setSelectedOperatorForAssign(op);
+    setAssignedBusinessIds([]);
+    setIsAssignDialogOpen(true);
+    setFetchingAssignments(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('empresa_operadores')
+        .select('empresa_id')
+        .eq('operador_id', op.id);
+      
+      if (error) throw error;
+      setAssignedBusinessIds((data || []).map(row => row.empresa_id));
+    } catch (err) {
+      console.error("Error loading assignments:", err);
+    } finally {
+      setFetchingAssignments(false);
+    }
+  };
+
+  const handleToggleBusiness = (businessId: string) => {
+    setAssignedBusinessIds(prev => 
+      prev.includes(businessId) 
+        ? prev.filter(id => id !== businessId) 
+        : [...prev, businessId]
+    );
+  };
+
+  const handleSaveAssignments = async () => {
+    if (!selectedOperatorForAssign) return;
+    setIsSaving(true);
+
+    try {
+      // 1. Eliminar asignaciones previas
+      await supabase
+        .from('empresa_operadores')
+        .delete()
+        .eq('operador_id', selectedOperatorForAssign.id);
+
+      // 2. Insertar nuevas
+      if (assignedBusinessIds.length > 0) {
+        const insertPayload = assignedBusinessIds.map(bid => ({
+          operador_id: selectedOperatorForAssign.id,
+          empresa_id: bid
+        }));
+        const { error } = await supabase.from('empresa_operadores').insert(insertPayload);
+        if (error) throw error;
+      }
+
+      toast({ title: "Éxito", description: "Empresas asignadas correctamente al operador." });
+      setIsAssignDialogOpen(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -364,6 +454,12 @@ export default function OperatorsPage() {
                             >
                               <Edit2 className="h-4 w-4 text-blue-400" /> Editar
                             </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="gap-2 cursor-pointer" 
+                              onClick={() => handleOpenAssignModal(op)}
+                            >
+                              <ShieldCheck className="h-4 w-4 text-accent" /> Asignar Empresa
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-white/10" />
                             <DropdownMenuItem 
                               className="gap-2 text-red-400 cursor-pointer"
@@ -382,6 +478,7 @@ export default function OperatorsPage() {
           )}
         </div>
 
+        {/* DIALOG REGISTRO/EDICIÓN */}
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           if (!open) {
             setIsDialogOpen(false);
@@ -473,6 +570,67 @@ export default function OperatorsPage() {
               <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
                 {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
                 {editingOperador ? 'Guardar Cambios' : 'Registrar Operador'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* DIALOG ASIGNACIÓN DE EMPRESA */}
+        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-accent" /> 
+                Asignar Empresas a {selectedOperatorForAssign?.nombres}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {fetchingAssignments ? (
+                <div className="flex flex-col items-center py-8 text-slate-400">
+                  <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                  <p className="text-xs">Cargando asignaciones...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-400">Selecciona las empresas que este operador podrá atender:</p>
+                  <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                    <ScrollArea className="h-64 p-4">
+                      <div className="space-y-3">
+                        {allBusinesses.map((bus) => (
+                          <div key={bus.id} className="flex items-center space-x-3 group">
+                            <Checkbox 
+                              id={`bus-${bus.id}`} 
+                              checked={assignedBusinessIds.includes(bus.id)}
+                              onCheckedChange={() => handleToggleBusiness(bus.id)}
+                              className="border-white/20 data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                            />
+                            <label 
+                              htmlFor={`bus-${bus.id}`} 
+                              className="text-sm font-medium leading-none cursor-pointer group-hover:text-accent transition-colors"
+                            >
+                              {bus.nombre}
+                            </label>
+                          </div>
+                        ))}
+                        {allBusinesses.length === 0 && (
+                          <p className="text-center text-xs text-slate-500 py-8">No hay empresas activas disponibles.</p>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
+                    <p className="text-[10px] text-blue-300 italic">
+                      Nota: Si la empresa tiene configurado "Operadores Exclusivos", solo los operadores asignados aquí verán sus pedidos.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsAssignDialogOpen(false)} className="text-slate-400">Cancelar</Button>
+              <Button onClick={handleSaveAssignments} className="bg-accent text-primary font-bold" disabled={isSaving || fetchingAssignments}>
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                Guardar Asignaciones
               </Button>
             </DialogFooter>
           </DialogContent>

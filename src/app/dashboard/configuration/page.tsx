@@ -342,7 +342,7 @@ export default function ConfigurationPage() {
           <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-white">
-                {editingItem ? 'Editar' : 'Crear Nuevo'} {activeTab.slice(0, -1)}
+                {editingItem ? 'Editar' : 'Crear Nuevo'}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
