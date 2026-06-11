@@ -20,7 +20,8 @@ import {
   Key,
   Hash,
   Navigation,
-  Globe
+  Globe,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -355,6 +356,11 @@ export default function CompaniesPage() {
               <Navigation className="h-5 w-5" /> Ubicación Operador
             </Button>
           </Link>
+          <Link href="/dashboard/configuration">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Settings className="h-5 w-5" /> Configuración
+            </Button>
+          </Link>
         </nav>
         <div className="pt-6 border-t border-white/10">
           <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
@@ -402,7 +408,7 @@ export default function CompaniesPage() {
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="font-bold text-slate-300">Empresa</TableHead>
                     <TableHead className="font-bold text-slate-300">Contacto</TableHead>
-                    <TableHead className="font-bold text-slate-300">Ubicación / Zonas</TableHead>
+                    <TableHead className="font-bold text-slate-300">Ciudad / Zonas</TableHead>
                     <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
                     <TableHead className="font-bold text-slate-300">Tipo / Estado</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
@@ -631,7 +637,7 @@ export default function CompaniesPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="direccion">Dirección Fiscal</Label>
+                <Label htmlFor="direccion">Dirección</Label>
                 <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
               </div>
             </div>

@@ -15,7 +15,8 @@ import {
   Building2,
   UserCheck,
   Search,
-  Calendar
+  Calendar,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -157,6 +158,11 @@ export default function TrackingPage() {
           <Link href="/dashboard/tracking">
             <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
               <Navigation className="h-5 w-5 text-accent" /> Ubicación Operador
+            </Button>
+          </Link>
+          <Link href="/dashboard/configuration">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Settings className="h-5 w-5" /> Configuración
             </Button>
           </Link>
         </nav>
