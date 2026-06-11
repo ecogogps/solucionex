@@ -160,6 +160,17 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
       const stream = video.srcObject as MediaStream;
       stream?.getTracks().forEach(t => t.stop());
 
+      let ubicacion = null;
+      if (navigator.geolocation) {
+        ubicacion = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
+        });
+      }
+
       setStep('processing');
 
       try {
@@ -176,12 +187,18 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
         }
 
         // 2. Actualizar a 'paquete_retirado'
+        const updateData: any = { 
+          estado: 'paquete_retirado',
+          imagen_paquete_retirado: publicUrl 
+        };
+
+        if (ubicacion) {
+          updateData.ubicacion_paquete_retirado = ubicacion;
+        }
+
         const { error: updateError } = await supabase
           .from('paquetes')
-          .update({ 
-            estado: 'paquete_retirado',
-            imagen_paquete_retirado: publicUrl 
-          })
+          .update(updateData)
           .eq('id', scannedId);
 
         if (updateError) throw updateError;

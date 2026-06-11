@@ -146,10 +146,10 @@ export default function BusinessLogoPage() {
 
       setOperadoresExclusivos(checked);
       toast({
-        title: checked ? "Exclusividad activada" : "Exclusividad desactivada",
+        title: checked ? "Activada" : "Desactivada",
         description: checked 
-          ? "Ahora solo los operadores asignados verán tus pedidos." 
-          : "Tus pedidos ahora son visibles para todos los operadores.",
+          ? "Operación Exclusiva" 
+          : "NATIVO ACTIVO",
       });
     } catch (error: any) {
       console.error("Error updating exclusivity:", error);
@@ -183,7 +183,7 @@ export default function BusinessLogoPage() {
           </Link>
           <Link href="/dashboard/business-portal/logo">
             <Button variant="ghost" className={cn("w-full justify-start gap-3 bg-white/10 text-white")}>
-              <ImageIcon className="h-5 w-5 text-accent" /> Logo Empresa
+              <ImageIcon className="h-5 w-5 text-accent" /> Configuración
             </Button>
           </Link>
         </nav>
@@ -202,7 +202,7 @@ export default function BusinessLogoPage() {
 
         <div className="p-4 lg:p-8 flex justify-center">
           <div className="w-full max-w-xl space-y-6">
-            <h2 className="text-2xl font-bold">Identidad de Empresa</h2>
+            <h2 className="text-2xl font-bold">Configuración Empresa</h2>
             
             {loading ? (
               <div className="flex flex-col items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-accent mb-4" /><p className="text-slate-400">Cargando...</p></div>
@@ -282,7 +282,6 @@ export default function BusinessLogoPage() {
                     <CardTitle className="text-white text-base flex items-center gap-2">
                       <Settings2 className="h-5 w-5 text-accent" /> Configuración Operativa
                     </CardTitle>
-                    <CardDescription className="text-slate-400">Personaliza la visibilidad de tus solicitudes.</CardDescription>
                   </CardHeader>
                   <CardContent className="pt-2">
                     <div className="flex items-center space-x-3 bg-accent/5 p-4 rounded-xl border border-accent/20">
@@ -301,9 +300,6 @@ export default function BusinessLogoPage() {
                           {isUpdatingExclusivity ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                           NATIVO ACTIVO / Operación Exclusiva
                         </Label>
-                        <p className="text-[11px] text-slate-400">
-                          Si se activa, tus pedidos solo serán visibles para los operadores que tengas asignados.
-                        </p>
                       </div>
                     </div>
                   </CardContent>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -100,15 +99,37 @@ export default function SolicitudesPage() {
       const dbRejectedIds = (rejections || []).map(r => r.paquete_id);
       setRejectedIds(dbRejectedIds);
 
-      // 2. Obtener paquetes disponibles (excluyendo rechazados)
+      // Obtener empresas exclusivas donde este operador está asignado
+      const { data: asignaciones } = await supabase
+      .from('empresa_operadores')
+      .select('empresa_id')
+      .eq('operador_id', currentUserId);
+
+      const empresasAsignadas = (asignaciones || []).map(a => a.empresa_id);
+
+      // Obtener empresas exclusivas que NO incluyen a este operador
+      const { data: empresasExclusivas } = await supabase
+      .from('empresas')
+      .select('id')
+      .eq('operadores_exclusivos', true);
+
+      const idsExcluidas = (empresasExclusivas || [])
+      .map(e => e.id)
+      .filter(id => !empresasAsignadas.includes(id));
+
       let query = supabase
-        .from('paquetes')
-        .select('*, empresas(nombre, direccion)')
-        .in('estado', ['buscando_operador', 'pedido_listo'])
-        .is('operador_id', null);
-      
+      .from('paquetes')
+      .select('*, empresas(nombre, direccion)')
+      .in('estado', ['buscando_operador', 'pedido_listo'])
+      .is('operador_id', null);
+
+      // Excluir paquetes de empresas exclusivas donde no está asignado
+      if (idsExcluidas.length > 0) {
+      query = query.not('empresa_id', 'in', `(${idsExcluidas.join(',')})`);
+      }
+
       if (dbRejectedIds.length > 0) {
-        query = query.not('id', 'in', `(${dbRejectedIds.join(',')})`);
+      query = query.not('id', 'in', `(${dbRejectedIds.join(',')})`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -167,13 +188,30 @@ export default function SolicitudesPage() {
   const handleAccept = async (pkg: PaqueteData) => {
     if (!userId) return;
 
+    let ubicacion = null;
+    if (navigator.geolocation) {
+      ubicacion = await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude }),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      });
+    }
+
     try {
+      const updateData: any = { 
+        operador_id: userId, 
+        estado: 'pendiente' 
+      };
+
+      if (ubicacion) {
+        updateData.ubicacion_pendiente = ubicacion;
+      }
+
       const { data, error } = await supabase
         .from('paquetes')
-        .update({ 
-          operador_id: userId, 
-          estado: 'pendiente' 
-        })
+        .update(updateData)
         .eq('id', pkg.id)
         .in('estado', ['buscando_operador', 'pedido_listo'])
         .is('operador_id', null)
