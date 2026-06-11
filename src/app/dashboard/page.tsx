@@ -100,6 +100,8 @@ interface PackageData {
   empresas?: { nombre: string };
   operadores?: { nombres: string };
   alerta_danio_reasignacion?: boolean;
+  ubicacion_pendiente?: { latitud: number; longitud: number };
+  ubicacion_paquete_retirado?: { latitud: number; longitud: number };
 }
 
 interface OperadorOption {
@@ -623,6 +625,7 @@ export default function DashboardAdmin() {
                     <TableHead className="font-bold text-slate-300">Guía / Fecha</TableHead>
                     <TableHead className="font-bold text-slate-300">Empresa / Operador</TableHead>
                     <TableHead className="font-bold text-slate-300">Destino</TableHead>
+                    <TableHead className="font-bold text-slate-300">Ubicación</TableHead>
                     <TableHead className="font-bold text-slate-300">Valor</TableHead>
                     <TableHead className="font-bold text-slate-300">Estado</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
@@ -657,6 +660,53 @@ export default function DashboardAdmin() {
                          <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3 shrink-0" /> {pkg.direccion}
                          </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1.5">
+                          {pkg.ubicacion_pendiente && (
+                            <div className="flex items-center gap-2 group">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Aceptado</span>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
+                                asChild
+                              >
+                                <a 
+                                  href={`https://www.google.com/maps?q=${pkg.ubicacion_pendiente.latitud},${pkg.ubicacion_pendiente.longitud}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  title="Ver ubicación al aceptar"
+                                >
+                                  <MapPinned className="h-3.5 w-3.5" />
+                                </a>
+                              </Button>
+                            </div>
+                          )}
+                          {pkg.ubicacion_paquete_retirado && (
+                            <div className="flex items-center gap-2 group">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Retirado</span>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
+                                asChild
+                              >
+                                <a 
+                                  href={`https://www.google.com/maps?q=${pkg.ubicacion_paquete_retirado.latitud},${pkg.ubicacion_paquete_retirado.longitud}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  title="Ver ubicación al retirar"
+                                >
+                                  <MapPinned className="h-3.5 w-3.5" />
+                                </a>
+                              </Button>
+                            </div>
+                          )}
+                          {!pkg.ubicacion_pendiente && !pkg.ubicacion_paquete_retirado && (
+                            <span className="text-[10px] text-slate-700 italic">Sin GPS</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
                       <TableCell>

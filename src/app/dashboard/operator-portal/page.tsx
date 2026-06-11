@@ -187,28 +187,46 @@ export default function SolicitudesPage() {
 
   const handleAccept = async (pkg: PaqueteData) => {
     if (!userId) return;
-
+  
     let ubicacion = null;
     if (navigator.geolocation) {
       ubicacion = await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude }),
-          () => resolve(null),
-          { enableHighAccuracy: true, timeout: 5000 }
+          (pos) => {
+            resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude });
+          },
+          (error) => {
+            // Esto te permitirá ver el motivo del fallo en la consola del navegador (F12)
+            console.warn("Fallo al obtener ubicación:", error.code, error.message);
+            resolve(null);
+          },
+          { 
+            enableHighAccuracy: false, // Cambiado a false para que sea más rápido usando Wi-Fi/red celular
+            timeout: 10000            // Incrementado a 10 segundos
+          }
         );
       });
+    } else {
+      console.warn("El navegador no soporta geolocalización o no está en un entorno HTTPS seguro.");
     }
-
+  
+    // Si consideras que la ubicación es obligatoria para aceptar, puedes agregar esta validación:
+    if (!ubicacion) {
+      toast({
+        variant: "destructive",
+        title: "Ubicación requerida",
+        description: "No se pudo obtener tu ubicación actual. Asegúrate de activar el GPS y dar permisos.",
+      });
+      return; // Detiene el proceso si no se pudo capturar la latitud/longitud
+    }
+  
     try {
       const updateData: any = { 
         operador_id: userId, 
-        estado: 'pendiente' 
+        estado: 'pendiente',
+        ubicacion_pendiente: ubicacion // Al validar arriba que no sea null, nos aseguramos de que siempre se envíe
       };
-
-      if (ubicacion) {
-        updateData.ubicacion_pendiente = ubicacion;
-      }
-
+  
       const { data, error } = await supabase
         .from('paquetes')
         .update(updateData)
@@ -216,16 +234,16 @@ export default function SolicitudesPage() {
         .in('estado', ['buscando_operador', 'pedido_listo'])
         .is('operador_id', null)
         .select();
-
+  
       if (error) throw error;
-
+  
       if (!data || data.length === 0) {
         throw new Error("Este pedido ya ha sido aceptado por otro operador.");
       }
-
+  
       toast({
         title: "¡Paquete Aceptado!",
-        description: `El paquete ${pkg.guia_numero} ha sido añadido a tu lista.`,
+        description: `El paquete ${pkg.guia_numero} ha sido añadido a tu lista con tu ubicación actual.`,
       });
       
       router.push('/dashboard/operator-portal/my-packages');

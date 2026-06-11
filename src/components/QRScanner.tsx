@@ -160,16 +160,28 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
       const stream = video.srcObject as MediaStream;
       stream?.getTracks().forEach(t => t.stop());
 
+      // --- INICIO DE LA SOLUCIÓN DE GEOLOCALIZACIÓN ---
       let ubicacion = null;
       if (navigator.geolocation) {
         ubicacion = await new Promise((resolve) => {
           navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude }),
-            () => resolve(null),
-            { enableHighAccuracy: true, timeout: 5000 }
+            (pos) => {
+              resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude });
+            },
+            (err) => {
+              console.warn("Fallo al obtener ubicación en retiro:", err.code, err.message);
+              resolve(null);
+            },
+            { 
+              enableHighAccuracy: false, // Más rápido usando redes móviles/Wi-Fi en vez de GPS puro
+              timeout: 10000            // 10 segundos de espera
+            }
           );
         });
+      } else {
+        console.warn("El navegador no soporta geolocalización o no está en un entorno HTTPS seguro.");
       }
+      // --- FIN DE LA SOLUCIÓN DE GEOLOCALIZACIÓN ---
 
       setStep('processing');
 
@@ -192,6 +204,7 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
           imagen_paquete_retirado: publicUrl 
         };
 
+        // Si se obtuvo la ubicación, se agrega al payload
         if (ubicacion) {
           updateData.ubicacion_paquete_retirado = ubicacion;
         }
