@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <-- Se agrega useEffect para comprobar la sesión al cargar
 import { useRouter } from 'next/navigation';
 import { Truck, ArrowRight, Loader2, ShieldCheck, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,53 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
+  // Iniciamos en true para que muestre el spinner de carga mientras verifica si ya hay sesión
+  const [loading, setLoading] = useState(true); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { toast } = useToast();
+
+  // VERIFICAR SESIÓN ACTIVA AL CARGAR LA PÁGINA
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Si el usuario ya está autenticado, buscamos su perfil para redirigirlo directamente
+          const { data: profileData } = await supabase
+            .from('perfiles')
+            .select('rol')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (profileData) {
+            const rol = profileData.rol;
+            switch (rol) {
+              case 'admin':
+                router.push('/dashboard');
+                break;
+              case 'empresa':
+                router.push('/dashboard/business-portal');
+                break;
+              case 'operador':
+                router.push('/dashboard/operator-portal');
+                break;
+              default:
+                setLoading(false);
+            }
+            return; // Evitamos pasar loading a false si estamos redirigiendo
+          }
+        }
+      } catch (error) {
+        console.error("Error al restaurar la sesión:", error);
+      }
+      setLoading(false); // Si no hay sesión o falla, mostramos el formulario
+    };
+
+    checkActiveSession();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,10 +141,19 @@ export default function LoginPage() {
         title: "Acceso Denegado",
         description: error.message || "Problema de conexión con el servidor.",
       });
-    } finally {
       setLoading(false);
     }
   };
+
+  // Renderiza una pantalla de carga mientras se verifica el localStorage al entrar
+  if (loading && !email) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-accent" />
+        <p className="text-white mt-4 font-medium">Cargando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">

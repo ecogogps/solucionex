@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation'; 
 import { 
   Search,
   MapPin, 
@@ -22,14 +23,24 @@ import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { TrackingModal } from '@/components/TrackingModal';
 
-export default function PublicTrackingPage() {
+// 1. Este componente contiene EXACTAMENTE toda su interfaz, lógica, campos y responsive
+function TrackingContent() {
   const [guiaBusqueda, setGuiaBusqueda] = useState('');
   const [loading, setLoading] = useState(false);
   const [paquete, setPaquete] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
-  // Suscripción en tiempo real para el paquete encontrado
+  const searchParams = useSearchParams();
+  const guiaParam = searchParams.get('guia'); 
+
+  useEffect(() => {
+    if (guiaParam) {
+      setGuiaBusqueda(guiaParam); 
+      handleSearch(undefined, guiaParam); 
+    }
+  }, [guiaParam]);
+
   useEffect(() => {
     if (!paquete?.id) return;
 
@@ -44,7 +55,6 @@ export default function PublicTrackingPage() {
           filter: `id=eq.${paquete.id}` 
         },
         (payload) => {
-          // Actualizamos el estado del paquete manteniendo los datos de la empresa
           setPaquete((prev: any) => ({
             ...prev,
             ...payload.new
@@ -58,9 +68,11 @@ export default function PublicTrackingPage() {
     };
   }, [paquete?.id]);
 
-  const handleSearch = async (e?: React.FormEvent) => {
+  const handleSearch = async (e?: React.FormEvent, guiaDirecta?: string) => {
     if (e) e.preventDefault();
-    if (!guiaBusqueda.trim()) return;
+    
+    const terminoBusqueda = (guiaDirecta || guiaBusqueda).trim();
+    if (!terminoBusqueda) return;
   
     setLoading(true);
     setError(null);
@@ -70,7 +82,7 @@ export default function PublicTrackingPage() {
       const { data: rows, error: fetchError } = await supabase
         .from('paquetes')
         .select('*')
-        .eq('guia_numero', guiaBusqueda.trim())
+        .eq('guia_numero', terminoBusqueda)
         .order('created_at', { ascending: false })
         .limit(1);
   
@@ -268,5 +280,20 @@ export default function PublicTrackingPage() {
         />
       )}
     </main>
+  );
+}
+
+// 2. Exportación principal que envuelve el contenido en un Suspense Boundary obligatorio
+export default function PublicTrackingPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-background text-white flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        </div>
+      }
+    >
+      <TrackingContent />
+    </Suspense>
   );
 }

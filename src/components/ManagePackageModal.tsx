@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
   Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, PhoneForwarded,
-  MessageSquareOff
+  MessageSquareOff, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -196,7 +196,7 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
   const getWhatsAppUrl = (pkgData: any) => {
     const phone = (pkgData.telefono || '').replace(/^0/, '').replace(/\D/g, '');
     const nombreEmpresa = (pkgData.empresas?.nombre || '').toUpperCase();
-    const trackingLink = `https://solucionexdv.vercel.app`;
+    const trackingLink = `https://solucionexdv.vercel.app/trazabilidad-cliente?guia=${pkgData.guia_numero}`;
     
     const message = `⚠️ Paquete por recibir de 
 Origen ➡️ *${nombreEmpresa}*
@@ -214,17 +214,21 @@ ${trackingLink}
 *Tmax sistema de entregas*
 Respaldo y Seguridad en cada Transacción.`;
 
-    // Detectamos si el usuario está en un dispositivo móvil
-    const isMobile = typeof window !== 'undefined' && 
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Elegimos el esquema nativo de móvil o el portal de WhatsApp Web para computadoras
-    const baseUrl = isMobile 
-      ? `whatsapp://send` 
-      : `https://web.whatsapp.com/send`;
+    // Al usar "whatsapp://send" directamente, el sistema operativo (Windows/macOS/móvil)
+    // lanzará automáticamente la aplicación de escritorio instalada (WhatsApp o WhatsApp Business).
+    const baseUrl = `whatsapp://send`;
 
     return `${baseUrl}?phone=593${phone}&text=${encodeURIComponent(message)}`;
   };
+
+    // NUEVA FUNCIÓN PARA EL WHATSAPP DEL OPERADOR
+    const getOperatorWhatsAppUrl = (pkgData: any) => {
+      if (!pkgData?.operadores?.telefono) return '';
+      const phone = pkgData.operadores.telefono.replace(/^0/, '').replace(/\D/g, '');
+      const nombreEmpresa = pkgData.empresas?.nombre || '';
+      const message = `Soy ${nombreEmpresa}`;
+      return `whatsapp://send?phone=593${phone}&text=${encodeURIComponent(message)}`;
+    };
 
   return (
     <>
@@ -263,9 +267,7 @@ Respaldo y Seguridad en cada Transacción.`;
                     <span className="truncate">{pkg.telefono || 'No registrado'}</span>
                     {pkg.telefono && (
                       <a 
-                        href={getWhatsAppUrl(pkg)} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                        href={getWhatsAppUrl(pkg)}
                         className="flex items-center justify-center bg-[#25D366] p-1.5 rounded-full hover:bg-[#128C7E] transition-colors shrink-0"
                         title="Chat por WhatsApp"
                       >
@@ -328,6 +330,33 @@ Respaldo y Seguridad en cada Transacción.`;
                       <Save className="h-3.5 w-3.5" /> Actualizar
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {/* TARJETA DE OPERADOR ASIGNADO Y BOTÓN WHATSAPP */}
+              {pkg.operadores?.nombres && (
+                <div className="p-4 bg-white/5 border border-white/10 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 text-accent">
+                    <Truck className="h-6 w-6" />
+                    <div>
+                      <p className="text-sm font-bold text-white">OPERADOR ASIGNADO</p>
+                      <p className="text-[10px] text-slate-400">{pkg.operadores.nombres}</p>
+                    </div>
+                  </div>
+                  {pkg.operadores?.telefono && (
+                    <Button 
+                      className="w-full sm:w-auto bg-[#25D366] hover:bg-[#128C7E] text-white font-bold gap-2 text-xs h-10 px-4"
+                      asChild
+                    >
+                      <a 
+                        href={getOperatorWhatsAppUrl(pkg)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        ESCRIBIR AL OPERADOR
+                      </a>
+                    </Button>
+                  )}
                 </div>
               )}
 

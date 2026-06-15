@@ -15,9 +15,10 @@ interface PaquetePrintData {
   metodo_pago: string;
   nota?: string;
   novedad?: string;
-  empresas?: { nombre: string; direccion?: string; ruc?: string };
+  empresas?: { nombre: string; direccion?: string; ruc?: string; logo?: string };
   operadores?: { nombres: string };
   created_at?: string; // Campo para fecha y hora de creación
+  numero_transaccion?: number; // Agregado según requerimiento
 }
 
 const statusMap: Record<string, string> = {
@@ -109,27 +110,45 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
       >
         <div className="space-y-4">
 
-          {/* Logo */}
-          <div className="flex justify-center items-center border-b-2 border-black pb-2">
-            <Image
-              src="/logo/impresion logo.png"
-              alt="Solucionex"
-              width={200}
-              height={80}
-              style={{
-                width: '45mm',
-                height: 'auto',
-                objectFit: 'contain',
-              }}
-              priority
-            />
+          {/* Logo de la Empresa (Carga dinámica para impresión) */}
+          <div className="flex justify-center items-center border-b-2 border-black pb-2 min-h-[50px]">
+            {data.empresas?.logo ? (
+              <img
+                src={data.empresas.logo}
+                alt={data.empresas.nombre || "Logo Empresa"}
+                style={{
+                  width: '60mm',
+                  height: 'auto',
+                  maxHeight: '26mm',
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              <div className="text-center py-2">
+                <span className="font-bold text-sm uppercase tracking-wider text-black block leading-tight">
+                  {data.empresas?.nombre || 'SIN LOGO'}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="text-center pt-3">
-          <span className="font-bold text-[11px] text-black">
-            Desarrollado por Tmax System V 1.1.1
-          </span>
-        </div>
+          {/* Versión del Sistema, Términos de Responsabilidad y Número de Transacción */}
+          <div className="text-center pt-3 space-y-2">
+            <div className="font-bold text-[11px] text-black leading-tight">
+              Software desarrollado por Tmax System®<br />
+              Licencia de uso V 1.1.1
+            </div>
+            <p className="text-[8px] text-black leading-normal px-2 text-center">
+              Tmax System no se responsabiliza y está totalmente desvinculado del buen uso o licitud del contenido, picking y packing gestionado por la empresa contratante, así como de la mala gestión por parte de operadores externos a Solucionex Delivery
+            </p>
+            {data.numero_transaccion !== undefined && data.numero_transaccion !== null && (
+              <div className="pt-1">
+                <span className="font-bold text-[11px] text-black">
+                  N° Transacción: {data.numero_transaccion}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Guía de Remisión */}
           <div className="flex flex-col text-center bg-gray-100 p-2 border-b border-black">
@@ -176,7 +195,7 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
                 </div>
               </div>
 
-              {/* QR Code - Nueva Ubicación */}
+              {/* QR Code */}
               <div className="flex flex-col items-center pt-2 mt-1">
                 <QRGenerator value={data.id} size={140} />
                 <span className="font-bold text-[9px] uppercase text-black mt-1">Escanear para Retiro</span>
@@ -190,8 +209,24 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
                 <span className="text-sm font-medium leading-tight text-black">{data.direccion}</span>
               </div>
 
-              {/* Operador (Ubicación actualizada abajo de Dirección) */}
-              <div className="flex flex-col border-t border-gray-200 pt-2">
+              {/* Logo Solucionex (Ubicado arriba de la sección Operador) */}
+              <div className="flex justify-center items-center pt-2 border-t border-gray-200">
+                <Image
+                  src="/logo/impresion logo.png"
+                  alt="Solucionex"
+                  width={200}
+                  height={80}
+                  style={{
+                    width: '35mm',
+                    height: 'auto',
+                    objectFit: 'contain',
+                  }}
+                  priority
+                />
+              </div>
+
+              {/* Operador */}
+              <div className="flex flex-col pt-1">
                 <span className="font-bold uppercase text-[11px] text-black mb-0.5">Operador:</span>
                 <span className="text-sm font-semibold leading-tight text-black">
                   {data.operadores?.nombres || 'No asignado'}
@@ -233,7 +268,6 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
             </div>
           </div>
         </div>
-        
         
         {/* Espacio para la cuchilla */}
         <div style={{ height: '12mm' }}></div>

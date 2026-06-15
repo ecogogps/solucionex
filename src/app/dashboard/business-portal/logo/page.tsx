@@ -298,7 +298,7 @@ export default function BusinessLogoPage() {
                           className="text-sm font-bold text-accent flex items-center gap-2 cursor-pointer"
                         >
                           {isUpdatingExclusivity ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                          NATIVO ACTIVO / Operación Exclusiva
+                          Activar operadores exclusivos de mi empresa
                         </Label>
                       </div>
                     </div>

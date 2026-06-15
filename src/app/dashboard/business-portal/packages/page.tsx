@@ -170,7 +170,7 @@ export default function BusinessPackagesPage() {
     try {
       const { data, error } = await supabase
         .from('paquetes')
-        .select('*, empresas (nombre, direccion, ruc), operadores (nombres), paquetes_historial (estado, created_at)')
+        .select('*, empresas (nombre, direccion, ruc, logo), operadores (nombres, telefono), paquetes_historial (estado, created_at)')
         .eq('empresa_id', uid)
         .order('created_at', { ascending: false });
 
@@ -222,7 +222,7 @@ export default function BusinessPackagesPage() {
           </Link>
           <Link href="/dashboard/business-portal/logo">
             <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <ImageIcon className="h-5 w-5" /> Logo Empresa
+              <ImageIcon className="h-5 w-5" /> Configuración
             </Button>
           </Link>
         </nav>
