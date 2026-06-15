@@ -58,7 +58,8 @@ export default function BusinessPortalRequest() {
     orderValue: '',
     address: '',
     phone: '',
-    note: ''
+    note: '',
+    sectorId: ''
   });
 
   const [showCamera, setShowCamera] = useState(false);
@@ -258,7 +259,8 @@ export default function BusinessPortalRequest() {
           direccion: formData.address,
           telefono: formData.phone,
           nota: formData.note,
-          estado: 'buscando_operador'
+          estado: 'buscando_operador',
+          sector_id: formData.sectorId
         }]);
 
       if (insertError) throw insertError;
@@ -360,25 +362,29 @@ export default function BusinessPortalRequest() {
                   {/* SELECCIÓN DE SECTOR (Mueve aquí para que el usuario sepa que influye en la guía) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Sector de Entrega</Label>
+                      <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Sector</Label>
                       <Select 
-                        value={selectedSectorName} 
-                        onValueChange={setSelectedSectorName}
-                        required
-                      >
+                          value={formData.sectorId}
+                          onValueChange={(value) => {
+                            const sector = sectores.find(s => s.id === value);
+                            setSelectedSectorName(sector?.nombre || '');
+                            setFormData(prev => ({ ...prev, sectorId: value }));
+                          }}
+                          required
+                        >
                         <SelectTrigger className="bg-white/5 border-white/10 text-white">
                           <SelectValue placeholder={fetchingSectors ? "Cargando sectores..." : "Seleccionar sector"} />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white">
                           {sectores.map((s) => (
-                            <SelectItem key={s.id} value={s.nombre}>{s.nombre}</SelectItem>
+                            <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>
                           ))}
                           {sectores.length === 0 && !fetchingSectors && (
                             <SelectItem value="none" disabled>No hay sectores asignados</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
-                      <p className="text-[10px] text-slate-500 italic">Determina el prefijo de tu Guía Nº</p>
+              
                     </div>
 
                     <div className="space-y-2">
@@ -491,19 +497,19 @@ export default function BusinessPortalRequest() {
                       <Input id="valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={formData.orderValue} onChange={(e) => setFormData({...formData, orderValue: e.target.value})} required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="telf" className="text-slate-300">Teléfono del Cliente</Label>
-                      <Input id="telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={formData.phone} onChange={handlePhoneChange} placeholder="09XXXXXXXX" required />
+                      <Label htmlFor="telf" className="text-slate-300">Teléfono</Label>
+                      <Input id="telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={formData.phone} onChange={handlePhoneChange} required />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dir" className="text-slate-300">Dirección de Entrega</Label>
+                    <Label htmlFor="dir" className="text-slate-300">Dirección</Label>
                     <Input id="dir" className="bg-white/5 border-white/10 text-white" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} required />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="nota" className="text-slate-300">Nota (contenido)</Label>
-                    <Textarea id="nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={formData.note} onChange={(e) => setFormData({...formData, note: e.target.value})} placeholder="Detalles adicionales del paquete..." />
+                    <Textarea id="nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={formData.note} onChange={(e) => setFormData({...formData, note: e.target.value})} />
                   </div>
 
                   <Button type="submit" className="w-full bg-accent text-primary hover:bg-accent/90 font-bold h-12 text-lg shadow-lg shadow-accent/10" disabled={loading || !formData.trackingNumber}>

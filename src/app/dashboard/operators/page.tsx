@@ -21,7 +21,9 @@ import {
   Navigation,
   Settings,
   ShieldCheck,
-  Check
+  Check,
+  Globe,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,6 +73,18 @@ interface OperadorData {
   tipo: 'clase_a' | 'clase_b' | 'clase_s';
   estado: 'activo' | 'inactivo';
   created_at?: string;
+  operador_zonas?: { zona_id: string; zonas: { id: string; nombre: string; ciudades: { id: string; nombre: string } } }[];
+}
+
+interface Ciudad {
+  id: string;
+  nombre: string;
+}
+
+interface Zona {
+  id: string;
+  nombre: string;
+  ciudad_id: string;
 }
 
 interface EmpresaOption {
@@ -84,6 +98,11 @@ export default function OperatorsPage() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
+  
+  // Data for selects
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
+  const [todasZonas, setAllZonas] = useState<Zona[]>([]);
+  const [filteredZonas, setFilteredZonas] = useState<Zona[]>([]);
   
   // Modals state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -101,32 +120,65 @@ export default function OperatorsPage() {
     telefono: '', 
     cedula: '', 
     tipo: 'clase_b' as const, 
-    estado: 'activo' as const 
+    estado: 'activo' as const,
+    ciudad_id: '',
+    zonas_ids: [] as string[]
   });
   
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchOperadores();
+    fetchInitialData();
     fetchBusinesses();
   }, []);
 
-  const fetchOperadores = async () => {
+  useEffect(() => {
+    if (formData.ciudad_id) {
+      setFilteredZonas(todasZonas.filter(z => z.ciudad_id === formData.ciudad_id));
+    } else {
+      setFilteredZonas([]);
+    }
+  }, [formData.ciudad_id, todasZonas]);
+
+  const fetchInitialData = async () => {
     setLoading(true);
+    try {
+      // Fetch operators with zones
+      const { data: opData, error: opError } = await supabase
+        .from('operadores')
+        .select('*, operador_zonas(zona_id, zonas(id, nombre, ciudades(id, nombre)))')
+        .order('nombres', { ascending: true });
+      
+      if (opError) throw opError;
+      setOperadores(opData || []);
+
+      // Fetch cities
+      const { data: cityData } = await supabase.from('ciudades').select('*').order('nombre');
+      setCiudades(cityData || []);
+
+      // Fetch all zones
+      const { data: zoneData } = await supabase.from('zonas').select('*').order('nombre');
+      setAllZonas(zoneData || []);
+
+    } catch (error: any) {
+      console.error("Error cargando datos iniciales:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOperadores = async () => {
     try {
       const { data, error } = await supabase
         .from('operadores')
-        .select('*')
+        .select('*, operador_zonas(zona_id, zonas(id, nombre, ciudades(id, nombre)))')
         .order('nombres', { ascending: true });
-      
       if (error) throw error;
       setOperadores(data || []);
-    } catch (error: any) {
-      console.error("Error cargando operadores:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los operadores." });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error al refrescar operadores:", error);
     }
   };
 
@@ -141,6 +193,15 @@ export default function OperatorsPage() {
     } catch (err) {
       console.error("Error fetching businesses:", err);
     }
+  };
+
+  const handleZoneToggle = (zoneId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      zonas_ids: prev.zonas_ids.includes(zoneId)
+        ? prev.zonas_ids.filter(id => id !== zoneId)
+        : [...prev.zonas_ids, zoneId]
+    }));
   };
 
   const handleOpenAssignModal = async (op: OperadorData) => {
@@ -195,7 +256,6 @@ export default function OperatorsPage() {
 
       toast({ title: "Éxito", description: "Empresas asignadas correctamente al operador." });
       
-      // Cerrar y refrescar eventos de puntero
       setIsAssignDialogOpen(false);
       setTimeout(() => {
         document.body.style.pointerEvents = 'auto';
@@ -253,9 +313,26 @@ export default function OperatorsPage() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Save zones relationship
+      const targetOperadorId = editingOperador ? editingOperador.id : data.user?.id;
+      
+      if (targetOperadorId) {
+        // Delete old zones
+        await supabase.from('operador_zonas').delete().eq('operador_id', targetOperadorId);
+        
+        // Insert new zones
+        if (formData.zonas_ids.length > 0) {
+          const zonePayload = formData.zonas_ids.map(zid => ({
+            operador_id: targetOperadorId,
+            zona_id: zid
+          }));
+          await supabase.from('operador_zonas').insert(zonePayload);
+        }
+      }
+
       toast({ 
         title: editingOperador ? "Actualizado" : "Operador Registrado", 
-        description: editingOperador ? "Los datos y credenciales han sido actualizados." : "Se ha creado el usuario y el registro exitosamente." 
+        description: editingOperador ? "Los datos y zonas han sido actualizados." : "Se ha creado el usuario y el registro exitosamente." 
       });
       
       fetchOperadores();
@@ -308,12 +385,28 @@ export default function OperatorsPage() {
 
   const openNewOperadorModal = () => {
     setEditingOperador(null);
-    setFormData({ nombres: '', email: '', password: '', telefono: '', cedula: '', tipo: 'clase_b', estado: 'activo' });
+    setFormData({ 
+      nombres: '', 
+      email: '', 
+      password: '', 
+      telefono: '', 
+      cedula: '', 
+      tipo: 'clase_b', 
+      estado: 'activo',
+      ciudad_id: '',
+      zonas_ids: []
+    });
     setIsDialogOpen(true);
   };
 
-  const openEditOperadorModal = (op: OperadorData) => {
+  const openEditOperadorModal = (op: any) => {
     setEditingOperador(op);
+    
+    // Extract zone IDs and detect city from existing relations
+    const currentZones = op.operador_zonas || [];
+    const currentZoneIds = currentZones.map((z: any) => z.zona_id);
+    const detectedCityId = currentZones.length > 0 ? currentZones[0].zonas?.ciudades?.id : '';
+
     setFormData({ 
       nombres: op.nombres || '', 
       email: op.correo || '', 
@@ -321,8 +414,11 @@ export default function OperatorsPage() {
       telefono: op.telefono || '', 
       cedula: op.cedula || '', 
       tipo: op.tipo || 'clase_b', 
-      estado: op.estado || 'activo' 
+      estado: op.estado || 'activo',
+      ciudad_id: detectedCityId || '',
+      zonas_ids: currentZoneIds
     });
+    
     setTimeout(() => {
       setIsDialogOpen(true);
     }, 100);
@@ -407,6 +503,7 @@ export default function OperatorsPage() {
                 <TableHeader className="bg-white/10">
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="font-bold text-slate-300">Operador</TableHead>
+                    <TableHead className="font-bold text-slate-300">Ciudad / Zonas</TableHead>
                     <TableHead className="font-bold text-slate-300">Cédula</TableHead>
                     <TableHead className="font-bold text-slate-300">Tipo / Estado</TableHead>
                     <TableHead className="font-bold text-slate-300">Teléfono</TableHead>
@@ -420,68 +517,86 @@ export default function OperatorsPage() {
                       o.cedula?.toLowerCase().includes(search.toLowerCase()) ||
                       o.correo?.toLowerCase().includes(search.toLowerCase())
                     )
-                    .map((op) => (
-                    <TableRow key={op.id} className="border-white/10 hover:bg-white/5">
-                      <TableCell className="font-medium text-white">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                            <BadgeCheck className="w-4 h-4 text-accent" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span>{op.nombres}</span>
-                            <span className="text-[10px] text-slate-500">{op.correo}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-300 font-mono text-xs">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-3 h-3 text-slate-500" />
-                          {op.cedula}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300 uppercase">
-                            {op.tipo?.replace('_', ' ')}
-                          </Badge>
-                          <Badge className={op.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
-                            {op.estado}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-400 text-xs">
-                        <div className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {op.telefono}</div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
-                            <DropdownMenuItem 
-                              className="gap-2 cursor-pointer" 
-                              onClick={() => openEditOperadorModal(op)}
-                            >
-                              <Edit2 className="h-4 w-4 text-blue-400" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="gap-2 cursor-pointer" 
-                              onClick={() => handleOpenAssignModal(op)}
-                            >
-                              <ShieldCheck className="h-4 w-4 text-accent" /> Asignar Empresa
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-white/10" />
-                            <DropdownMenuItem 
-                              className="gap-2 text-red-400 cursor-pointer"
-                              onClick={() => deleteOperador(op.id)}
-                            >
-                              <Trash2 className="h-4 w-4" /> Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                    .map((op) => {
+                      const zonasArray = op.operador_zonas || [];
+                      const ciudadNombre = zonasArray.length > 0 ? zonasArray[0].zonas?.ciudades?.nombre : 'Sin ciudad';
+                      const numZonas = zonasArray.length;
+
+                      return (
+                        <TableRow key={op.id} className="border-white/10 hover:bg-white/5">
+                          <TableCell className="font-medium text-white">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                                <BadgeCheck className="w-4 h-4 text-accent" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span>{op.nombres}</span>
+                                <span className="text-[10px] text-slate-500">{op.correo}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-white">
+                                <Globe className="w-3 h-3 text-accent" /> {ciudadNombre}
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge variant="outline" className="text-[9px] border-white/5 bg-white/5 text-slate-400">
+                                  {numZonas} {numZonas === 1 ? 'Zona' : 'Zonas'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-300 font-mono text-xs">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-3 h-3 text-slate-500" />
+                              {op.cedula}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300 uppercase">
+                                {op.tipo?.replace('_', ' ')}
+                              </Badge>
+                              <Badge className={op.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
+                                {op.estado}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-400 text-xs">
+                            <div className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {op.telefono}</div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
+                                <DropdownMenuItem 
+                                  className="gap-2 cursor-pointer" 
+                                  onClick={() => openEditOperadorModal(op)}
+                                >
+                                  <Edit2 className="h-4 w-4 text-blue-400" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="gap-2 cursor-pointer" 
+                                  onClick={() => handleOpenAssignModal(op)}
+                                >
+                                  <ShieldCheck className="h-4 w-4 text-accent" /> Asignar Empresa
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-white/10" />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-red-400 cursor-pointer"
+                                  onClick={() => deleteOperador(op.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" /> Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </div>
@@ -497,7 +612,7 @@ export default function OperatorsPage() {
             }, 300);
           }
         }}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white">
                 {editingOperador ? 'Editar Operador' : 'Registrar Nuevo Operador'}
@@ -572,6 +687,50 @@ export default function OperatorsPage() {
                       <SelectItem value="inactivo">Inactivo</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* ASOCIACIÓN CIUDAD Y ZONAS PARA OPERADORES */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
+                <div className="grid gap-2">
+                  <Label className="text-accent flex items-center gap-1"><Globe className="w-3 h-3" /> Seleccionar Ciudad</Label>
+                  <Select value={formData.ciudad_id} onValueChange={(v) => setFormData({...formData, ciudad_id: v, zonas_ids: []})}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Elegir ciudad..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      {ciudades.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Zonas de Operación ({formData.zonas_ids.length})</Label>
+                  <div className="bg-white/5 border border-white/10 rounded-md p-2">
+                    {formData.ciudad_id ? (
+                      <ScrollArea className="h-32">
+                        <div className="space-y-2 pr-4">
+                          {filteredZonas.map(z => (
+                            <div key={z.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`zone-${z.id}`} 
+                                checked={formData.zonas_ids.includes(z.id)}
+                                onCheckedChange={() => handleZoneToggle(z.id)}
+                                className="border-white/20 data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                              />
+                              <label htmlFor={`zone-${z.id}`} className="text-xs font-medium leading-none cursor-pointer">
+                                {z.nombre}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <p className="text-[10px] text-slate-500 italic py-8 text-center">Selecciona una ciudad primero</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
