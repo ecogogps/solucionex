@@ -6,7 +6,6 @@ import {
   Package, 
   Search, 
   MoreVertical, 
-  LogOut, 
   Truck, 
   Clock, 
   CheckCircle2, 
@@ -36,14 +35,11 @@ import {
   X,
   Image as ImageIcon,
   AlertCircle,
-  Navigation,
   Volume2,
   VolumeX,
   FileDown,
-  Settings,
   Copy,
-  Check,
-  Wallet
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -77,7 +73,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
 import Image from 'next/image';
 import { exportPackagesToPDF } from '@/components/Package-report';
 
@@ -544,751 +539,699 @@ export default function DashboardAdmin() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
   return (
-    <div className="min-h-screen bg-background flex text-white">
-      <aside className="w-64 bg-black/20 border-r border-white/10 hidden lg:flex flex-col p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-10">
-          <Truck className="h-8 w-8 text-accent" />
-          <span className="text-xl font-bold tracking-tight">Solucionex</span>
-        </div>
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard">
-            <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20 mb-2">
-              <Package className="h-5 w-5 text-accent" /> Paquetes
-            </Button>
-          </Link>
-          <Link href="/dashboard/business">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Building2 className="h-5 w-5" /> Empresas
-            </Button>
-          </Link>
-          <Link href="/dashboard/operators">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <UserCheck className="h-5 w-5" /> Operadores
-            </Button>
-          </Link>
-          <Link href="/dashboard/tracking">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Navigation className="h-5 w-5" /> Ubicación Operador
-            </Button>
-          </Link>
-          <Link href="/dashboard/wallets">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Wallet className="h-5 w-5" /> Billeteras
-            </Button>
-          </Link>
-          <Link href="/dashboard/configuration">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Settings className="h-5 w-5" /> Configuración
-            </Button>
-          </Link>
-        </nav>
-        <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" /> Cerrar Sesión
+    <>
+      <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
+        <h2 className="text-xl font-bold text-white">Gestión Paquetes</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {!isAudioEnabled ? (
+              <Badge variant="outline" className="border-yellow-500/50 text-yellow-500 gap-1 text-[10px] py-1 cursor-pointer" onClick={() => setIsAudioEnabled(true)}>
+                <VolumeX className="h-3 w-3" /> Sonido Silenciado
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px] py-1">
+                <Volume2 className="h-3 w-3" /> Sonido Activo
+              </Badge>
+            )}
+          </div>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              placeholder="Buscar guía o empresa..." 
+              className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleExportPDF} variant="outline" className="border-accent text-accent hover:bg-accent/10 font-bold gap-2">
+            <FileDown className="h-4 w-4" /> Exportar Hoy
+          </Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-accent text-primary hover:bg-accent/90 font-bold">
+            <Plus className="h-4 w-4 mr-2" /> Nuevo Paquete
           </Button>
         </div>
-      </aside>
+      </header>
 
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
-          <h2 className="text-xl font-bold text-white">Gestión Paquetes</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              {!isAudioEnabled ? (
-                <Badge variant="outline" className="border-yellow-500/50 text-yellow-500 gap-1 text-[10px] py-1 cursor-pointer" onClick={() => setIsAudioEnabled(true)}>
-                  <VolumeX className="h-3 w-3" /> Sonido Silenciado
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px] py-1">
-                  <Volume2 className="h-3 w-3" /> Sonido Activo
-                </Badge>
-              )}
-            </div>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input 
-                placeholder="Buscar guía o empresa..." 
-                className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleExportPDF} variant="outline" className="border-accent text-accent hover:bg-accent/10 font-bold gap-2">
-              <FileDown className="h-4 w-4" /> Exportar Hoy
-            </Button>
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-accent text-primary hover:bg-accent/90 font-bold">
-              <Plus className="h-4 w-4 mr-2" /> Nuevo Paquete
-            </Button>
+      <div className="p-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+            <Loader2 className="h-8 w-8 animate-spin mb-4" />
+            <p>Sincronizando...</p>
           </div>
-        </header>
-
-        <div className="p-8">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Sincronizando...</p>
-            </div>
-          ) : packages.length === 0 ? (
-            <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
-              <Package className="h-12 w-12 text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white">Sin registros</h3>
-              <p className="text-slate-400">No hay paquetes activos en el sistema.</p>
-            </div>
-          ) : (
-            <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
-              <Table>
-                <TableHeader className="bg-white/10">
-                  <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="font-bold text-slate-300">Guía / Fecha</TableHead>
-                    <TableHead className="font-bold text-slate-300">Empresa / Operador</TableHead>
-                    <TableHead className="font-bold text-slate-300">Destino</TableHead>
-                    <TableHead className="font-bold text-slate-300">Ubicación</TableHead>
-                    <TableHead className="font-bold text-slate-300">Valor</TableHead>
-                    <TableHead className="font-bold text-slate-300">Estado</TableHead>
-                    <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {packages
-                    .filter(p => 
-                      p.guia_numero.toLowerCase().includes(search.toLowerCase()) || 
-                      p.empresas?.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-                      p.operadores?.nombres?.toLowerCase().includes(search.toLowerCase())
-                    )
-                    .map((pkg) => (
-                    <TableRow key={pkg.id} className="border-white/10 hover:bg-white/5">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-mono font-medium text-accent">{pkg.guia_numero}</span>
-                          <span className="text-[10px] text-slate-500">{new Date(pkg.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-white text-xs flex items-center gap-1">
-                            <Building2 className="w-3 h-3 text-slate-400" /> {pkg.empresas?.nombre || 'N/A'}
-                          </span>
-                          <span className="text-slate-400 text-[10px] flex items-center gap-1 italic">
-                            <UserCheck className="w-3 h-3" /> {pkg.operadores?.nombres || 'No asignado'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-slate-300 text-xs">
-                         <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 shrink-0" /> {pkg.direccion}
-                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1.5">
-                          {pkg.ubicacion_pendiente && (
-                            <div className="flex items-center gap-2 group">
-                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Aceptado</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
-                                asChild
+        ) : packages.length === 0 ? (
+          <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
+            <Package className="h-12 w-12 text-slate-500 mb-4" />
+            <h3 className="text-lg font-semibold text-white">Sin registros</h3>
+            <p className="text-slate-400">No hay paquetes activos en el sistema.</p>
+          </div>
+        ) : (
+          <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
+            <Table>
+              <TableHeader className="bg-white/10">
+                <TableRow className="border-white/10 hover:bg-transparent">
+                  <TableHead className="font-bold text-slate-300">Guía / Fecha</TableHead>
+                  <TableHead className="font-bold text-slate-300">Empresa / Operador</TableHead>
+                  <TableHead className="font-bold text-slate-300">Destino</TableHead>
+                  <TableHead className="font-bold text-slate-300">Ubicación</TableHead>
+                  <TableHead className="font-bold text-slate-300">Valor</TableHead>
+                  <TableHead className="font-bold text-slate-300">Estado</TableHead>
+                  <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {packages
+                  .filter(p => 
+                    p.guia_numero.toLowerCase().includes(search.toLowerCase()) || 
+                    p.empresas?.nombre?.toLowerCase().includes(search.toLowerCase()) ||
+                    p.operadores?.nombres?.toLowerCase().includes(search.toLowerCase())
+                  )
+                  .map((pkg) => (
+                  <TableRow key={pkg.id} className="border-white/10 hover:bg-white/5">
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-mono font-medium text-accent">{pkg.guia_numero}</span>
+                        <span className="text-[10px] text-slate-500">{new Date(pkg.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-white text-xs flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-slate-400" /> {pkg.empresas?.nombre || 'N/A'}
+                        </span>
+                        <span className="text-slate-400 text-[10px] flex items-center gap-1 italic">
+                          <UserCheck className="w-3 h-3" /> {pkg.operadores?.nombres || 'No asignado'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate text-slate-300 text-xs">
+                       <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 shrink-0" /> {pkg.direccion}
+                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5">
+                        {pkg.ubicacion_pendiente && (
+                          <div className="flex items-center gap-2 group">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Aceptado</span>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
+                              asChild
+                            >
+                              <a 
+                                href={`https://www.google.com/maps?q=${pkg.ubicacion_pendiente.latitud},${pkg.ubicacion_pendiente.longitud}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                title="Ver ubicación al aceptar"
                               >
-                                <a 
-                                  href={`https://www.google.com/maps?q=${pkg.ubicacion_pendiente.latitud},${pkg.ubicacion_pendiente.longitud}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  title="Ver ubicación al aceptar"
-                                >
-                                  <MapPinned className="h-3.5 w-3.5" />
-                                </a>
-                              </Button>
-                            </div>
-                          )}
-                          {pkg.ubicacion_paquete_retirado && (
-                            <div className="flex items-center gap-2 group">
-                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Retirado</span>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
-                                asChild
+                                <MapPinned className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                          </div>
+                        )}
+                        {pkg.ubicacion_paquete_retirado && (
+                          <div className="flex items-center gap-2 group">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter w-12 shrink-0">Retirado</span>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-accent hover:bg-accent/10 shrink-0" 
+                              asChild
+                            >
+                              <a 
+                                href={`https://www.google.com/maps?q=${pkg.ubicacion_paquete_retirado.latitud},${pkg.ubicacion_paquete_retirado.longitud}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                title="Ver ubicación al retirar"
                               >
-                                <a 
-                                  href={`https://www.google.com/maps?q=${pkg.ubicacion_paquete_retirado.latitud},${pkg.ubicacion_paquete_retirado.longitud}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  title="Ver ubicación al retirar"
-                                >
-                                  <MapPinned className="h-3.5 w-3.5" />
-                                </a>
-                              </Button>
-                            </div>
-                          )}
-                          {!pkg.ubicacion_pendiente && !pkg.ubicacion_paquete_retirado && (
-                            <span className="text-[10px] text-slate-700 italic">Sin GPS</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1.5 items-start">
-                          {getStatusBadge(pkg.estado)}
-                          
-                          {pkg.alerta_danio_reasignacion && (
-                            <div className="flex flex-col gap-1 items-start mt-0.5">
-                              <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[9px] px-1 py-0 animate-pulse">
-                                  DAÑO / REASIGNACIÓN
-                              </Badge>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-5 text-[9px] hover:bg-white/10 text-yellow-500 hover:text-yellow-400 px-1.5 border border-yellow-500/30 font-bold"
+                                <MapPinned className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                          </div>
+                        )}
+                        {!pkg.ubicacion_pendiente && !pkg.ubicacion_paquete_retirado && (
+                          <span className="text-[10px] text-slate-700 italic">Sin GPS</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        {getStatusBadge(pkg.estado)}
+                        
+                        {pkg.alerta_danio_reasignacion && (
+                          <div className="flex flex-col gap-1 items-start mt-0.5">
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[9px] px-1 py-0 animate-pulse">
+                                DAÑO / REASIGNACIÓN
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 text-[9px] hover:bg-white/10 text-yellow-500 hover:text-yellow-400 px-1.5 border border-yellow-500/30 font-bold"
+                              onClick={() => handleInactivarAlerta(pkg.id)}
+                            >
+                              Inactivar Alerta
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="hover:bg-accent/20 text-accent"
+                          onClick={() => openViewPackageModal(pkg)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
+                            <DropdownMenuItem 
+                              className="gap-2 cursor-pointer" 
+                              onClick={() => openEditPackageModal(pkg)}
+                            >
+                              <Edit2 className="h-4 w-4 text-blue-400" /> Gestionar
+                            </DropdownMenuItem>
+                            
+                            {pkg.alerta_danio_reasignacion && (
+                              <DropdownMenuItem 
+                                className="gap-2 text-yellow-500 cursor-pointer"
                                 onClick={() => handleInactivarAlerta(pkg.id)}
                               >
-                                Inactivar Alerta
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="hover:bg-accent/20 text-accent"
-                            onClick={() => openViewPackageModal(pkg)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
-                              <DropdownMenuItem 
-                                className="gap-2 cursor-pointer" 
-                                onClick={() => openEditPackageModal(pkg)}
-                              >
-                                <Edit2 className="h-4 w-4 text-blue-400" /> Gestionar
-                              </DropdownMenuItem>
-                              
-                              {pkg.alerta_danio_reasignacion && (
-                                <DropdownMenuItem 
-                                  className="gap-2 text-yellow-500 cursor-pointer"
-                                  onClick={() => handleInactivarAlerta(pkg.id)}
-                                >
-                                  <AlertTriangle className="h-4 w-4" /> Inactivar Alerta
-                              </DropdownMenuItem>
-                              )}
-                              
-                              <DropdownMenuSeparator className="bg-white/10" />
-                              <DropdownMenuItem 
-                                className="gap-2 text-red-400 cursor-pointer"
-                                onClick={() => deletePackage(pkg.id)}
-                              >
-                                <Trash2 className="h-4 w-4" /> Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                                <AlertTriangle className="h-4 w-4" /> Inactivar Alerta
+                            </DropdownMenuItem>
+                            )}
+                            
+                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuItem 
+                              className="gap-2 text-red-400 cursor-pointer"
+                              onClick={() => deletePackage(pkg.id)}
+                            >
+                              <Trash2 className="h-4 w-4" /> Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      {/* DIALOG DE CREACIÓN */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white text-base flex items-center gap-2">
+              <PlusCircle className="h-5 w-5 text-accent" /> Datos del Paquete (Nueva Solicitud)
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateSubmit} className="space-y-6 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Empresa Solicitante</Label>
+                <Select 
+                  value={createFormData.empresa_id} 
+                  onValueChange={(v) => setCreateFormData({...createFormData, empresa_id: v})}
+                  required
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Seleccionar empresa" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    {businesses.map((bus) => (
+                      <SelectItem key={bus.id} value={bus.id}>{bus.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Tipo de Paquete</Label>
+                <Select 
+                  value={createFormData.tipo} 
+                  onValueChange={(v) => setCreateFormData({...createFormData, tipo: v})}
+                  required
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Seleccionar tamaño" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectItem value="pequeño">Pequeño</SelectItem>
+                    <SelectItem value="mediano">Mediano</SelectItem>
+                    <SelectItem value="grande">Grande</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* DIALOG DE CREACIÓN */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white text-base flex items-center gap-2">
-                <PlusCircle className="h-5 w-5 text-accent" /> Datos del Paquete (Nueva Solicitud)
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateSubmit} className="space-y-6 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Empresa Solicitante</Label>
-                  <Select 
-                    value={createFormData.empresa_id} 
-                    onValueChange={(v) => setCreateFormData({...createFormData, empresa_id: v})}
-                    required
-                  >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue placeholder="Seleccionar empresa" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      {businesses.map((bus) => (
-                        <SelectItem key={bus.id} value={bus.id}>{bus.nombre}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Tipo de Paquete</Label>
-                  <Select 
-                    value={createFormData.tipo} 
-                    onValueChange={(v) => setCreateFormData({...createFormData, tipo: v})}
-                    required
-                  >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue placeholder="Seleccionar tamaño" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="pequeño">Pequeño</SelectItem>
-                      <SelectItem value="mediano">Mediano</SelectItem>
-                      <SelectItem value="grande">Grande</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Tiempo de Recogida</Label>
-                  <Select 
-                    value={createFormData.tiempo_recogida} 
-                    onValueChange={(v) => setCreateFormData({...createFormData, tiempo_recogida: v})}
-                    required
-                  >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue placeholder="Tiempo estimado" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="5">5 minutos</SelectItem>
-                      <SelectItem value="10">10 minutos</SelectItem>
-                      <SelectItem value="15">15 minutos</SelectItem>
-                      <SelectItem value="20">20 minutos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-guia" className="text-slate-300">Guía Nº</Label>
-                  <Input 
-                    id="create-guia"
-                    className="bg-white/5 border-white/10 text-white" 
-                    value={createFormData.guia_numero}
-                    onChange={(e) => setCreateFormData({...createFormData, guia_numero: e.target.value})}
-                    placeholder="Ej: GU-001"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Imagen de guía</Label>
-                  <div className="flex flex-col gap-2">
-                    {capturedImage ? (
-                      <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
-                        <img src={capturedImage} alt="Guía" className="w-full h-full object-contain" />
-                        <button 
-                          type="button"
-                          onClick={() => setCapturedImage(null)}
-                          className="absolute top-2 right-2 bg-red-500/80 p-1 rounded-full text-white hover:bg-red-500"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
-                          onClick={() => setShowCamera(true)}
-                        >
-                          <Camera className="mr-2 h-4 w-4" /> Foto
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <ImageIcon className="mr-2 h-4 w-4" /> Subir
-                        </Button>
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-slate-300">Método de Pago</Label>
-                  <RadioGroup value={createFormData.metodo_pago} onValueChange={(v) => setCreateFormData({...createFormData, metodo_pago: v})} className="flex gap-4 pt-1">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="transferencia" id="create-transferencia" className="border-accent text-accent" />
-                      <Label htmlFor="create-transferencia" className="cursor-pointer text-sm">Transf.</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="efectivo" id="create-efectivo" className="border-accent text-accent" />
-                      <Label htmlFor="create-efectivo" className="cursor-pointer text-sm">Efec.</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create-valor" className="text-slate-300">Valor Pedido ($)</Label>
-                  <Input id="create-valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={createFormData.valor_pedido} onChange={(e) => setCreateFormData({...createFormData, valor_pedido: e.target.value})} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-telf" className="text-slate-300">Teléfono</Label>
-                  <Input id="create-telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={createFormData.telefono} onChange={(e) => setCreateFormData({...createFormData, telefono: e.target.value.replace(/\D/g, '')})} required />
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="create-dir" className="text-slate-300">Dirección</Label>
-                <Input id="create-dir" className="bg-white/5 border-white/10 text-white" value={createFormData.direccion} onChange={(e) => setCreateFormData({...createFormData, direccion: e.target.value})} required />
+                <Label className="text-slate-300">Tiempo de Recogida</Label>
+                <Select 
+                  value={createFormData.tiempo_recogida} 
+                  onValueChange={(v) => setCreateFormData({...createFormData, tiempo_recogida: v})}
+                  required
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Tiempo estimado" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectItem value="5">5 minutos</SelectItem>
+                    <SelectItem value="10">10 minutos</SelectItem>
+                    <SelectItem value="15">15 minutos</SelectItem>
+                    <SelectItem value="20">20 minutos</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="create-nota" className="text-slate-300">Nota</Label>
-                <Textarea id="create-nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={createFormData.nota} onChange={(e) => setCreateFormData({...createFormData, nota: e.target.value})} />
-              </div>
-
-              <DialogFooter className="pt-4 border-t border-white/5">
-                <Button variant="ghost" onClick={() => setIsCreateDialogOpen(false)} className="text-slate-400">Cancelar</Button>
-                <Button type="submit" className="bg-accent text-primary hover:bg-accent/90 font-bold px-8" disabled={isSaving}>
-                  {isSaving ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4" /> Enviar Solicitud</>}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG DE EDICIÓN */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-lg">
-            <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Edit2 className="h-5 w-5 text-accent" /> Gestionar Paquete
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="guia" className="text-slate-400 flex items-center gap-1">
-                    <Hash className="w-3 h-3" /> Guía Nº
-                  </Label>
-                  <Input id="guia" value={formData.guia_numero} onChange={(e) => setFormData({...formData, guia_numero: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="valor" className="text-slate-400 flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" /> Valor Pedido ($)
-                  </Label>
-                  <Input id="valor" type="number" step="0.01" value={formData.valor_pedido} onChange={(e) => setFormData({...formData, valor_pedido: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dest" className="text-slate-400 flex items-center gap-1">
-                   <MapPin className="w-3 h-3" /> Dirección de Destino
-                </Label>
-                <Input id="dest" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-slate-400">Operador Asignado</Label>
-                  <Select value={formData.operador_id} onValueChange={(v) => setFormData({...formData, operador_id: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Sin asignar" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      <SelectItem value="null">-- Ninguno --</SelectItem>
-                      {operadores.map((op) => (
-                        <SelectItem key={op.id} value={op.id}>{op.nombres}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-slate-400">Estado de Gestión</Label>
-                  <Select value={formData.estado} onValueChange={(v) => setFormData({...formData, estado: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      <SelectItem value="pedido_listo">Pedido Listo</SelectItem>
-                      <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
-                      <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
-                      <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
-                      <SelectItem value="llegado_a_origen">Llegado a origen</SelectItem>
-                      <SelectItem value="demorado_despacho">Demorado Despacho</SelectItem>
-                      <SelectItem value="demorado_operador">Demorado Operador</SelectItem>
-                      <SelectItem value="paquete_retirado">Paquete retirado de origen</SelectItem>
-                      <SelectItem value="en_ruta">En Transito a Destino</SelectItem>
-                      <SelectItem value="llegado">Paquete llego al Destino</SelectItem>
-                      <SelectItem value="entregado">ENTREGADO CON EXITO</SelectItem>
-                      <SelectItem value="entregado_novedad">ENTREGADO CON NOVEDAD</SelectItem>
-                      <SelectItem value="cancelado">No ejecutado</SelectItem>
-                      <SelectItem value="anulado_retornar">Anulado - Retornar a origen</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="nota-edit" className="text-slate-400 flex items-center gap-1">
-                  <FileText className="w-3 h-3" /> Nota / Instrucciones
-                </Label>
-                <Textarea 
-                  id="nota-edit" 
-                  value={formData.nota} 
-                  onChange={(e) => setFormData({...formData, nota: e.target.value})} 
-                  className="bg-white/5 border-white/10 focus:ring-accent min-h-[80px]" 
-                  placeholder="Instrucciones adicionales para el operador..."
+                <Label htmlFor="create-guia" className="text-slate-300">Guía Nº</Label>
+                <Input 
+                  id="create-guia"
+                  className="bg-white/5 border-white/10 text-white" 
+                  value={createFormData.guia_numero}
+                  onChange={(e) => setCreateFormData({...createFormData, guia_numero: e.target.value})}
+                  placeholder="Ej: GU-001"
+                  required
                 />
               </div>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0 border-t border-white/5 pt-4">
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">Cerrar</Button>
-              <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
-                {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                Guardar Cambios
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Imagen de guía</Label>
+                <div className="flex flex-col gap-2">
+                  {capturedImage ? (
+                    <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
+                      <img src={capturedImage} alt="Guía" className="w-full h-full object-contain" />
+                      <button 
+                        type="button"
+                        onClick={() => setCapturedImage(null)}
+                        className="absolute top-2 right-2 bg-red-500/80 p-1 rounded-full text-white hover:bg-red-500"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                        onClick={() => setShowCamera(true)}
+                      >
+                        <Camera className="mr-2 h-4 w-4" /> Foto
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <ImageIcon className="mr-2 h-4 w-4" /> Subir
+                      </Button>
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-slate-300">Método de Pago</Label>
+                <RadioGroup value={createFormData.metodo_pago} onValueChange={(v) => setCreateFormData({...createFormData, metodo_pago: v})} className="flex gap-4 pt-1">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="transferencia" id="create-transferencia" className="border-accent text-accent" />
+                    <Label htmlFor="create-transferencia" className="cursor-pointer text-sm">Transf.</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="efectivo" id="create-efectivo" className="border-accent text-accent" />
+                    <Label htmlFor="create-efectivo" className="cursor-pointer text-sm">Efec.</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-valor" className="text-slate-300">Valor Pedido ($)</Label>
+                <Input id="create-valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={createFormData.valor_pedido} onChange={(e) => setCreateFormData({...createFormData, valor_pedido: e.target.value})} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-telf" className="text-slate-300">Teléfono</Label>
+                <Input id="create-telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={createFormData.telefono} onChange={(e) => setCreateFormData({...createFormData, telefono: e.target.value.replace(/\D/g, '')})} required />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-dir" className="text-slate-300">Dirección</Label>
+              <Input id="create-dir" className="bg-white/5 border-white/10 text-white" value={createFormData.direccion} onChange={(e) => setCreateFormData({...createFormData, direccion: e.target.value})} required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-nota" className="text-slate-300">Nota</Label>
+              <Textarea id="create-nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={createFormData.nota} onChange={(e) => setCreateFormData({...createFormData, nota: e.target.value})} />
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-white/5">
+              <Button type="button" variant="ghost" onClick={() => setIsCreateDialogOpen(false)} className="text-slate-400">Cancelar</Button>
+              <Button type="submit" className="bg-accent text-primary hover:bg-accent/90 font-bold px-8" disabled={isSaving}>
+                {isSaving ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-4 w-4" /> Enviar Solicitud</>}
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-        {/* DIALOG DE CÁMARA PARA CREACIÓN */}
-        <Dialog open={showCamera} onOpenChange={setShowCamera}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
-            <DialogHeader><DialogTitle>Capturar Guía</DialogTitle></DialogHeader>
-            <div className="relative">
-              <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
-              {hasCameraPermission === false && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6 text-center">
-                  <Alert variant="destructive" className="max-w-xs">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Acceso Requerido</AlertTitle>
-                    <AlertDescription>Por favor permite el acceso a la cámara.</AlertDescription>
-                  </Alert>
+      {/* DIALOG DE EDICIÓN */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-accent" /> Gestionar Paquete
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="guia" className="text-slate-400 flex items-center gap-1">
+                  <Hash className="w-3 h-3" /> Guía Nº
+                </Label>
+                <Input id="guia" value={formData.guia_numero} onChange={(e) => setFormData({...formData, guia_numero: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="valor" className="text-slate-400 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" /> Valor Pedido ($)
+                </Label>
+                <Input id="valor" type="number" step="0.01" value={formData.valor_pedido} onChange={(e) => setFormData({...formData, valor_pedido: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="dest" className="text-slate-400 flex items-center gap-1">
+                 <MapPin className="w-3 h-3" /> Dirección de Destino
+              </Label>
+              <Input id="dest" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label className="text-slate-400">Operador Asignado</Label>
+                <Select value={formData.operador_id} onValueChange={(v) => setFormData({...formData, operador_id: v})}>
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue placeholder="Sin asignar" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    <SelectItem value="null">-- Ninguno --</SelectItem>
+                    {operadores.map((op) => (
+                      <SelectItem key={op.id} value={op.id}>{op.nombres}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-slate-400">Estado de Gestión</Label>
+                <Select value={formData.estado} onValueChange={(v) => setFormData({...formData, estado: v})}>
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    <SelectItem value="pedido_listo">Pedido Listo</SelectItem>
+                    <SelectItem value="buscando_operador">Buscando Operador</SelectItem>
+                    <SelectItem value="pendiente">Pendiente (Asignado)</SelectItem>
+                    <SelectItem value="camino_a_retirar">Estoy en camino a retirar</SelectItem>
+                    <SelectItem value="llegado_a_origen">Llegado a origen</SelectItem>
+                    <SelectItem value="demorado_despacho">Demorado Despacho</SelectItem>
+                    <SelectItem value="demorado_operador">Demorado Operador</SelectItem>
+                    <SelectItem value="paquete_retirado">Paquete retirado de origen</SelectItem>
+                    <SelectItem value="en_ruta">En Transito a Destino</SelectItem>
+                    <SelectItem value="llegado">Paquete llego al Destino</SelectItem>
+                    <SelectItem value="entregado">ENTREGADO CON EXITO</SelectItem>
+                    <SelectItem value="entregado_novedad">ENTREGADO CON NOVEDAD</SelectItem>
+                    <SelectItem value="cancelado">No ejecutado</SelectItem>
+                    <SelectItem value="anulado_retornar">Anulado - Retornar a origen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="nota-edit" className="text-slate-400 flex items-center gap-1">
+                <FileText className="w-3 h-3" /> Nota / Instrucciones
+              </Label>
+              <Textarea 
+                id="nota-edit" 
+                value={formData.nota} 
+                onChange={(e) => setFormData({...formData, nota: e.target.value})} 
+                className="bg-white/5 border-white/10 focus:ring-accent min-h-[80px]" 
+                placeholder="Instrucciones adicionales para el operador..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0 border-t border-white/5 pt-4">
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">Cerrar</Button>
+            <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
+              {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG DE CÁMARA PARA CREACIÓN */}
+      <Dialog open={showCamera} onOpenChange={setShowCamera}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
+          <DialogHeader><DialogTitle>Capturar Guía</DialogTitle></DialogHeader>
+          <div className="relative">
+            <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+            {hasCameraPermission === false && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-6 text-center">
+                <Alert variant="destructive" className="max-w-xs">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Acceso Requerido</AlertTitle>
+                  <AlertDescription>Por favor permite el acceso a la cámara.</AlertDescription>
+                </Alert>
+              </div>
+            )}
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+          <DialogFooter className="flex flex-row justify-center gap-2">
+            <Button variant="ghost" onClick={() => setShowCamera(false)}>Cancelar</Button>
+            <Button onClick={takePhoto} disabled={!hasCameraPermission} className="bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG DE VISTA DE DETALLES */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Eye className="h-5 w-5 text-accent" /> Detalles del Paquete
+            </DialogTitle>
+          </DialogHeader>
+          
+          {viewingPackage && (
+            <div className="grid gap-6 py-4">
+              <div className="flex justify-between items-start border-b border-white/5 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-accent">Guía: {viewingPackage.guia_numero}</h3>
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                    <Calendar className="w-3 h-3" /> {new Date(viewingPackage.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  {getStatusBadge(viewingPackage.estado)}
+                  <Badge variant="outline" className="border-white/10 text-slate-400 text-[10px] uppercase">
+                    {viewingPackage.tipo}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/5">
+                  <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
+                    <Building2 className="w-3 h-3" /> Empresa Cliente
+                  </Label>
+                  <p className="font-semibold">{viewingPackage.empresas?.nombre || 'No disponible'}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-lg border border-white/5">
+                  <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
+                    <UserCheck className="w-3 h-3" /> Operador Asignado
+                  </Label>
+                  <p className="font-semibold">{viewingPackage.operadores?.nombres || 'Sin asignar'}</p>
+                </div>
+              </div>
+
+              {viewingPackage.pin_retiro && (
+                <div className="bg-accent/5 p-4 rounded-lg border border-white/5 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">PIN</span>
+                    <span className="text-lg font-mono font-black tracking-widest text-accent">{viewingPackage.pin_retiro}</span>
+                  </div>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleCopyPin(viewingPackage.pin_retiro!)}
+                    className="h-8 text-xs gap-1.5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white shrink-0"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-green-400" /> Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" /> 
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
-            </div>
-            <canvas ref={canvasRef} className="hidden" />
-            <DialogFooter className="flex flex-row justify-center gap-2">
-              <Button variant="ghost" onClick={() => setShowCamera(false)}>Cancelar</Button>
-              <Button onClick={takePhoto} disabled={!hasCameraPermission} className="bg-accent text-primary font-bold hover:bg-accent">Capturar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
-        {/* DIALOG DE VISTA DE DETALLES */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Eye className="h-5 w-5 text-accent" /> Detalles del Paquete
-              </DialogTitle>
-            </DialogHeader>
-            
-            {viewingPackage && (
-              <div className="grid gap-6 py-4">
-                <div className="flex justify-between items-start border-b border-white/5 pb-4">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-accent shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-bold text-accent">Guía: {viewingPackage.guia_numero}</h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Calendar className="w-3 h-3" /> {new Date(viewingPackage.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(viewingPackage.estado)}
-                    <Badge variant="outline" className="border-white/10 text-slate-400 text-[10px] uppercase">
-                      {viewingPackage.tipo}
-                    </Badge>
+                    <p className="text-xs text-slate-500 font-bold uppercase">Dirección de Destino</p>
+                    <p className="text-sm">{viewingPackage.direccion}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/5">
-                    <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
-                      <Building2 className="w-3 h-3" /> Empresa Cliente
-                    </Label>
-                    <p className="font-semibold">{viewingPackage.empresas?.nombre || 'No disponible'}</p>
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-accent shrink-0" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p>
+                      <p className="text-sm font-mono">{viewingPackage.telefono || 'N/A'}</p>
+                    </div>
                   </div>
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/5">
-                    <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1 mb-2">
-                      <UserCheck className="w-3 h-3" /> Operador Asignado
-                    </Label>
-                    <p className="font-semibold">{viewingPackage.operadores?.nombres || 'Sin asignar'}</p>
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-accent shrink-0" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Valor y Pago</p>
+                      <p className="text-sm font-bold">${viewingPackage.valor_pedido} <span className="text-[10px] text-slate-400 font-normal uppercase">({viewingPackage.metodo_pago})</span></p>
+                    </div>
                   </div>
                 </div>
 
-                
-                {viewingPackage.pin_retiro && (
-                  <div className="bg-accent/5 p-4 rounded-lg border border-white/5 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">PIN</span>
-                      <span className="text-lg font-mono font-black tracking-widest text-accent">{viewingPackage.pin_retiro}</span>
+                {viewingPackage.tiempo_recogida && (
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-accent shrink-0" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Tiempo Recogida (Empresa)</p>
+                      <p className="text-sm">{viewingPackage.tiempo_recogida} minutos</p>
                     </div>
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleCopyPin(viewingPackage.pin_retiro!)}
-                      className="h-8 text-xs gap-1.5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white shrink-0"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-green-400" /> Copiado
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5" /> 
-                        </>
-                      )}
-                    </Button>
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-accent shrink-0 mt-1" />
+                {viewingPackage.nota && (
+                   <div className="flex items-start gap-3 bg-white/5 p-3 rounded-lg">
+                    <FileText className="h-5 w-5 text-accent shrink-0" />
                     <div>
-                      <p className="text-xs text-slate-500 font-bold uppercase">Dirección de Destino</p>
-                      <p className="text-sm">{viewingPackage.direccion}</p>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Notas / Instrucciones</p>
+                      <p className="text-sm italic text-slate-300">{viewingPackage.nota}</p>
                     </div>
                   </div>
+                )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-accent shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Teléfono Cliente</p>
-                        <p className="text-sm font-mono">{viewingPackage.telefono || 'N/A'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-accent shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Valor y Pago</p>
-                        <p className="text-sm font-bold">${viewingPackage.valor_pedido} <span className="text-[10px] text-slate-400 font-normal uppercase">({viewingPackage.metodo_pago})</span></p>
-                      </div>
+                {viewingPackage.novedad && (
+                  <div className="flex items-start gap-3 bg-red-500/5 p-3 rounded-lg border-l-2 border-red-500">
+                    <UserX className="h-5 w-5 text-red-400 shrink-0" />
+                    <div>
+                      <p className="text-xs text-red-400 font-bold uppercase">Novedad del Operador</p>
+                      <p className="text-sm italic text-slate-300">{viewingPackage.novedad}</p>
                     </div>
                   </div>
+                )}
 
-                  {viewingPackage.tiempo_recogida && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-accent shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Tiempo Recogida (Empresa)</p>
-                        <p className="text-sm">{viewingPackage.tiempo_recogida} minutos</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {viewingPackage.imagen_url && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" /> Imagen de Guía Física
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_url} 
+                          alt="Imagen Guía" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
                       </div>
                     </div>
                   )}
 
-                  {viewingPackage.nota && (
-                     <div className="flex items-start gap-3 bg-white/5 p-3 rounded-lg">
-                      <FileText className="h-5 w-5 text-accent shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold uppercase">Notas / Instrucciones</p>
-                        <p className="text-sm italic text-slate-300">{viewingPackage.nota}</p>
+                  {viewingPackage.imagen_paquete_retirado && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <Package className="w-3 h-3 text-accent" /> Evidencia de Retiro (Origen)
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_paquete_retirado} 
+                          alt="Evidencia Retiro" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
                       </div>
                     </div>
                   )}
 
-                  {viewingPackage.novedad && (
-                    <div className="flex items-start gap-3 bg-red-500/5 p-3 rounded-lg border-l-2 border-red-500">
-                      <UserX className="h-5 w-5 text-red-400 shrink-0" />
-                      <div>
-                        <p className="text-xs text-red-400 font-bold uppercase">Novedad del Operador</p>
-                        <p className="text-sm italic text-slate-300">{viewingPackage.novedad}</p>
+                  {viewingPackage.imagen_paquete_entregado && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-green-400" /> Evidencia de Entrega
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_paquete_entregado} 
+                          alt="Evidencia Entrega" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
                       </div>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {viewingPackage.imagen_url && (
-                      <div className="space-y-2 pt-2">
-                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                          <CreditCard className="w-3 h-3" /> Imagen de Guía Física
-                        </Label>
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                          <Image 
-                            src={viewingPackage.imagen_url} 
-                            alt="Imagen Guía" 
-                            fill 
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
+                  {viewingPackage.imagen_paquete_entregado_novedad && (
+                    <div className="space-y-2 pt-2">
+                      <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
+                        <PackageCheck className="w-3 h-3 text-green-600" /> Evidencia Entrega Novedad
+                      </Label>
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <Image 
+                          src={viewingPackage.imagen_paquete_entregado_novedad} 
+                          alt="Evidencia Entrega Novedad" 
+                          fill 
+                          className="object-contain"
+                          unoptimized
+                        />
                       </div>
-                    )}
-
-                    {viewingPackage.imagen_paquete_retirado && (
-                      <div className="space-y-2 pt-2">
-                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                          <Package className="w-3 h-3 text-accent" /> Evidencia de Retiro (Origen)
-                        </Label>
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                          <Image 
-                            src={viewingPackage.imagen_paquete_retirado} 
-                            alt="Evidencia Retiro" 
-                            fill 
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {viewingPackage.imagen_paquete_entregado && (
-                      <div className="space-y-2 pt-2">
-                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-green-400" /> Evidencia de Entrega
-                        </Label>
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                          <Image 
-                            src={viewingPackage.imagen_paquete_entregado} 
-                            alt="Evidencia Entrega" 
-                            fill 
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {viewingPackage.imagen_paquete_entregado_novedad && (
-                      <div className="space-y-2 pt-2">
-                        <Label className="text-slate-500 text-[10px] uppercase font-bold flex items-center gap-1">
-                          <PackageCheck className="w-3 h-3 text-green-600" /> Evidencia Entrega Novedad
-                        </Label>
-                        <div className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-black">
-                          <Image 
-                            src={viewingPackage.imagen_paquete_entregado_novedad} 
-                            alt="Evidencia Entrega Novedad" 
-                            fill 
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-            
-            <DialogFooter className="border-t border-white/5 pt-4">
-              <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="w-full text-slate-400 hover:text-white">
-                Cerrar Vista
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
+            </div>
+          )}
+          
+          <DialogFooter className="border-t border-white/5 pt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="w-full text-slate-400 hover:text-white">
+              Cerrar Vista
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

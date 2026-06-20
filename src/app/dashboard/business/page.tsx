@@ -7,23 +7,16 @@ import {
   Plus, 
   Search, 
   MoreVertical, 
-  LogOut, 
-  Truck, 
   Trash2,
   Edit2,
   Loader2,
   Mail,
   Phone,
-  Package,
-  UserCheck,
   MapPin,
   Key,
   Hash,
-  Navigation,
   Globe,
-  Settings,
-  ShieldCheck,
-  Wallet
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +55,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
 
 interface EmpresaData {
   id: string;
@@ -283,11 +275,6 @@ export default function CompaniesPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
   const openNewEmpresaModal = () => {
     setEditingEmpresa(null);
     setFormData({ 
@@ -336,355 +323,308 @@ export default function CompaniesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex text-white">
-      <aside className="w-64 bg-black/20 border-r border-white/10 hidden lg:flex flex-col p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-10">
-          <Truck className="h-8 w-8 text-accent" />
-          <span className="text-xl font-bold tracking-tight">Solucionex</span>
-        </div>
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5 mb-2">
-              <Package className="h-5 w-5" /> Paquetes
-            </Button>
-          </Link>
-          <Link href="/dashboard/business">
-            <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
-              <Building2 className="h-5 w-5 text-accent" /> Empresas
-            </Button>
-          </Link>
-          <Link href="/dashboard/operators">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <UserCheck className="h-5 w-5" /> Operadores
-            </Button>
-          </Link>
-          <Link href="/dashboard/tracking">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Navigation className="h-5 w-5" /> Ubicación Operador
-            </Button>
-          </Link>
-          <Link href="/dashboard/wallets">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Wallet className="h-5 w-5" /> Billeteras
-            </Button>
-          </Link>
-          <Link href="/dashboard/configuration">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <Settings className="h-5 w-5" /> Configuración
-            </Button>
-          </Link>
-        </nav>
-        <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" /> Cerrar Sesión
+    <>
+      <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
+        <h2 className="text-xl font-bold text-white">Gestión de Empresas</h2>
+        <div className="flex items-center gap-4">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              placeholder="Buscar empresa..." 
+              className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <Button onClick={openNewEmpresaModal} className="bg-accent text-primary hover:bg-accent/90 font-bold">
+            <Plus className="h-4 w-4 mr-2" /> Nueva Empresa
           </Button>
         </div>
-      </aside>
+      </header>
 
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
-          <h2 className="text-xl font-bold text-white">Gestión de Empresas</h2>
-          <div className="flex items-center gap-4">
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input 
-                placeholder="Buscar empresa..." 
-                className="w-full bg-white/5 border border-white/10 rounded-md py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent text-white placeholder:text-slate-500" 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+      <div className="p-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+            <Loader2 className="h-8 w-8 animate-spin mb-4" />
+            <p>Procesando...</p>
+          </div>
+        ) : empresas.length === 0 ? (
+          <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
+            <Building2 className="h-12 w-12 text-slate-500 mb-4" />
+            <h3 className="text-lg font-semibold text-white">Sin empresas registradas</h3>
+            <p className="text-slate-400">Comienza registrando tu primera empresa aliada.</p>
+          </div>
+        ) : (
+          <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
+            <Table>
+              <TableHeader className="bg-white/10">
+                <TableRow className="border-white/10 hover:bg-transparent">
+                  <TableHead className="font-bold text-slate-300">Empresa</TableHead>
+                  <TableHead className="font-bold text-slate-300">Contacto</TableHead>
+                  <TableHead className="font-bold text-slate-300">Ciudad / Zonas</TableHead>
+                  <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
+                  <TableHead className="font-bold text-slate-300">Tipo / Seguridad</TableHead>
+                  <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {empresas
+                  .filter(e => 
+                    e.nombre.toLowerCase().includes(search.toLowerCase()) || 
+                    e.correo.toLowerCase().includes(search.toLowerCase())
+                  )
+                  .map((empresa) => {
+                    const zonasArray = (empresa as any).empresa_zonas || [];
+                    const ciudadNombre = zonasArray.length > 0 ? zonasArray[0].zonas?.ciudades?.nombre : 'Sin ciudad';
+                    const numZonas = zonasArray.length;
+
+                    return (
+                      <TableRow key={empresa.id} className="border-white/10 hover:bg-white/5">
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-white">{empresa.nombre}</span>
+                            <span className="text-[10px] text-slate-500 flex items-center gap-1"><MapPin className="w-2 h-2" /> {empresa.direccion}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs text-slate-400 gap-1">
+                            <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-accent" /> {empresa.correo}</span>
+                            <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {empresa.telefono}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 text-[11px] font-bold text-white">
+                              <Globe className="w-3 h-3 text-accent" /> {ciudadNombre}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              <Badge variant="outline" className="text-[9px] border-white/5 bg-white/5 text-slate-400">
+                                {numZonas} {numZonas === 1 ? 'Zona' : 'Zonas'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs text-slate-300 gap-1">
+                            <span className="font-mono">RUC: {empresa.ruc || '-'}</span>
+                            <span className="font-mono text-accent">Guía: {empresa.guia_numero || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
+                              {empresa.tipo === 'ultima_milla' ? 'Última Milla' : 'Real Time'}
+                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
+                                {empresa.estado}
+                              </Badge>
+                              {empresa.operadores_exclusivos && (
+                                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[9px] px-1 py-0">Exclusivo</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
+                              <DropdownMenuItem 
+                                className="gap-2 cursor-pointer" 
+                                onClick={() => openEditEmpresaModal(empresa)}
+                              >
+                                <Edit2 className="h-4 w-4 text-blue-400" /> Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-white/10" />
+                              <DropdownMenuItem 
+                                className="gap-2 text-red-400 cursor-pointer"
+                                onClick={() => deleteEmpresa(empresa.id)}
+                              >
+                                <Trash2 className="h-4 w-4" /> Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsDialogOpen(false);
+          setTimeout(() => {
+            document.body.style.pointerEvents = 'auto';
+          }, 300);
+        }
+      }}>
+        <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              {editingEmpresa ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="nombre">Nombre Comercial</Label>
+                <Input id="nombre" value={formData.nombre} onChange={(e) => setFormData({...formData, nombre: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="ruc">RUC</Label>
+                <Input id="ruc" value={formData.ruc} onChange={(e) => setFormData({...formData, ruc: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
             </div>
             
-            <Button onClick={openNewEmpresaModal} className="bg-accent text-primary hover:bg-accent/90 font-bold">
-              <Plus className="h-4 w-4 mr-2" /> Nueva Empresa
-            </Button>
-          </div>
-        </header>
-
-        <div className="p-8">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p>Procesando...</p>
-            </div>
-          ) : empresas.length === 0 ? (
-            <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center flex flex-col items-center">
-              <Building2 className="h-12 w-12 text-slate-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white">Sin empresas registradas</h3>
-              <p className="text-slate-400">Comienza registrando tu primera empresa aliada.</p>
-            </div>
-          ) : (
-            <div className="bg-white/5 rounded-xl shadow-2xl border border-white/10 overflow-hidden backdrop-blur-sm">
-              <Table>
-                <TableHeader className="bg-white/10">
-                  <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="font-bold text-slate-300">Empresa</TableHead>
-                    <TableHead className="font-bold text-slate-300">Contacto</TableHead>
-                    <TableHead className="font-bold text-slate-300">Ciudad / Zonas</TableHead>
-                    <TableHead className="font-bold text-slate-300">RUC / Guía</TableHead>
-                    <TableHead className="font-bold text-slate-300">Tipo / Seguridad</TableHead>
-                    <TableHead className="text-right font-bold text-slate-300">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {empresas
-                    .filter(e => 
-                      e.nombre.toLowerCase().includes(search.toLowerCase()) || 
-                      e.correo.toLowerCase().includes(search.toLowerCase())
-                    )
-                    .map((empresa) => {
-                      const zonasArray = (empresa as any).empresa_zonas || [];
-                      const ciudadNombre = zonasArray.length > 0 ? zonasArray[0].zonas?.ciudades?.nombre : 'Sin ciudad';
-                      const numZonas = zonasArray.length;
-
-                      return (
-                        <TableRow key={empresa.id} className="border-white/10 hover:bg-white/5">
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-white">{empresa.nombre}</span>
-                              <span className="text-[10px] text-slate-500 flex items-center gap-1"><MapPin className="w-2 h-2" /> {empresa.direccion}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col text-xs text-slate-400 gap-1">
-                              <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-accent" /> {empresa.correo}</span>
-                              <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-accent" /> {empresa.telefono}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-1 text-[11px] font-bold text-white">
-                                <Globe className="w-3 h-3 text-accent" /> {ciudadNombre}
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                <Badge variant="outline" className="text-[9px] border-white/5 bg-white/5 text-slate-400">
-                                  {numZonas} {numZonas === 1 ? 'Zona' : 'Zonas'}
-                                </Badge>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col text-xs text-slate-300 gap-1">
-                              <span className="font-mono">RUC: {empresa.ruc || '-'}</span>
-                              <span className="font-mono text-accent">Guía: {empresa.guia_numero || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              <Badge variant="outline" className="w-fit text-[10px] border-white/10 text-slate-300">
-                                {empresa.tipo === 'ultima_milla' ? 'Última Milla' : 'Real Time'}
-                              </Badge>
-                              <div className="flex items-center gap-1">
-                                <Badge className={empresa.estado === 'activo' ? 'bg-green-500/20 text-green-400 border-green-500/50 w-fit' : 'bg-red-500/20 text-red-400 border-red-500/50 w-fit'}>
-                                  {empresa.estado}
-                                </Badge>
-                                {empresa.operadores_exclusivos && (
-                                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50 text-[9px] px-1 py-0">Exclusivo</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="hover:bg-white/10"><MoreVertical className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-slate-800 border-white/10 text-white">
-                                <DropdownMenuItem 
-                                  className="gap-2 cursor-pointer" 
-                                  onClick={() => openEditEmpresaModal(empresa)}
-                                >
-                                  <Edit2 className="h-4 w-4 text-blue-400" /> Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-white/10" />
-                                <DropdownMenuItem 
-                                  className="gap-2 text-red-400 cursor-pointer"
-                                  onClick={() => deleteEmpresa(empresa.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" /> Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          if (!open) {
-            setIsDialogOpen(false);
-            setTimeout(() => {
-              document.body.style.pointerEvents = 'auto';
-            }, 300);
-          }
-        }}>
-          <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">
-                {editingEmpresa ? 'Editar Empresa' : 'Registrar Nueva Empresa'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="nombre">Nombre Comercial</Label>
-                  <Input id="nombre" value={formData.nombre} onChange={(e) => setFormData({...formData, nombre: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="ruc">RUC</Label>
-                  <Input id="ruc" value={formData.ruc} onChange={(e) => setFormData({...formData, ruc: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="guia_numero">Guía Nº (Identificador)</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Input id="guia_numero" value={formData.guia_numero} onChange={(e) => setFormData({...formData, guia_numero: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent pl-10" placeholder="Ej: GU-001" />
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="guia_numero">Guía Nº (Identificador)</Label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <Input id="guia_numero" value={formData.guia_numero} onChange={(e) => setFormData({...formData, guia_numero: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent pl-10" placeholder="Ej: GU-001" />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Tipo de Empresa</Label>
-                  <Select value={formData.tipo} onValueChange={(v: any) => setFormData({...formData, tipo: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      <SelectItem value="ultima_milla">Última Milla</SelectItem>
-                      <SelectItem value="real_time">Real Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-2">
+                <Label>Tipo de Empresa</Label>
+                <Select value={formData.tipo} onValueChange={(v: any) => setFormData({...formData, tipo: v})}>
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    <SelectItem value="ultima_milla">Última Milla</SelectItem>
+                    <SelectItem value="real_time">Real Time</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="correo">Correo Electrónico (Login)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="correo">Correo Electrónico (Login)</Label>
+                <Input 
+                  id="correo" 
+                  type="email" 
+                  value={formData.correo} 
+                  onChange={(e) => setFormData({...formData, correo: e.target.value})} 
+                  className="bg-white/5 border-white/10 focus:ring-accent" 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Contraseña {editingEmpresa && "(Nueva p. actualizar)"}</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                   <Input 
-                    id="correo" 
-                    type="email" 
-                    value={formData.correo} 
-                    onChange={(e) => setFormData({...formData, correo: e.target.value})} 
-                    className="bg-white/5 border-white/10 focus:ring-accent" 
+                    id="password" 
+                    type="password" 
+                    value={formData.password} 
+                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                    className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
+                    placeholder="••••••••"
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Contraseña {editingEmpresa && "(Nueva p. actualizar)"}</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                      className="bg-white/5 border-white/10 focus:ring-accent pl-10" 
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="telefono">Teléfono</Label>
-                  <Input id="telefono" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Estado</Label>
-                  <Select value={formData.estado} onValueChange={(v: any) => setFormData({...formData, estado: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      <SelectItem value="activo">Activo</SelectItem>
-                      <SelectItem value="inactivo">Inactivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* ASOCIACIÓN CIUDAD Y ZONAS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
-                <div className="grid gap-2">
-                  <Label className="text-accent flex items-center gap-1"><Globe className="w-3 h-3" /> Seleccionar Ciudad</Label>
-                  <Select value={formData.ciudad_id} onValueChange={(v) => setFormData({...formData, ciudad_id: v, zonas_ids: []})}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Elegir ciudad..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      {ciudades.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Zonas de Cobertura ({formData.zonas_ids.length})</Label>
-                  <div className="bg-white/5 border border-white/10 rounded-md p-2">
-                    {formData.ciudad_id ? (
-                      <ScrollArea className="h-32">
-                        <div className="space-y-2 pr-4">
-                          {filteredZonas.map(z => (
-                            <div key={z.id} className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`zone-${z.id}`} 
-                                checked={formData.zonas_ids.includes(z.id)}
-                                onCheckedChange={() => handleZoneToggle(z.id)}
-                                className="border-white/20 data-[state=checked]:bg-accent data-[state=checked]:text-primary"
-                              />
-                              <label htmlFor={`zone-${z.id}`} className="text-xs font-medium leading-none cursor-pointer">
-                                {z.nombre}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    ) : (
-                      <p className="text-[10px] text-slate-500 italic py-8 text-center">Selecciona una ciudad primero</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-white/5">
-                <div className="flex items-center space-x-2 bg-white/5 p-3 rounded-lg border border-white/10">
-                  <Checkbox 
-                    id="operadores_exclusivos" 
-                    checked={formData.operadores_exclusivos}
-                    onCheckedChange={(checked) => setFormData({...formData, operadores_exclusivos: !!checked})}
-                    className="border-accent data-[state=checked]:bg-accent data-[state=checked]:text-primary"
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <label htmlFor="operadores_exclusivos" className="text-sm font-bold text-accent flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4" /> Activar operadores exclusivos de mi empresa
-                    </label>
-  
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="direccion">Dirección Fiscal/Física</Label>
-                  <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
                 </div>
               </div>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
-              <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
-                {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                {editingEmpresa ? 'Guardar Cambios' : 'Registrar Empresa'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="telefono">Teléfono</Label>
+                <Input id="telefono" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
+              <div className="grid gap-2">
+                <Label>Estado</Label>
+                <Select value={formData.estado} onValueChange={(v: any) => setFormData({...formData, estado: v})}>
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    <SelectItem value="activo">Activo</SelectItem>
+                    <SelectItem value="inactivo">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* ASOCIACIÓN CIUDAD Y ZONAS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
+              <div className="grid gap-2">
+                <Label className="text-accent flex items-center gap-1"><Globe className="w-3 h-3" /> Seleccionar Ciudad</Label>
+                <Select value={formData.ciudad_id} onValueChange={(v) => setFormData({...formData, ciudad_id: v, zonas_ids: []})}>
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue placeholder="Elegir ciudad..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    {ciudades.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Zonas de Cobertura ({formData.zonas_ids.length})</Label>
+                <div className="bg-white/5 border border-white/10 rounded-md p-2">
+                  {formData.ciudad_id ? (
+                    <ScrollArea className="h-32">
+                      <div className="space-y-2 pr-4">
+                        {filteredZonas.map(z => (
+                          <div key={z.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`zone-${z.id}`} 
+                              checked={formData.zonas_ids.includes(z.id)}
+                              onCheckedChange={() => handleZoneToggle(z.id)}
+                              className="border-white/20 data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                            />
+                            <label htmlFor={`zone-${z.id}`} className="text-xs font-medium leading-none cursor-pointer">
+                              {z.nombre}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <p className="text-[10px] text-slate-500 italic py-8 text-center">Selecciona una ciudad primero</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              <div className="flex items-center space-x-2 bg-white/5 p-3 rounded-lg border border-white/10">
+                <Checkbox 
+                  id="operadores_exclusivos" 
+                  checked={formData.operadores_exclusivos}
+                  onCheckedChange={(checked) => setFormData({...formData, operadores_exclusivos: !!checked})}
+                  className="border-accent data-[state=checked]:bg-accent data-[state=checked]:text-primary"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label htmlFor="operadores_exclusivos" className="text-sm font-bold text-accent flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Activar operadores exclusivos de mi empresa
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="direccion">Dirección Fiscal/Física</Label>
+                <Input id="direccion" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} className="bg-white/5 border-white/10 focus:ring-accent" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
+            <Button onClick={handleSave} className="bg-accent text-primary hover:bg-accent/90 font-bold" disabled={isSaving}>
+              {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+              {editingEmpresa ? 'Guardar Cambios' : 'Registrar Empresa'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
