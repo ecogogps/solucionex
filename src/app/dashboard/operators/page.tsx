@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   Check,
   Globe,
-  MapPin
+  MapPin,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -450,6 +451,11 @@ export default function OperatorsPage() {
           <Link href="/dashboard/tracking">
             <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
               <Navigation className="h-5 w-5" /> Ubicación Operador
+            </Button>
+          </Link>
+          <Link href="/dashboard/wallets">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Wallet className="h-5 w-5" /> Billeteras
             </Button>
           </Link>
           <Link href="/dashboard/configuration">

@@ -117,11 +117,28 @@ export default function SolicitudesPage() {
       .map(e => e.id)
       .filter(id => !empresasAsignadas.includes(id));
 
+      // 1. Zonas del operador
+      const { data: opZonas } = await supabase
+      .from('operador_zonas')
+      .select('zona_id')
+      .eq('operador_id', currentUserId);
+
+      // 2. Sectores de esas zonas
+      const zonaIds = (opZonas || []).map(z => z.zona_id);
+      const { data: sectoresData } = await supabase
+      .from('sectores')
+      .select('id')
+      .in('zona_id', zonaIds);
+
+      const sectorIds = (sectoresData || []).map(s => s.id);
+
+      // 3. Filtrar paquetes por esos sectores
       let query = supabase
       .from('paquetes')
       .select('*, empresas(nombre, direccion)')
       .in('estado', ['buscando_operador', 'pedido_listo'])
-      .is('operador_id', null);
+      .is('operador_id', null)
+      .in('sector_id', sectorIds); // ← nuevo filtro
 
       // Excluir paquetes de empresas exclusivas donde no está asignado
       if (idsExcluidas.length > 0) {

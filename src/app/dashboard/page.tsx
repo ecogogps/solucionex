@@ -40,7 +40,10 @@ import {
   Volume2,
   VolumeX,
   FileDown,
-  Settings
+  Settings,
+  Copy,
+  Check,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -102,6 +105,7 @@ interface PackageData {
   alerta_danio_reasignacion?: boolean;
   ubicacion_pendiente?: { latitud: number; longitud: number };
   ubicacion_paquete_retirado?: { latitud: number; longitud: number };
+  pin_retiro?: string;
 }
 
 interface OperadorOption {
@@ -129,6 +133,20 @@ export default function DashboardAdmin() {
   
   const [editingPackage, setEditingPackage] = useState<PackageData | null>(null);
   const [viewingPackage, setViewingPackage] = useState<PackageData | null>(null);
+  
+  // Estado para retroalimentación visual al copiar
+  const [copied, setCopied] = useState(false);
+
+  // Función para copiar el PIN desde el administrador
+  const handleCopyPin = (pinValue: string) => {
+    navigator.clipboard.writeText(pinValue);
+    setCopied(true);
+    toast({
+      title: "PIN Copiado",
+      description: "El PIN se ha copiado al portapapeles."
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
   
   const [formData, setFormData] = useState({ 
     guia_numero: '',
@@ -559,6 +577,11 @@ export default function DashboardAdmin() {
               <Navigation className="h-5 w-5" /> Ubicación Operador
             </Button>
           </Link>
+          <Link href="/dashboard/wallets">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Wallet className="h-5 w-5" /> Billeteras
+            </Button>
+          </Link>
           <Link href="/dashboard/configuration">
             <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
               <Settings className="h-5 w-5" /> Configuración
@@ -758,7 +781,7 @@ export default function DashboardAdmin() {
                                   onClick={() => handleInactivarAlerta(pkg.id)}
                                 >
                                   <AlertTriangle className="h-4 w-4" /> Inactivar Alerta
-                                </DropdownMenuItem>
+                              </DropdownMenuItem>
                               )}
                               
                               <DropdownMenuSeparator className="bg-white/10" />
@@ -1102,6 +1125,33 @@ export default function DashboardAdmin() {
                   </div>
                 </div>
 
+                
+                {viewingPackage.pin_retiro && (
+                  <div className="bg-accent/5 p-4 rounded-lg border border-white/5 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">PIN</span>
+                      <span className="text-lg font-mono font-black tracking-widest text-accent">{viewingPackage.pin_retiro}</span>
+                    </div>
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleCopyPin(viewingPackage.pin_retiro!)}
+                      className="h-8 text-xs gap-1.5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white shrink-0"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-green-400" /> Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" /> 
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-accent shrink-0 mt-1" />
@@ -1139,7 +1189,7 @@ export default function DashboardAdmin() {
                   )}
 
                   {viewingPackage.nota && (
-                    <div className="flex items-start gap-3 bg-white/5 p-3 rounded-lg border-l-2 border-accent">
+                     <div className="flex items-start gap-3 bg-white/5 p-3 rounded-lg">
                       <FileText className="h-5 w-5 text-accent shrink-0" />
                       <div>
                         <p className="text-xs text-slate-500 font-bold uppercase">Notas / Instrucciones</p>

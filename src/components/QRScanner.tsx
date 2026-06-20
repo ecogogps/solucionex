@@ -3,12 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
 import { supabase } from '@/lib/supabase';
-import { Camera, X, CheckCircle2, Loader2, Camera as CameraIcon } from 'lucide-react';
+import { 
+  Camera, X, CheckCircle2, Loader2, Camera as CameraIcon, 
+  QrCode, Keyboard, ArrowLeft 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface QRScannerProps {
   isOpen: boolean;
@@ -17,6 +21,8 @@ interface QRScannerProps {
   onSuccess: () => void;
 }
 
+type ScannerStep = 'selection' | 'scanning' | 'entering_pin' | 'loading' | 'photo' | 'processing';
+
 export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,12 +30,14 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
   const controlsRef = useRef<IScannerControls | null>(null);
   const photoVideoRef = useRef<HTMLVideoElement>(null);
 
-  const [step, setStep] = useState<'scanning' | 'loading' | 'photo' | 'processing'>('scanning');
+  // El flujo inicia ahora en la pantalla de selección 'selection'
+  const [step, setStep] = useState<ScannerStep>('selection');
   const [scannedId, setScannedId] = useState<string | null>(null);
   const [paqueteInfo, setPaqueteInfo] = useState<{ guia_numero: string } | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [pin, setPin] = useState<string>('');
 
-  // Escáner QR
+  // Escáner QR (Solo se activa si el paso actual es 'scanning')
   useEffect(() => {
     if (!isOpen || step !== 'scanning') return;
   
@@ -38,7 +46,6 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
   
     const startScanner = async () => {
       try {
-        // Intentar obtener la cámara principal (no la angular)
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             facingMode: 'environment',
@@ -59,7 +66,7 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
             if (result) {
               controls.stop();
               stream.getTracks().forEach(t => t.stop());
-              await verifyPaquete(result.getText());
+              await verifyPaquete(result.getText(), 'qr');
             }
           }
         );
@@ -103,18 +110,30 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
     };
   }, [step]);
 
-  const verifyPaquete = async (id: string) => {
+  // Verificación unificada para QR y PIN
+  const verifyPaquete = async (identifier: string, method: 'qr' | 'pin') => {
     setStep('loading');
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('paquetes')
-        .select('id, guia_numero, operador_id, estado')
-        .eq('id', id)
-        .maybeSingle();
+        .select('id, guia_numero, operador_id, estado');
+
+      if (method === 'qr') {
+        query = query.eq('id', identifier);
+      } else {
+        // Realiza la búsqueda utilizando el PIN asignado (cambiar 'pin_retiro' si usas otra columna)
+        query = query.eq('pin_retiro', identifier);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error || !data) {
-        toast({ variant: 'destructive', title: 'QR Inválido', description: 'El paquete no existe en el sistema.' });
-        setStep('scanning');
+        toast({ 
+          variant: 'destructive', 
+          title: method === 'qr' ? 'QR Inválido' : 'PIN Inválido', 
+          description: method === 'qr' ? 'El paquete no existe en el sistema.' : 'No se encontró ningún paquete con este PIN.' 
+        });
+        setStep(method === 'qr' ? 'scanning' : 'entering_pin');
         return;
       }
 
@@ -124,25 +143,25 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
         toast({ 
           variant: 'destructive', 
           title: 'Acción No Permitida', 
-          description: `No se puede escanear un paquete con estado: ${data.estado.replace(/_/g, ' ')}.` 
+          description: `No se puede procesar un paquete con estado: ${data.estado.replace(/_/g, ' ')}.` 
         });
-        setStep('scanning');
+        setStep(method === 'qr' ? 'scanning' : 'entering_pin');
         return;
       }
 
       if (data.operador_id !== userId) {
         toast({ variant: 'destructive', title: 'No Autorizado', description: 'Este paquete no está asignado a tu cuenta.' });
-        setStep('scanning');
+        setStep(method === 'qr' ? 'scanning' : 'entering_pin');
         return;
       }
 
       toast({ title: '¡Verificado!', description: `Paquete ${data.guia_numero} validado correctamente.` });
-      setScannedId(id);
+      setScannedId(data.id);
       setPaqueteInfo(data);
       setStep('photo');
     } catch {
       toast({ variant: 'destructive', title: 'Error', description: 'Error de conexión.' });
-      setStep('scanning');
+      setStep(method === 'qr' ? 'scanning' : 'entering_pin');
     }
   };
 
@@ -156,11 +175,9 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
       const dataUrl = canvas.toDataURL('image/jpeg');
       setPhoto(dataUrl);
       
-      // Detener cámara inmediatamente
       const stream = video.srcObject as MediaStream;
       stream?.getTracks().forEach(t => t.stop());
 
-      // --- INICIO DE LA SOLUCIÓN DE GEOLOCALIZACIÓN ---
       let ubicacion = null;
       if (navigator.geolocation) {
         ubicacion = await new Promise((resolve) => {
@@ -173,20 +190,16 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
               resolve(null);
             },
             { 
-              enableHighAccuracy: false, // Más rápido usando redes móviles/Wi-Fi en vez de GPS puro
-              timeout: 10000            // 10 segundos de espera
+              enableHighAccuracy: false,
+              timeout: 10000
             }
           );
         });
-      } else {
-        console.warn("El navegador no soporta geolocalización o no está en un entorno HTTPS seguro.");
       }
-      // --- FIN DE LA SOLUCIÓN DE GEOLOCALIZACIÓN ---
 
       setStep('processing');
 
       try {
-        // 1. Subir evidencia
         const response = await fetch(dataUrl);
         const blob = await response.blob();
         const fileName = `image-paquete-retirado/retiro-${scannedId}-${Date.now()}.jpg`;
@@ -198,13 +211,11 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
           publicUrl = url;
         }
 
-        // 2. Actualizar a 'paquete_retirado'
         const updateData: any = { 
           estado: 'paquete_retirado',
           imagen_paquete_retirado: publicUrl 
         };
 
-        // Si se obtuvo la ubicación, se agrega al payload
         if (ubicacion) {
           updateData.ubicacion_paquete_retirado = ubicacion;
         }
@@ -219,7 +230,6 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
         toast({ title: 'Paquete Retirado', description: 'Registrando salida a ruta...' });
         onSuccess();
 
-        // 3. Esperar 2 segundos y actualizar a 'en_ruta'
         setTimeout(async () => {
           await supabase.from('paquetes').update({ estado: 'en_ruta' }).eq('id', scannedId);
           toast({ title: 'En Ruta', description: 'El paquete ya está en tránsito.' });
@@ -236,10 +246,11 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
 
   const handleClose = () => {
     controlsRef.current?.stop();
-    setStep('scanning');
+    setStep('selection');
     setScannedId(null);
     setPaqueteInfo(null);
     setPhoto(null);
+    setPin('');
     onClose();
   };
 
@@ -249,13 +260,40 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
         <DialogHeader className="p-4 border-b border-white/10">
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-accent" />
+            {step === 'selection' && 'Método de Verificación'}
             {step === 'scanning' && 'Escanear Ticket QR'}
+            {step === 'entering_pin' && 'Ingresar PIN'}
             {step === 'photo' && 'Evidencia de Retiro'}
             {(step === 'loading' || step === 'processing') && 'Procesando...'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="p-4">
+          {/* PASO 1: SELECCIÓN DE MÉTODO */}
+          {step === 'selection' && (
+            <div className="flex flex-col gap-4 py-6">
+              <p className="text-center text-sm text-slate-400 mb-2">
+                Selecciona la forma
+              </p>
+              
+              <Button
+                className="h-16 bg-accent text-primary font-bold text-base hover:bg-accent/90 flex items-center justify-center gap-3 rounded-xl"
+                onClick={() => setStep('scanning')}
+              >
+                <QrCode className="h-6 w-6" /> Escanear Código QR
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-16 border-white/10 hover:bg-white/5 text-white font-bold text-base flex items-center justify-center gap-3 rounded-xl"
+                onClick={() => setStep('entering_pin')}
+              >
+                <Keyboard className="h-6 w-6 text-accent" /> Colocar PIN de 5 dígitos
+              </Button>
+            </div>
+          )}
+
+          {/* PASO 2A: ESCÁNER QR */}
           {step === 'scanning' && (
             <div className="space-y-4">
               <div className="relative rounded-xl overflow-hidden bg-black aspect-square border border-white/10">
@@ -265,9 +303,84 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
                 </div>
               </div>
               <p className="text-center text-sm text-slate-400">Ubica el QR del ticket dentro del recuadro</p>
+              
+              <Button
+                variant="ghost"
+                className="w-full h-10 hover:bg-white/5 text-slate-400 flex items-center justify-center gap-2"
+                onClick={() => setStep('selection')}
+              >
+                <ArrowLeft className="h-4 w-4" /> Volver al menú
+              </Button>
             </div>
           )}
 
+          {/* PASO 2B: INGRESO DE PIN */}
+          {step === 'entering_pin' && (
+            <div className="flex flex-col items-center justify-center py-4 space-y-6">
+              <p className="text-sm text-slate-400 text-center">
+                Ingresa el PIN de 5 dígitos
+              </p>
+              
+              <div className="relative w-full max-w-[280px] mx-auto">
+                {/* Input transparente sobre las casillas para aprovechar el teclado nativo */}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={5}
+                  value={pin}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, ''); // Filtrar solo números
+                    setPin(val);
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                  autoFocus
+                />
+                
+                {/* Renderizado de las 5 casillas del PIN */}
+                <div className="flex justify-between gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const char = pin[i] || '';
+                    const isFocused = pin.length === i;
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-12 h-14 bg-slate-800 border-2 rounded-xl flex items-center justify-center text-xl font-bold transition-all",
+                          isFocused ? "border-accent shadow-[0_0_8px_rgba(0,255,255,0.4)]" : "border-white/10",
+                          char ? "text-white" : "text-slate-500"
+                        )}
+                      >
+                        {char || '•'}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex w-full gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white/10 hover:bg-white/5 text-white"
+                  onClick={() => {
+                    setPin('');
+                    setStep('selection');
+                  }}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+                </Button>
+                <Button
+                  disabled={pin.length !== 5}
+                  className="flex-1 bg-accent text-primary font-bold hover:bg-accent/90"
+                  onClick={() => verifyPaquete(pin, 'pin')}
+                >
+                  Verificar PIN
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* CARGAS Y PROCESAMIENTO */}
           {(step === 'loading' || step === 'processing') && (
             <div className="flex flex-col items-center py-20 gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-accent" />
@@ -277,6 +390,7 @@ export function QRScanner({ isOpen, onClose, userId, onSuccess }: QRScannerProps
             </div>
           )}
 
+          {/* PASO 3: CAPTURA DE FOTO */}
           {step === 'photo' && (
             <div className="space-y-4">
               <div className="relative rounded-xl overflow-hidden bg-black aspect-square border border-white/10">

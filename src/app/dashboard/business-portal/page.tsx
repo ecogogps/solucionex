@@ -453,7 +453,7 @@ export default function BusinessPortalRequest() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-slate-300">Imagen de guía</Label>
+                      <Label className="text-slate-300">Evidencia de envío</Label>
                       <div className="flex flex-col gap-2">
                         {capturedImage ? (
                           <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
@@ -503,7 +503,7 @@ export default function BusinessPortalRequest() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dir" className="text-slate-300">Dirección</Label>
+                    <Label htmlFor="dir" className="text-slate-300">Destino</Label>
                     <Input id="dir" className="bg-white/5 border-white/10 text-white" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} required />
                   </div>
 

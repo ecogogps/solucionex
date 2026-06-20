@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Package, Loader2, MapPin, Phone, CreditCard, 
   Save, RotateCcw, Printer, Calendar, Hash, DollarSign, PackageCheck, Trash2, FileText, PhoneForwarded,
-  MessageSquareOff, Truck
+  MessageSquareOff, Truck, Copy, Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,22 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     nota: ''
   });
 
+  // Estado para controlar la retroalimentación visual al copiar
+  const [copied, setCopied] = useState(false);
+
   const { toast } = useToast();
+
+  // Función para copiar el PIN al portapapeles
+  const handleCopyPin = () => {
+    if (!pkg.pin_retiro) return;
+    navigator.clipboard.writeText(pkg.pin_retiro);
+    setCopied(true);
+    toast({
+      title: "PIN Copiado",
+      description: "El PIN ha sido copiado."
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (pkg) {
@@ -282,6 +297,33 @@ Respaldo y Seguridad en cada Transacción.`;
                   <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
                   <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
                 </div>
+
+                {/* Sección interactiva del PIN */}
+                {pkg.pin_retiro && (
+                  <div className="col-span-1 sm:col-span-2 pt-2 mt-2 border-t border-white/5 flex items-center justify-between bg-accent/5 p-2 rounded-lg">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">PIN</span>
+                      <span className="text-lg font-mono font-black tracking-widest text-accent">{pkg.pin_retiro}</span>
+                    </div>
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleCopyPin}
+                      className="h-8 text-xs gap-1.5 border border-white/10 hover:bg-white/10 text-slate-300 hover:text-white shrink-0"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-green-400" /> Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" /> 
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {pkg.alerta_no_contesta && (

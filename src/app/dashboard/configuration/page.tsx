@@ -17,7 +17,8 @@ import {
   Globe,
   MapPin,
   MapPinned,
-  Search
+  Search,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,7 +102,7 @@ export default function ConfigurationPage() {
     try {
       const { data: cityData } = await supabase.from('ciudades').select('*').order('nombre');
       const { data: zoneData } = await supabase.from('zonas').select('*, ciudades(nombre)').order('nombre');
-      const { data: sectorData } = await supabase.from('sectores').select('*, zonas(nombre, ciudad_id, ciudades(nombre))').order('nombre');
+      const { data: sectorData = [] } = await supabase.from('sectores').select('*, zonas(nombre, ciudad_id, ciudades(nombre))').order('nombre');
       
       setCiudades(cityData || []);
       setZonas(zoneData || []);
@@ -216,6 +217,11 @@ export default function ConfigurationPage() {
               <Navigation className="h-5 w-5" /> Ubicación Operador
             </Button>
           </Link>
+          <Link href="/dashboard/wallets">
+            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
+              <Wallet className="h-5 w-5" /> Billeteras
+            </Button>
+          </Link>
           <Link href="/dashboard/configuration">
             <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white hover:bg-white/20">
               <Settings className="h-5 w-5 text-accent" /> Configuración
@@ -295,8 +301,8 @@ export default function ConfigurationPage() {
                         <TableCell className="text-slate-400 flex items-center gap-2"><Globe className="w-3 h-3 text-accent" /> {z.ciudades?.nombre}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="hover:bg-blue-500/20 text-blue-400" onClick={() => handleOpenDialog(z)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" className="hover:bg-red-500/20 text-red-400" onClick={() => handleDelete(z.id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-blue-500/20 text-blue-400" onClick={() => handleOpenDialog(z)}><Edit2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-red-500/20 text-red-400" onClick={() => handleDelete(z.id)}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -325,8 +331,8 @@ export default function ConfigurationPage() {
                         <TableCell className="text-slate-500 text-xs">{(s.zonas as any)?.ciudades?.nombre}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="hover:bg-blue-500/20 text-blue-400" onClick={() => handleOpenDialog(s)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" className="hover:bg-red-500/20 text-red-400" onClick={() => handleDelete(s.id)}><Trash2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-blue-500/20 text-blue-400" onClick={() => handleOpenDialog(s)}><Edit2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="hover:bg-red-500/20 text-red-400" onClick={() => handleDelete(s.id)}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
