@@ -1,12 +1,10 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
-  Truck, LogOut, Package, ClipboardCheck, Navigation, 
-  Loader2, MapPin, Clock, ChevronRight, History, MapPinned, Camera, QrCode, XCircle, ArrowRightCircle,
-  PhoneForwarded
+  Package, Truck, LogOut, Navigation, Loader2, MapPin, ChevronRight, 
+  History, MapPinned, QrCode, XCircle, ArrowRightCircle, PhoneForwarded
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,11 +29,10 @@ export default function MyPackagesPage() {
   const [selectedPackage, setSelectedPackage] = useState<PaqueteData | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   
-  const [trackingPackage, setTrackingPackage] = useState<PaqueteData | null>(null);
+  const [trackingPackage, setTrackingPackage] = useState<any | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
-  
+
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,7 +92,7 @@ export default function MyPackagesPage() {
 
   const fetchData = async (currentUserId: string) => {
     try {
-      // 1. Obtener paquetes asignados (agregado "telefono" en empresas)
+      // 1. Obtener paquetes asignados
       const { data: assignedData, error: assignedError } = await supabase
         .from('paquetes')
         .select('*, empresas(nombre, direccion, telefono), operadores(nombres), paquetes_historial(estado, created_at)')
@@ -104,7 +101,7 @@ export default function MyPackagesPage() {
 
       if (assignedError) throw assignedError;
 
-      // 2. Obtener rechazos de hoy (agregado "telefono" en empresas)
+      // 2. Obtener rechazos de hoy
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -119,7 +116,7 @@ export default function MyPackagesPage() {
       const formattedRejections = (rejectedData || []).map(r => ({
         ...r.paquetes,
         estado: 'rechazado_por_operador',
-        created_at: r.created_at, // Usar fecha del rechazo para orden
+        created_at: r.created_at,
         es_rechazo: true
       }));
 
@@ -256,23 +253,30 @@ export default function MyPackagesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col">
+    <>
       <header className="h-16 bg-slate-900 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40">
-        <div className="flex items-center gap-2"><Truck className="h-6 w-6 text-accent shrink-0" /><span className="font-bold text-lg truncate">Solucionex</span></div>
+        <div className="flex items-center gap-2">
+          <Truck className="h-6 w-6 text-accent shrink-0" />
+          <span className="font-bold text-lg truncate">Solucionex</span>
+        </div>
         <div className="flex items-center gap-4 shrink-0">
           <Badge variant="outline" className="border-accent text-accent">Operador</Badge>
-          <Button variant="ghost" size="icon" onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="text-red-400 shrink-0"><LogOut className="h-5 w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="text-red-400 shrink-0">
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 
-      <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
+      <div className="p-4 lg:p-6 space-y-6 pb-24">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">Mis Paquetes</h2>
           <p className="text-slate-400 text-sm">Gestiona tus entregas asignadas</p>
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center py-20"><Loader2 className="h-10 w-10 text-accent" /></div>
+          <div className="flex flex-col items-center py-20">
+            <Loader2 className="h-10 w-10 text-accent animate-spin" />
+          </div>
         ) : (
           <Tabs defaultValue="activos" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 mb-6">
@@ -295,7 +299,10 @@ export default function MyPackagesPage() {
                 activeDeliveries.map((pkg) => (
                   <Card 
                     key={pkg.id} 
-                    className={cn("bg-white/10 border-accent/20 cursor-pointer active:scale-[0.98] transition-all", (pkg.alerta_no_contesta || pkg.estado === 'cancelado') && "border-red-500/50")}
+                    className={cn(
+                      "bg-white/10 border-accent/20 cursor-pointer active:scale-[0.98] transition-all", 
+                      (pkg.alerta_no_contesta || pkg.estado === 'cancelado') && "border-red-500/50"
+                    )}
                     onClick={() => { setSelectedPackage(pkg); setIsDetailOpen(true); }}
                   >
                     <CardContent className="p-4">
@@ -315,9 +322,9 @@ export default function MyPackagesPage() {
                             <div className="flex items-start gap-1 mt-1">
                               <MapPin className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" /> 
                               <span className="text-[10px] text-slate-400 break-words">{pkg.direccion}</span>
-                              </div>
+                            </div>
 
-                              {pkg.vuelve_a_llamar && (
+                            {pkg.vuelve_a_llamar && (
                               <div className="mt-2 flex">
                                 <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
                                   <PhoneForwarded className="w-3 h-3" /> REINTENTAR LLAMADA
@@ -325,7 +332,6 @@ export default function MyPackagesPage() {
                               </div>
                             )}
 
-                            {/* NUEVO BADGE: Número actualizado */}
                             {pkg.alerta_numero_actualizado && (
                               <div className="mt-2 flex">
                                 <Badge className="bg-green-500/20 text-green-400 border-green-500/50 text-[10px] gap-1 animate-pulse">
@@ -348,7 +354,6 @@ export default function MyPackagesPage() {
                             />
                           </div>
                           <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
-                            {/* Botón "Estoy en camino a retirar" condicional */}
                             {((pkg.estado === 'pendiente' || pkg.estado === 'pedido_listo') && 
                               !pkg.paquetes_historial?.some((h: any) => h.estado === 'camino_a_retirar')) && (
                               <Button 
@@ -382,7 +387,6 @@ export default function MyPackagesPage() {
                               <MapPinned className="h-4 w-4" />
                             </Button>
                             <div className="shrink-0">{getStatusBadge(pkg.estado)}</div>
-                            <ChevronRight className="h-4 w-4 text-slate-500 shrink-0 hidden sm:block" />
                           </div>
                         </div>
                       </div>
@@ -461,7 +465,7 @@ export default function MyPackagesPage() {
             </TabsContent>
           </Tabs>
         )}
-      </main>
+      </div>
 
       <OperatorPackageModal 
         isOpen={isDetailOpen}
@@ -479,8 +483,8 @@ export default function MyPackagesPage() {
         guiaNumero={trackingPackage?.guia_numero || ''}
       />
 
-      {/* Botones Flotantes */}
-      <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-50">
+      {/* Botones Flotantes de GPS y QR */}
+      <div className="fixed bottom-24 left-6 flex flex-col gap-3 z-40">
         <button
           onClick={updateLocation}
           disabled={isUpdatingLocation}
@@ -493,7 +497,7 @@ export default function MyPackagesPage() {
 
       <button
         onClick={() => setIsQRScannerOpen(true)}
-        className="fixed bottom-24 right-6 h-14 w-14 bg-accent rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-accent/90 transition-all"
+        className="fixed bottom-24 right-6 h-14 w-14 bg-accent rounded-full flex items-center justify-center shadow-lg z-40 hover:bg-accent/90 transition-all"
       >
         <QrCode className="h-6 w-6 text-primary" />
       </button>
@@ -504,11 +508,6 @@ export default function MyPackagesPage() {
         userId={userId || ''}
         onSuccess={() => userId && fetchData(userId)}
       />
-
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <button onClick={() => router.push('/dashboard/operator-portal')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400")}><Package className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Solicitudes</span>{pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
-        <button onClick={() => router.push('/dashboard/operator-portal/my-packages')} className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400")}><ClipboardCheck className="h-5 w-5 shrink-0" /><span className="text-[10px] font-bold">Mis Paquetes</span>{pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}</button>
-      </nav>
-    </div>
+    </>
   );
 }

@@ -1,28 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
-  Truck, 
-  LogOut, 
+  Truck,
+  LogOut,
   Package, 
-  ClipboardCheck, 
   Loader2, 
   CheckCircle2, 
   XCircle, 
   MapPin, 
   Building2,
-  Clock,
   Volume2,
-  VolumeX,
-  X
+  VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { cn } from '@/lib/utils';
 
 interface PaqueteData {
   id: string;
@@ -48,7 +44,6 @@ export default function SolicitudesPage() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -101,52 +96,52 @@ export default function SolicitudesPage() {
 
       // Obtener empresas exclusivas donde este operador está asignado
       const { data: asignaciones } = await supabase
-      .from('empresa_operadores')
-      .select('empresa_id')
-      .eq('operador_id', currentUserId);
+        .from('empresa_operadores')
+        .select('empresa_id')
+        .eq('operador_id', currentUserId);
 
       const empresasAsignadas = (asignaciones || []).map(a => a.empresa_id);
 
       // Obtener empresas exclusivas que NO incluyen a este operador
       const { data: empresasExclusivas } = await supabase
-      .from('empresas')
-      .select('id')
-      .eq('operadores_exclusivos', true);
+        .from('empresas')
+        .select('id')
+        .eq('operadores_exclusivos', true);
 
       const idsExcluidas = (empresasExclusivas || [])
-      .map(e => e.id)
-      .filter(id => !empresasAsignadas.includes(id));
+        .map(e => e.id)
+        .filter(id => !empresasAsignadas.includes(id));
 
       // 1. Zonas del operador
       const { data: opZonas } = await supabase
-      .from('operador_zonas')
-      .select('zona_id')
-      .eq('operador_id', currentUserId);
+        .from('operador_zonas')
+        .select('zona_id')
+        .eq('operador_id', currentUserId);
 
       // 2. Sectores de esas zonas
       const zonaIds = (opZonas || []).map(z => z.zona_id);
       const { data: sectoresData } = await supabase
-      .from('sectores')
-      .select('id')
-      .in('zona_id', zonaIds);
+        .from('sectores')
+        .select('id')
+        .in('zona_id', zonaIds);
 
       const sectorIds = (sectoresData || []).map(s => s.id);
 
       // 3. Filtrar paquetes por esos sectores
       let query = supabase
-      .from('paquetes')
-      .select('*, empresas(nombre, direccion)')
-      .in('estado', ['buscando_operador', 'pedido_listo'])
-      .is('operador_id', null)
-      .in('sector_id', sectorIds); // ← nuevo filtro
+        .from('paquetes')
+        .select('*, empresas(nombre, direccion)')
+        .in('estado', ['buscando_operador', 'pedido_listo'])
+        .is('operador_id', null)
+        .in('sector_id', sectorIds);
 
       // Excluir paquetes de empresas exclusivas donde no está asignado
       if (idsExcluidas.length > 0) {
-      query = query.not('empresa_id', 'in', `(${idsExcluidas.join(',')})`);
+        query = query.not('empresa_id', 'in', `(${idsExcluidas.join(',')})`);
       }
 
       if (dbRejectedIds.length > 0) {
-      query = query.not('id', 'in', `(${dbRejectedIds.join(',')})`);
+        query = query.not('id', 'in', `(${dbRejectedIds.join(',')})`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -213,13 +208,12 @@ export default function SolicitudesPage() {
             resolve({ latitud: pos.coords.latitude, longitud: pos.coords.longitude });
           },
           (error) => {
-            // Esto te permitirá ver el motivo del fallo en la consola del navegador (F12)
             console.warn("Fallo al obtener ubicación:", error.code, error.message);
             resolve(null);
           },
           { 
-            enableHighAccuracy: false, // Cambiado a false para que sea más rápido usando Wi-Fi/red celular
-            timeout: 10000            // Incrementado a 10 segundos
+            enableHighAccuracy: false,
+            timeout: 10000
           }
         );
       });
@@ -227,21 +221,20 @@ export default function SolicitudesPage() {
       console.warn("El navegador no soporta geolocalización o no está en un entorno HTTPS seguro.");
     }
   
-    // Si consideras que la ubicación es obligatoria para aceptar, puedes agregar esta validación:
     if (!ubicacion) {
       toast({
         variant: "destructive",
         title: "Ubicación requerida",
         description: "No se pudo obtener tu ubicación actual. Asegúrate de activar el GPS y dar permisos.",
       });
-      return; // Detiene el proceso si no se pudo capturar la latitud/longitud
+      return;
     }
   
     try {
       const updateData: any = { 
         operador_id: userId, 
         estado: 'pendiente',
-        ubicacion_pendiente: ubicacion // Al validar arriba que no sea null, nos aseguramos de que siempre se envíe
+        ubicacion_pendiente: ubicacion
       };
   
       const { data, error } = await supabase
@@ -309,7 +302,7 @@ export default function SolicitudesPage() {
   const visiblePackages = availablePackages.filter(p => !rejectedIds.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col">
+    <>
       <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-6 sticky top-0 z-40 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <Truck className="h-6 w-6 text-accent" />
@@ -339,7 +332,7 @@ export default function SolicitudesPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
+      <div className="p-4 lg:p-6 space-y-6 pb-24">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">Solicitudes Disponibles</h2>
           <p className="text-slate-400 text-sm">Escaneando pedidos en tiempo real...</p>
@@ -387,18 +380,11 @@ export default function SolicitudesPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="ghost" 
-                        className="flex-1 text-red-400 hover:bg-red-400/10 hover:text-red-400"
-                        onClick={() => handleReject(pkg.id)}
-                      >
+                    <div className="flex gap-2">
+                      <Button onClick={() => handleReject(pkg.id)} variant="outline" className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold h-10">
                         <XCircle className="w-4 h-4 mr-2" /> Rechazar
                       </Button>
-                      <Button 
-                        className="flex-1 bg-accent text-primary font-bold hover:bg-accent/90"
-                        onClick={() => handleAccept(pkg)}
-                      >
+                      <Button onClick={() => handleAccept(pkg)} className="flex-1 bg-accent text-primary hover:bg-accent/90 font-bold h-10">
                         <CheckCircle2 className="w-4 h-4 mr-2" /> Aceptar
                       </Button>
                     </div>
@@ -408,33 +394,7 @@ export default function SolicitudesPage() {
             )}
           </div>
         )}
-      </main>
-
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <button 
-          onClick={() => router.push('/dashboard/operator-portal')}
-          className={cn(
-            "flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative",
-            pathname === '/dashboard/operator-portal' ? "text-accent" : "text-slate-400"
-          )}
-        >
-          <Package className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Solicitudes</span>
-          {pathname === '/dashboard/operator-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </button>
-
-        <button 
-          onClick={() => router.push('/dashboard/operator-portal/my-packages')}
-          className={cn(
-            "flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative",
-            pathname === '/dashboard/operator-portal/my-packages' ? "text-accent" : "text-slate-400"
-          )}
-        >
-          <ClipboardCheck className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Mis Paquetes</span>
-          {pathname === '/dashboard/operator-portal/my-packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </button>
-      </nav>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -8,21 +7,13 @@ import {
   ArrowUpRight, 
   ArrowDownLeft, 
   History, 
-  UserCircle, 
-  Building2, 
-  Truck, 
   Upload, 
-  Camera, 
   X, 
   Loader2, 
   CheckCircle2, 
   AlertTriangle,
-  FileText,
-  Plus,
-  Minus,
   ExternalLink,
   Search,
-  ChevronRight,
   Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,7 +37,6 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -74,6 +64,7 @@ interface Movimiento {
   created_at: string;
   perfil_id: string;
   perfiles?: { nombre?: string }; // Enriquecido localmente
+  nombre_perfil?: string; // Añadido para resolver el error de tipado
 }
 
 function SettlementContent() {
@@ -164,11 +155,17 @@ function SettlementContent() {
       if (paymentImage) {
         const response = await fetch(paymentImage);
         const blob = await response.blob();
-        const fileName = `comprobantes/pago-${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage.from('paquetes').upload(fileName, blob);
+        
+        // Corrección del Path y Bucket para usar la política RLS {perfil_id}/{archivo}
+        const fileName = `${selectedProfileId}/pago-${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('comprobantes-billetera')
+          .upload(fileName, blob);
+        
         if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('paquetes').getPublicUrl(fileName);
-        finalComprobanteUrl = publicUrl;
+        
+        // Guardamos únicamente la ruta del archivo en la base de datos
+        finalComprobanteUrl = fileName;
       }
 
       const payload = {
@@ -201,7 +198,7 @@ function SettlementContent() {
       toast({ 
         variant: "destructive", 
         title: "Error en la operación", 
-        description: error.message || "No se pudo completar la transacción." 
+        description: error.message || "No se pudo completar el movimiento." 
       });
     } finally {
       setProcessing(false);
@@ -214,6 +211,33 @@ function SettlementContent() {
       const reader = new FileReader();
       reader.onloadend = () => setPaymentImage(reader.result as string);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleViewComprobante = async (path: string) => {
+    if (!path) return;
+    // Soporte para URLs completas heredadas
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      window.open(path, '_blank');
+      return;
+    }
+    try {
+      // Generación de URL firmada temporal de 1 hora para el bucket privado
+      const { data, error } = await supabase.storage
+        .from('comprobantes-billetera')
+        .createSignedUrl(path, 3600);
+
+      if (error) throw error;
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error("Error generating signed URL:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo abrir el comprobante."
+      });
     }
   };
 
@@ -255,7 +279,7 @@ function SettlementContent() {
           </Card>
           <Card className="bg-white/5 border-white/10">
             <CardHeader className="p-4 pb-1">
-              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Por Acreditar (Mío)</CardTitle>
+              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Por Acreditar (ADMIN)</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-xl font-bold text-white">${Number(adminWallet?.por_acreditar || 0).toFixed(2)}</p>
@@ -263,7 +287,7 @@ function SettlementContent() {
           </Card>
           <Card className="bg-white/5 border-white/10">
             <CardHeader className="p-4 pb-1">
-              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Saldo Retirado</CardTitle>
+              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Saldo Efectivo</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-xl font-bold text-white">${Number(adminWallet?.saldo_efectivo || 0).toFixed(2)}</p>
@@ -271,7 +295,7 @@ function SettlementContent() {
           </Card>
           <Card className="bg-white/5 border-white/10">
             <CardHeader className="p-4 pb-1">
-              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Balance Digital</CardTitle>
+              <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Tasas Transaccionales</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-xl font-bold text-sky-400">${Number(adminWallet?.balance_digital_app || 0).toFixed(2)}</p>
@@ -286,7 +310,7 @@ function SettlementContent() {
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-orange-400">
                 <ArrowDownLeft className="w-4 h-4" /> RECAUDACIÓN (ENTRADAS)
               </CardTitle>
-              <CardDescription className="text-xs">Cobra el efectivo en manos de terceros</CardDescription>
+              <CardDescription className="text-xs">Cobro efectivo y transferencias</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="space-y-4">
@@ -503,7 +527,7 @@ function SettlementContent() {
           <Card className="bg-red-500/5 border-red-500/10">
             <CardHeader>
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-400">
-                <AlertTriangle className="w-4 h-4" /> AJUSTE MANUAL (SALDO PAGADO)
+                <AlertTriangle className="w-4 h-4" /> AJUSTE MANUAL (SALDO EFECTIVO)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -545,7 +569,7 @@ function SettlementContent() {
         <div className="space-y-4 pt-4 border-t border-white/5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h3 className="text-lg font-black flex items-center gap-2">
-              <History className="h-5 w-5 text-accent" /> LIBRO MAYOR DEL SISTEMA
+              <History className="h-5 w-5 text-accent" /> MOVIMIENTOS
             </h3>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -601,7 +625,7 @@ function SettlementContent() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-bold text-xs text-slate-200">{(mov as any).nombre_perfil}</span>
+                      <span className="font-bold text-xs text-slate-200">{mov.nombre_perfil}</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={cn(
@@ -631,11 +655,9 @@ function SettlementContent() {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-accent hover:bg-accent/10" 
-                          asChild
+                          onClick={() => handleViewComprobante(mov.comprobante_url!)}
                         >
-                          <a href={mov.comprobante_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
                       )}
                     </TableCell>
@@ -696,4 +718,3 @@ export default function SettlementPage() {
     </Suspense>
   );
 }
-

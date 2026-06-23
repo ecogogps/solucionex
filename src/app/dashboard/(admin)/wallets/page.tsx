@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -38,6 +37,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { getSignedComprobanteUrl } from '@/lib/storage-helpers';
 
 interface BilleteraAdmin {
   perfil_id: string;
@@ -89,7 +89,7 @@ export default function WalletsAdminPage() {
       setBilleteras(data || []);
     } catch (error: any) {
       console.error("Error fetching wallets:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los estados financieros." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los movimientos." });
     } finally {
       setLoading(false);
     }
@@ -120,6 +120,21 @@ export default function WalletsAdminPage() {
     fetchMovimientos(wallet.perfil_id);
   };
 
+  const handleViewComprobante = async (path: string) => {
+    if (!path) return;
+    try {
+      const url = await getSignedComprobanteUrl(path);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Error loading signed URL:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo recuperar la imagen del comprobante."
+      });
+    }
+  };
+
   const filteredWallets = billeteras.filter(w => {
     const matchSearch = w.nombre.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'todos' || w.rol === filter;
@@ -148,7 +163,7 @@ export default function WalletsAdminPage() {
   return (
     <>
       <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8 shrink-0">
-        <h2 className="text-xl font-bold text-white">Estados Financieros</h2>
+        <h2 className="text-xl font-bold text-white">Movimientos</h2>
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input 
@@ -183,7 +198,7 @@ export default function WalletsAdminPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-black text-white">${totals.totalCashAcumulado.toFixed(2)}</p>
-              <p className="text-[10px] text-slate-500 mt-1">Efectivo en manos de terceros a cobrar</p>
+              <p className="text-[10px] text-slate-500 mt-1">En manos de terceros a cobrar</p>
             </CardContent>
           </Card>
 
@@ -228,7 +243,7 @@ export default function WalletsAdminPage() {
                     <TableHead className="font-bold text-slate-300">Rol</TableHead>
                     <TableHead className="font-bold text-slate-300">Por Acreditar</TableHead>
                     <TableHead className="font-bold text-slate-300">Cash Acumulado</TableHead>
-                    <TableHead className="font-bold text-slate-300">Saldo Pagado</TableHead>
+                    <TableHead className="font-bold text-slate-300">Saldo Efectivo</TableHead>
                     <TableHead className="text-right font-bold text-slate-300">Acción</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -298,7 +313,7 @@ export default function WalletsAdminPage() {
                     <SheetDescription asChild>
                       <div className="text-slate-400 flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] uppercase border-accent text-accent">ID: {selectedWallet.perfil_id.substring(0,8)}</Badge>
-                        <span>Historial Financiero</span>
+                        <span>Movimientos</span>
                       </div>
                     </SheetDescription>
                   </div>
@@ -314,14 +329,18 @@ export default function WalletsAdminPage() {
                   <p className="text-[10px] uppercase font-bold text-slate-500">Cash Acumulado</p>
                   <p className="text-2xl font-black text-orange-400">${Number(selectedWallet.cash_acumulado).toFixed(2)}</p>
                 </div>
-                <div className="space-y-1 border-t border-white/5 pt-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Balance Digital App</p>
-                  <p className="text-2xl font-black text-sky-400">${Number(selectedWallet.balance_digital_app ?? 0).toFixed(2)}</p>
-                </div>
-                <div className="space-y-1 border-t border-white/5 pt-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500">Tasa Pendiente</p>
-                  <p className="text-2xl font-black text-yellow-500">${Number(selectedWallet.tasa_pendiente ?? 0).toFixed(2)}</p>
-                </div>
+                {selectedWallet.rol !== 'operador' && (
+                  <>
+                    <div className="space-y-1 border-t border-white/5 pt-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500">Balance Digital App</p>
+                      <p className="text-2xl font-black text-sky-400">${Number(selectedWallet.balance_digital_app ?? 0).toFixed(2)}</p>
+                    </div>
+                    <div className="space-y-1 border-t border-white/5 pt-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500">Tasa Pendiente</p>
+                      <p className="text-2xl font-black text-yellow-500">${Number(selectedWallet.tasa_pendiente ?? 0).toFixed(2)}</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex-1 overflow-hidden flex flex-col">
@@ -378,14 +397,12 @@ export default function WalletsAdminPage() {
                               {new Date(mov.created_at).toLocaleString()}
                             </div>
                             {mov.comprobante_url && (
-                              <a 
-                                href={mov.comprobante_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-accent hover:underline flex items-center gap-1"
+                              <button
+                                onClick={() => handleViewComprobante(mov.comprobante_url!)}
+                                className="text-accent hover:underline flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer"
                               >
                                 Ver comprobante <ExternalLink className="h-2 w-2" />
-                              </a>
+                              </button>
                             )}
                           </div>
                         </div>
@@ -401,4 +418,3 @@ export default function WalletsAdminPage() {
     </>
   );
 }
-

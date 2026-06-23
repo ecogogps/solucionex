@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
-  Package, 
-  Truck, 
-  LogOut, 
   PlusCircle, 
   Send, 
   Loader2, 
@@ -23,7 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { cn } from '@/lib/utils';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { 
   Dialog, 
@@ -33,7 +29,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
 
 interface Sector {
   id: string;
@@ -44,7 +39,6 @@ export default function BusinessPortalRequest() {
   const [loading, setLoading] = useState(false);
   const [fetchingSectors, setFetchingSectors] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const pathname = usePathname();
 
   const [randomDigits] = useState(() => Math.floor(10000 + Math.random() * 90000).toString());
   const [sectores, setSectores] = useState<Sector[]>([]);
@@ -230,7 +224,7 @@ export default function BusinessPortalRequest() {
       if (capturedImage) {
         const blob = base64ToBlob(capturedImage, 'image/jpeg');
         const fileName = `images/guia-${Date.now()}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('paquetes')
           .upload(fileName, blob, {
             contentType: 'image/jpeg',
@@ -285,242 +279,179 @@ export default function BusinessPortalRequest() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden">
-      <aside className="hidden lg:flex w-64 bg-black/20 border-r border-white/10 flex-col p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-10">
-          <Truck className="h-8 w-8 text-accent" />
-          <span className="text-xl font-bold tracking-tight">Solucionex</span>
-        </div>
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard/business-portal">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <PlusCircle className={cn("h-5 w-5", pathname === '/dashboard/business-portal' && "text-accent")} /> Nueva Solicitud
-            </Button>
-          </Link>
-          <Link href="/dashboard/business-portal/packages">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal/packages' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Package className={cn("h-5 w-5", pathname === '/dashboard/business-portal/packages' && "text-accent")} /> Mis Paquetes
-            </Button>
-          </Link>
-          <Link href="/dashboard/business-portal/logo">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal/logo' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <ImageIcon className={cn("h-5 w-5", pathname === '/dashboard/business-portal/logo' && "text-accent")} /> Configuración
-            </Button>
-          </Link>
-        </nav>
-        <div className="pt-6 border-t border-white/10">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => {
-            supabase.auth.signOut();
-            router.push('/');
-          }}>
-            <LogOut className="h-5 w-5" /> Cerrar Sesión
-          </Button>
-        </div>
-      </aside>
-
-      <main className="flex-1 h-screen overflow-y-auto pb-24 lg:pb-8">
-        <header className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 bg-black/10 backdrop-blur-md sticky top-0 z-40">
-          <div className="flex items-center gap-2">
-            <Truck className="h-6 w-6 text-accent" />
-            <span className="font-bold">Solucionex</span>
-          </div>
-          <div className="text-xs font-medium text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-            Portal Empresa
-          </div>
-        </header>
-
-        <div className="p-4 lg:p-8 flex justify-center items-start">
-          <div className="w-full max-w-2xl space-y-6">
-            <h2 className="text-2xl font-bold">Nueva Solicitud</h2>
-            <Card className="bg-white/5 border-white/10 shadow-2xl backdrop-blur-sm">
-              <CardHeader className="border-b border-white/5 pb-4">
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <PlusCircle className="h-5 w-5 text-accent" /> Datos del Paquete
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  
-                  {/* SELECCIÓN DE SECTOR (Mueve aquí para que el usuario sepa que influye en la guía) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Sector</Label>
-                      <Select 
-                          value={formData.sectorId}
-                          onValueChange={(value) => {
-                            const sector = sectores.find(s => s.id === value);
-                            setSelectedSectorName(sector?.nombre || '');
-                            setFormData(prev => ({ ...prev, sectorId: value }));
-                          }}
-                          required
-                        >
-                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                          <SelectValue placeholder={fetchingSectors ? "Cargando sectores..." : "Seleccionar sector"} />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                          {sectores.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>
-                          ))}
-                          {sectores.length === 0 && !fetchingSectors && (
-                            <SelectItem value="none" disabled>No hay sectores asignados</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-              
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="guia" className="text-slate-300">Guía Nº</Label>
-                      <Input 
-                        id="guia"
-                        className="bg-white/10 border-white/10 text-accent font-bold cursor-not-allowed" 
-                        value={formData.trackingNumber || (selectedSectorName ? 'Generando...' : 'Selecciona un sector')}
-                        readOnly
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-300">Tipo de Paquete</Label>
-                      <Select 
-                        value={formData.type} 
-                        onValueChange={(v) => setFormData({...formData, type: v})}
+    <>
+      <div className="p-4 lg:p-8 flex justify-center items-start">
+        <div className="w-full max-w-2xl space-y-6">
+          <h2 className="text-2xl font-bold">Nueva Solicitud</h2>
+          <Card className="bg-white/5 border-white/10 shadow-2xl backdrop-blur-sm">
+            <CardHeader className="border-b border-white/5 pb-4">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <PlusCircle className="h-5 w-5 text-accent" /> Datos del Paquete
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                
+                {/* SELECCIÓN DE SECTOR */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-accent flex items-center gap-1"><MapPin className="w-3 h-3" /> Sector</Label>
+                    <Select 
+                        value={formData.sectorId}
+                        onValueChange={(value) => {
+                          const sector = sectores.find(s => s.id === value);
+                          setSelectedSectorName(sector?.nombre || '');
+                          setFormData(prev => ({ ...prev, sectorId: value }));
+                        }}
                         required
                       >
-                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                          <SelectValue placeholder="Seleccionar tamaño" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                          <SelectItem value="pequeño">Pequeño</SelectItem>
-                          <SelectItem value="mediano">Mediano</SelectItem>
-                          <SelectItem value="grande">Grande</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-300">Tiempo de Recogida</Label>
-                      <Select 
-                        value={formData.pickupTime} 
-                        onValueChange={(v) => setFormData({...formData, pickupTime: v})}
-                        required
-                      >
-                        <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                          <SelectValue placeholder="Tiempo estimado" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                          <SelectItem value="10">10 minutos</SelectItem>
-                          <SelectItem value="15">15 minutos</SelectItem>
-                          <SelectItem value="20">20 minutos</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <Label className="text-slate-300">Método de Pago</Label>
-                      <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="flex gap-4 pt-1">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="transferencia" id="transferencia" className="border-accent text-accent" />
-                          <Label htmlFor="transferencia" className="cursor-pointer text-sm">Transf.</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="efectivo" id="efectivo" className="border-accent text-accent" />
-                          <Label htmlFor="efectivo" className="cursor-pointer text-sm">Efec.</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-300">Evidencia de envío</Label>
-                      <div className="flex flex-col gap-2">
-                        {capturedImage ? (
-                          <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
-                            <img src={capturedImage} alt="Guía" className="w-full h-full object-contain" />
-                            <button 
-                              type="button"
-                              onClick={() => setCapturedImage(null)}
-                              className="absolute top-2 right-2 bg-red-500/80 p-1 rounded-full text-white hover:bg-red-500"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
-                              onClick={() => setShowCamera(true)}
-                            >
-                              <Camera className="mr-2 h-4 w-4" /> Foto
-                            </Button>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              <ImageIcon className="mr-2 h-4 w-4" /> Subir
-                            </Button>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                          </div>
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                        <SelectValue placeholder={fetchingSectors ? "Cargando sectores..." : "Seleccionar sector"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        {sectores.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>
+                        ))}
+                        {sectores.length === 0 && !fetchingSectors && (
+                          <SelectItem value="none" disabled>No hay sectores asignados</SelectItem>
                         )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="guia" className="text-slate-300">Guía Nº</Label>
+                    <Input 
+                      id="guia"
+                      className="bg-white/10 border-white/10 text-accent font-bold cursor-not-allowed" 
+                      value={formData.trackingNumber || (selectedSectorName ? 'Generando...' : 'Selecciona un sector')}
+                      readOnly
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Tipo de Paquete</Label>
+                    <Select 
+                      value={formData.type} 
+                      onValueChange={(v) => setFormData({...formData, type: v})}
+                      required
+                    >
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                        <SelectValue placeholder="Seleccionar tamaño" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        <SelectItem value="pequeño">Pequeño</SelectItem>
+                        <SelectItem value="mediano">Mediano</SelectItem>
+                        <SelectItem value="grande">Grande</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Tiempo de Recogida</Label>
+                    <Select 
+                      value={formData.pickupTime} 
+                      onValueChange={(v) => setFormData({...formData, pickupTime: v})}
+                      required
+                    >
+                      <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                        <SelectValue placeholder="Tiempo estimado" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        <SelectItem value="10">10 minutos</SelectItem>
+                        <SelectItem value="15">15 minutos</SelectItem>
+                        <SelectItem value="20">20 minutos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <Label className="text-slate-300">Método de Pago</Label>
+                    <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="flex gap-4 pt-1">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="transferencia" id="transferencia" className="border-accent text-accent" />
+                        <Label htmlFor="transferencia" className="cursor-pointer text-sm">Transf.</Label>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="valor" className="text-slate-300">Valor Pedido ($)</Label>
-                      <Input id="valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={formData.orderValue} onChange={(e) => setFormData({...formData, orderValue: e.target.value})} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="telf" className="text-slate-300">Teléfono</Label>
-                      <Input id="telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={formData.phone} onChange={handlePhoneChange} required />
-                    </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="efectivo" id="efectivo" className="border-accent text-accent" />
+                        <Label htmlFor="efectivo" className="cursor-pointer text-sm">Efec.</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dir" className="text-slate-300">Destino</Label>
-                    <Input id="dir" className="bg-white/5 border-white/10 text-white" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} required />
+                    <Label className="text-slate-300">Evidencia de envío</Label>
+                    <div className="flex flex-col gap-2">
+                      {capturedImage ? (
+                        <div className="relative rounded-md overflow-hidden border border-white/10 aspect-video bg-black/20">
+                          <img src={capturedImage} alt="Guía" className="w-full h-full object-contain" />
+                          <button 
+                            type="button"
+                            onClick={() => setCapturedImage(null)}
+                            className="absolute top-2 right-2 bg-red-500/80 p-1 rounded-full text-white hover:bg-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                            onClick={() => setShowCamera(true)}
+                          >
+                            <Camera className="mr-2 h-4 w-4" /> Foto
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="bg-white/5 border-white/10 h-10 flex-1 text-slate-400 hover:text-white"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <ImageIcon className="mr-2 h-4 w-4" /> Subir
+                          </Button>
+                          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="nota" className="text-slate-300">Nota (contenido)</Label>
-                    <Textarea id="nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={formData.note} onChange={(e) => setFormData({...formData, note: e.target.value})} />
+                    <Label htmlFor="valor" className="text-slate-300">Valor Pedido ($)</Label>
+                    <Input id="valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={formData.orderValue} onChange={(e) => setFormData({...formData, orderValue: e.target.value})} required />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="telf" className="text-slate-300">Teléfono</Label>
+                    <Input id="telf" type="text" inputMode="numeric" className="bg-white/5 border-white/10 text-white" value={formData.phone} onChange={handlePhoneChange} required />
+                  </div>
+                </div>
 
-                  <Button type="submit" className="w-full bg-accent text-primary hover:bg-accent/90 font-bold h-12 text-lg shadow-lg shadow-accent/10" disabled={loading || !formData.trackingNumber}>
-                    {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5" /> Enviar Solicitud</>}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dir" className="text-slate-300">Destino</Label>
+                  <Input id="dir" className="bg-white/5 border-white/10 text-white" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nota" className="text-slate-300">Nota (contenido)</Label>
+                  <Textarea id="nota" className="bg-white/5 border-white/10 text-white min-h-[100px]" value={formData.note} onChange={(e) => setFormData({...formData, note: e.target.value})} />
+                </div>
+
+                <Button type="submit" className="w-full bg-accent text-primary hover:bg-accent/90 font-bold h-12 text-lg shadow-lg shadow-accent/10" disabled={loading || !formData.trackingNumber}>
+                  {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2 h-5 w-5" /> Enviar Solicitud</>}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+      </div>
 
       <Dialog open={showCamera} onOpenChange={setShowCamera}>
         <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-md">
@@ -544,28 +475,6 @@ export default function BusinessPortalRequest() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
-          <PlusCircle className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Solicitud</span>
-          {pathname === '/dashboard/business-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
-          <Package className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Paquetes</span>
-          {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
-          <ImageIcon className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Logo</span>
-          {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400">
-          <LogOut className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Salir</span>
-        </button>
-      </nav>
-    </div>
+    </>
   );
 }

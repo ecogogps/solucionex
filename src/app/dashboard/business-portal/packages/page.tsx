@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
-  Package, Truck, LogOut, PlusCircle, Loader2, MapPin, Edit2, 
+  Package, MapPin, Edit2, 
   MessageSquareOff, RefreshCcw, ExternalLink, UserX, MapPinned, Eye, Volume2, VolumeX,
-  Phone, Image as ImageIcon
+  Phone, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
 
 // Componentes modales
 import { ManagePackageModal } from '@/components/ManagePackageModal';
@@ -42,7 +41,6 @@ export default function BusinessPackagesPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPackage, setPreviewPackage] = useState<any | null>(null);
 
-  const pathname = usePathname();
   const router = useRouter();
   const audioAlertRef = useRef<HTMLAudioElement | null>(null);
   const audioWrongNumRef = useRef<HTMLAudioElement | null>(null);
@@ -164,7 +162,7 @@ export default function BusinessPackagesPage() {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId, playNoContestaSound, playNumeroEquivocadoSound, stopNoContestaSound, stopNumeroEquivocadoSound]); // <-- Incluir dependencias de stop
+  }, [userId, playNoContestaSound, playNumeroEquivocadoSound, stopNoContestaSound, stopNumeroEquivocadoSound]);
 
   const fetchMisPaquetes = async (uid: string) => {
     try {
@@ -211,164 +209,165 @@ export default function BusinessPackagesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden print:bg-white print:text-black">
-      <aside className="hidden lg:flex w-64 bg-black/20 border-r border-white/10 flex-col p-6 shadow-2xl print:hidden">
-        <div className="flex items-center gap-3 mb-10"><Truck className="h-8 w-8 text-accent" /><span className="text-xl font-bold tracking-tight">Solucionex</span></div>
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard/business-portal"><Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5"><PlusCircle className="h-5 w-5" /> Nueva Solicitud</Button></Link>
-          <Link href="/dashboard/business-portal/packages" className="relative">
-            <Button variant="ghost" className="w-full justify-start gap-3 bg-white/10 text-white"><Package className="h-5 w-5 text-accent" /> Mis Paquetes</Button>
-            {alertCount > 0 && <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}
-          </Link>
-          <Link href="/dashboard/business-portal/logo">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/5">
-              <ImageIcon className="h-5 w-5" /> Configuración
+    <>
+      <header className="h-16 flex items-center justify-between px-6 bg-slate-900 border-b border-white/10 sticky top-0 z-40 print:hidden">
+        <div className="hidden lg:block text-xs font-medium text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">Portal Empresa</div>
+        <div className="flex items-center gap-2">
+          {!isAudioEnabled ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsAudioEnabled(true)}
+              className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold"
+            >
+              <VolumeX className="h-3 w-3" /> Audio Bloqueado
             </Button>
-          </Link>
-        </nav>
-        <Button variant="ghost" className="w-full justify-start gap-3 text-red-400" onClick={() => { supabase.auth.signOut(); router.push('/'); }}><LogOut className="h-5 w-5" /> Cerrar Sesión</Button>
-      </aside>
-
-      <main className="flex-1 h-screen overflow-y-auto pb-24 lg:pb-8 print:hidden">
-        <header className="h-16 flex items-center justify-between px-6 bg-slate-900 border-b border-white/10 sticky top-0 z-40">
-          <div className="flex items-center gap-2 lg:hidden"><Truck className="h-6 w-6 text-accent" /><span className="font-bold">Solucionex</span></div>
-          <div className="hidden lg:block text-xs font-medium text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">Portal Empresa</div>
-          <div className="flex items-center gap-2">
-            {!isAudioEnabled ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsAudioEnabled(true)}
-                className="h-8 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-2 text-[10px] font-bold"
-              >
-                <VolumeX className="h-3 w-3" /> Audio Bloqueado
-              </Button>
-            ) : (
-              <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px]">
-                <Volume2 className="h-3 w-3" /> Sonido Activo
-              </Badge>
-            )}
-          </div>
-        </header>
-
-        <div className="p-4 lg:p-8 flex justify-center">
-          <div className="w-full max-w-2xl space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Mis Paquetes</h2>
-              {alertCount > 0 && <Badge className="bg-red-500/20 text-red-400 border-red-500/50 animate-pulse">{alertCount} ALERTAS ACTIVAS</Badge>}
-            </div>
-
-            {fetchingPackages ? (
-              <div className="flex flex-col items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-accent mb-4" /><p className="text-slate-400">Cargando...</p></div>
-            ) : misPaquetes.length === 0 ? (
-              <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center"><Package className="h-12 w-12 text-slate-500 mx-auto mb-4" /><h3 className="text-lg font-semibold">Sin paquetes</h3></div>
-            ) : (
-              <div className="space-y-4">
-                {misPaquetes.map((pkg) => (
-                  <Card 
-                    key={pkg.id} 
-                    className={cn(
-                      "bg-white/5 border-white/10 transition-all cursor-pointer group", 
-                      (pkg.alerta_no_contesta || pkg.alerta_cambio_pago || pkg.alerta_numero_equivocado) && "animate-pulse-yellow border-yellow-500/40"
-                    )}
-                    onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="flex flex-col min-w-0">
-                            <p className="font-bold text-white truncate">Guía: {pkg.guia_numero}</p>
-                            <p className="text-xs text-slate-400 flex items-start gap-1 mt-1">
-                              <MapPin className="h-3 w-3 mt-0.5 shrink-0" /> 
-                              <span className="break-words">{pkg.direccion}</span>
-                            </p>
-                          </div>
-                          <div className="shrink-0 mt-1 sm:mt-0">
-                            {getStatusBadge(pkg.estado)}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
-                          <div className="w-full sm:w-auto">
-                            <Cronometro 
-                              paqueteId={pkg.id} 
-                              estadoActual={pkg.estado}
-                              tiempoRecogida={pkg.tiempo_recogida} 
-                              historial={pkg.paquetes_historial ||[]}
-                              retrasoEmpresa={pkg.retraso_empresa_segundos} 
-                              retrasoOperador={pkg.retraso_operador_segundos} 
-                            />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewPackage(pkg);
-                                  setIsPreviewOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTrackingPackage(pkg);
-                                  setIsTrackingOpen(true);
-                                }}
-                              >
-                                <MapPinned className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex items-center gap-2 ml-1 shrink-0">
-                              <div className="flex flex-col items-end">
-                                <p className="text-lg font-bold text-accent leading-none">${pkg.valor_pedido}</p>
-                                <span className="text-[10px] font-bold text-slate-400">
-                                  {pkg.metodo_pago === 'transferencia' ? '(T)' : '(E)'}
-                                </span>
-                              </div>
-                              <Edit2 className="h-4 w-4 text-slate-500" />
-                            </div>
-                          </div>
-                        </div>
-                        
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {pkg.alerta_no_contesta && (
-                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
-                              <MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA
-                            </Badge>
-                          )}
-                          {pkg.alerta_numero_equivocado && (
-                            <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[10px] gap-1 animate-pulse">
-                              <Phone className="w-3 h-3" /> NÚMERO EQUIVOCADO
-                            </Badge>
-                          )}
-                          {pkg.alerta_cambio_pago && (
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50 text-[10px] gap-1"><RefreshCcw className="w-3 h-3" /> CAMBIO DE PAGO</Badge>
-                              {pkg.imagen_pago_url && <a href={pkg.imagen_pago_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent flex items-center gap-1 hover:underline" onClick={(e) => e.stopPropagation()}><ExternalLink className="w-3 h-3" /> Ver Comprobante</a>}
-                            </div>
-                          )}
-                        </div>
-                        {pkg.novedad && <p className="text-xs text-red-400 italic mt-2"><UserX className="inline h-3 w-3 mr-1" /> {pkg.novedad}</p>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+          ) : (
+            <Badge variant="outline" className="border-accent/20 text-accent/50 gap-1 text-[10px]">
+              <Volume2 className="h-3 w-3" /> Sonido Activo
+            </Badge>
+          )}
         </div>
-      </main>
+      </header>
+
+      <div className="p-4 lg:p-8 flex justify-center print:hidden">
+        <div className="w-full max-w-2xl space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Mis Paquetes</h2>
+            {alertCount > 0 && <Badge className="bg-red-500/20 text-red-400 border-red-500/50 animate-pulse">{alertCount} ALERTAS ACTIVAS</Badge>}
+          </div>
+
+          {fetchingPackages ? (
+            <div className="flex flex-col items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+              <p className="text-slate-400">Cargando...</p>
+            </div>
+          ) : misPaquetes.length === 0 ? (
+            <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
+              <Package className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold">Sin paquetes</h3>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {misPaquetes.map((pkg) => (
+                <Card 
+                  key={pkg.id} 
+                  className={cn(
+                    "bg-white/5 border-white/10 transition-all cursor-pointer group", 
+                    (pkg.alerta_no_contesta || pkg.alerta_cambio_pago || pkg.alerta_numero_equivocado) && "animate-pulse-yellow border-yellow-500/40"
+                  )}
+                  onClick={() => { setSelectedPackage(pkg); setIsEditModalOpen(true); }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex flex-col min-w-0">
+                          <p className="font-bold text-white truncate">Guía: {pkg.guia_numero}</p>
+                          <p className="text-xs text-slate-400 flex items-start gap-1 mt-1">
+                            <MapPin className="h-3 w-3 mt-0.5 shrink-0" /> 
+                            <span className="break-words">{pkg.direccion}</span>
+                          </p>
+                        </div>
+                        <div className="shrink-0 mt-1 sm:mt-0">
+                          {getStatusBadge(pkg.estado)}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full md:w-auto">
+                        <div className="w-full sm:w-auto">
+                          <Cronometro 
+                            paqueteId={pkg.id} 
+                            estadoActual={pkg.estado}
+                            tiempoRecogida={pkg.tiempo_recogida} 
+                            historial={pkg.paquetes_historial || []}
+                            retrasoEmpresa={pkg.retraso_empresa_segundos} 
+                            retrasoOperador={pkg.retraso_operador_segundos} 
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewPackage(pkg);
+                                setIsPreviewOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-accent hover:bg-accent/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTrackingPackage(pkg);
+                                setIsTrackingOpen(true);
+                              }}
+                            >
+                              <MapPinned className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 ml-1 shrink-0">
+                            <div className="flex flex-col items-end">
+                              <p className="text-lg font-bold text-accent leading-none">${pkg.valor_pedido}</p>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {pkg.metodo_pago === 'transferencia' ? '(T)' : '(E)'}
+                              </span>
+                            </div>
+                            <Edit2 className="h-4 w-4 text-slate-500" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {pkg.alerta_no_contesta && (
+                          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] gap-1 animate-pulse">
+                            <MessageSquareOff className="w-3 h-3" /> CLIENTE NO CONTESTA
+                          </Badge>
+                        )}
+                        {pkg.alerta_numero_equivocado && (
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/50 text-[10px] gap-1 animate-pulse">
+                            <Phone className="w-3 h-3" /> NÚMERO EQUIVOCADO
+                          </Badge>
+                        )}
+                        {pkg.alerta_cambio_pago && (
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50 text-[10px] gap-1">
+                              <RefreshCcw className="w-3 h-3" /> CAMBIO DE PAGO
+                            </Badge>
+                            {pkg.imagen_pago_url && (
+                              <a 
+                                href={pkg.imagen_pago_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[10px] text-accent flex items-center gap-1 hover:underline" 
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-3 h-3" /> Ver Comprobante
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {pkg.novedad && (
+                        <p className="text-xs text-red-400 italic mt-2">
+                          <UserX className="inline h-3 w-3 mr-1" /> {pkg.novedad}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <ManagePackageModal 
         pkg={selectedPackage} 
@@ -401,22 +400,6 @@ export default function BusinessPackagesPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <nav className="fixed bottom-6 left-6 right-6 h-16 bg-slate-800 border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}><PlusCircle className="h-5 w-5" /><span className="text-[10px] font-bold">Solicitud</span></Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
-          <Package className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Paquetes</span>
-          {alertCount > 0 && <span className="absolute top-2 right-4 bg-red-500 text-white text-[8px] h-4 w-4 flex items-center justify-center rounded-full animate-bounce">{alertCount}</span>}
-          {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
-          <ImageIcon className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Logo</span>
-          {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} className="flex flex-col items-center justify-center gap-1 w-full h-full text-red-400"><LogOut className="h-5 w-5" /> Cerrar Sesión</button>
-      </nav>
-    </div>
+    </>
   );
 }
