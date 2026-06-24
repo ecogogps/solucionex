@@ -130,7 +130,12 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Cards de Saldo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={cn(
+        "grid gap-4",
+        rol === 'empresa' 
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" 
+          : "grid-cols-1 sm:grid-cols-3"
+      )}>
         {/* POR ACREDITAR */}
         <Card className={cn(
           "bg-white/5 border-white/10 transition-all",
@@ -149,7 +154,7 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
             )}>
               ${Number(wallet?.por_acreditar || 0).toFixed(2)}
             </p>
-            <p className="text-[10px] text-slate-500 mt-1">Ganancia pendiente de pago</p>
+          
           </CardContent>
         </Card>
 
@@ -171,9 +176,7 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
             )}>
               ${Number(wallet?.cash_acumulado || 0).toFixed(2)}
             </p>
-            <p className="text-[10px] text-slate-500 mt-1">
-              {rol === 'empresa' ? 'Pendiente por cobrar (Efectivo)' : 'Efectivo en mano por entregar'}
-            </p>
+
           </CardContent>
         </Card>
 
@@ -182,37 +185,30 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
           <CardHeader className="pb-2">
             <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest flex items-center gap-2">
               <CircleDollarSign className="w-3 h-3 text-slate-500" />
-              Saldo Pagado
+              Saldo Efectivo
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-black text-slate-400">
               ${Number(wallet?.saldo_efectivo || 0).toFixed(2)}
             </p>
-            <p className="text-[10px] text-slate-500 mt-1">Total liquidado históricamente</p>
+            
           </CardContent>
         </Card>
 
-        {/* TASA PENDIENTE (Solo Empresa) */}
+        {/* BALANCE DIGITAL APP (Solo Empresa) */}
         {rol === 'empresa' && (
-          <Card className={cn(
-            "bg-white/5 border-white/10 transition-all",
-            Number(wallet?.tasa_pendiente || 0) > 0 && "border-yellow-500/30 bg-yellow-500/5 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
-          )}>
+          <Card className="bg-white/5 border-white/10">
             <CardHeader className="pb-2">
               <CardTitle className="text-[10px] uppercase text-slate-500 font-bold tracking-widest flex items-center gap-2">
-                <AlertCircle className={cn("w-3 h-3", Number(wallet?.tasa_pendiente || 0) > 0 ? "text-yellow-400" : "text-slate-500")} />
-                Tasa Pendiente
+                <CircleDollarSign className="w-3 h-3 text-sky-400" />
+                Balance Digital App
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={cn(
-                "text-3xl font-black",
-                Number(wallet?.tasa_pendiente || 0) > 0 ? "text-yellow-400" : "text-white"
-              )}>
-                ${Number(wallet?.tasa_pendiente || 0).toFixed(2)}
+              <p className="text-3xl font-black text-sky-400">
+                ${Number(wallet?.balance_digital_app || 0).toFixed(2)}
               </p>
-              <p className="text-[10px] text-slate-500 mt-1">Pendiente de cobro por Solucionex</p>
             </CardContent>
           </Card>
         )}
@@ -239,7 +235,7 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
           <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 p-4 rounded-xl flex items-center gap-3">
             <CircleDollarSign className="w-5 h-5 shrink-0" />
             <p className="text-sm font-medium">
-              Solucionex te debe $${Number(wallet?.por_acreditar).toFixed(2)} por tus envíos completados.
+              La plataforma te debe ${Number(wallet?.por_acreditar).toFixed(2)} por tus paquetes entregados.
             </p>
           </div>
         )}
@@ -248,14 +244,14 @@ export function MyWalletView({ rol }: { rol: 'empresa' | 'operador' }) {
       {/* Historial de Movimientos */}
       <div className="space-y-4">
         <h3 className="text-lg font-black flex items-center gap-2">
-          <History className="h-5 w-5 text-accent" /> Historial de Movimientos
+          <History className="h-5 w-5 text-accent" /> Movimientos
         </h3>
 
         {movements.length === 0 ? (
           <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
             <History className="h-12 w-12 text-slate-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white">Aún no tienes movimientos</h3>
-            <p className="text-slate-400 text-sm mt-1">Tus transacciones financieras aparecerán aquí.</p>
+            <p className="text-slate-400 text-sm mt-1">Tus Movimientos aparecerán aquí.</p>
           </div>
         ) : (
           <div className="space-y-3">

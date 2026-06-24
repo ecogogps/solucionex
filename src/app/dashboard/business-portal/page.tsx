@@ -33,6 +33,7 @@ import { supabase } from '@/lib/supabase';
 interface Sector {
   id: string;
   nombre: string;
+  valor: number;
 }
 
 export default function BusinessPortalRequest() {
@@ -43,6 +44,7 @@ export default function BusinessPortalRequest() {
   const [randomDigits] = useState(() => Math.floor(10000 + Math.random() * 90000).toString());
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [selectedSectorName, setSelectedSectorName] = useState('');
+  const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
 
   const [formData, setFormData] = useState({
     type: '',
@@ -53,7 +55,8 @@ export default function BusinessPortalRequest() {
     address: '',
     phone: '',
     note: '',
-    sectorId: ''
+    sectorId: '',
+    multiplicador: 1
   });
 
   const [showCamera, setShowCamera] = useState(false);
@@ -91,10 +94,10 @@ export default function BusinessPortalRequest() {
       if (empresaZonas && empresaZonas.length > 0) {
         const zoneIds = empresaZonas.map(ez => ez.zona_id);
         
-        // 2. Obtener los sectores que pertenecen a esas zonas
+        // 2. Obtener los sectores que pertenecen a esas zonas, incluyendo su valor
         const { data: sectorsData, error } = await supabase
           .from('sectores')
-          .select('id, nombre')
+          .select('id, nombre, valor')
           .in('zona_id', zoneIds)
           .order('nombre', { ascending: true });
 
@@ -240,6 +243,10 @@ export default function BusinessPortalRequest() {
         imageUrl = publicUrl;
       }
 
+      const totalACobrar = selectedSector 
+      ? parseFloat(formData.orderValue || '0') + (selectedSector.valor * formData.multiplicador)
+      : null;
+
       const { error: insertError } = await supabase
         .from('paquetes')
         .insert([{
@@ -254,7 +261,9 @@ export default function BusinessPortalRequest() {
           telefono: formData.phone,
           nota: formData.note,
           estado: 'buscando_operador',
-          sector_id: formData.sectorId
+          sector_id: formData.sectorId,
+          multiplicador: formData.multiplicador,
+          total_a_cobrar: totalACobrar
         }]);
 
       if (insertError) throw insertError;
@@ -300,6 +309,7 @@ export default function BusinessPortalRequest() {
                         value={formData.sectorId}
                         onValueChange={(value) => {
                           const sector = sectores.find(s => s.id === value);
+                          setSelectedSector(sector || null);
                           setSelectedSectorName(sector?.nombre || '');
                           setFormData(prev => ({ ...prev, sectorId: value }));
                         }}
@@ -336,7 +346,11 @@ export default function BusinessPortalRequest() {
                     <Label className="text-slate-300">Tipo de Paquete</Label>
                     <Select 
                       value={formData.type} 
-                      onValueChange={(v) => setFormData({...formData, type: v})}
+                      onValueChange={(v) => setFormData({
+                        ...formData, 
+                        type: v, 
+                        multiplicador: v === 'grande' ? formData.multiplicador : 1
+                      })}
                       required
                     >
                       <SelectTrigger className="bg-white/5 border-white/10 text-white">
@@ -348,6 +362,25 @@ export default function BusinessPortalRequest() {
                         <SelectItem value="grande">Grande</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    {formData.type === 'grande' && (
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-slate-300">Multiplicador</Label>
+                        <Select 
+                          value={String(formData.multiplicador)} 
+                          onValueChange={(v) => setFormData({...formData, multiplicador: parseInt(v)})}
+                        >
+                          <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                            <SelectValue placeholder="Seleccionar multiplicador" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white">
+                            {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                              <SelectItem key={n} value={String(n)}>x{n}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -427,6 +460,18 @@ export default function BusinessPortalRequest() {
                   <div className="space-y-2">
                     <Label htmlFor="valor" className="text-slate-300">Valor Pedido ($)</Label>
                     <Input id="valor" type="number" step="0.01" className="bg-white/5 border-white/10 text-white" value={formData.orderValue} onChange={(e) => setFormData({...formData, orderValue: e.target.value})} required />
+                    
+                    {selectedSector && formData.orderValue && (
+                      <div className="mt-2 bg-accent/5 border border-accent/20 rounded-lg p-3">
+                        <p className="text-[10px] uppercase font-bold text-slate-500">Total a cobrar</p>
+                        <p className="text-2xl font-black text-accent">
+                          ${(
+                            parseFloat(formData.orderValue || '0') + 
+                            (selectedSector.valor * formData.multiplicador)
+                          ).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="telf" className="text-slate-300">Teléfono</Label>

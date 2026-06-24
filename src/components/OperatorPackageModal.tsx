@@ -33,6 +33,7 @@ export interface PaqueteData {
   telefono: string;
   valor_pedido: number;
   metodo_pago: string;
+  total_a_cobrar?: number;
   tiempo_recogida: number;
   retraso_empresa_segundos?: number; 
   retraso_operador_segundos?: number;
@@ -598,7 +599,7 @@ Respaldo y Seguridad en cada entrega.`;
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                     <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Valor</span>
                     <p className="text-lg font-bold text-accent">${selectedPackage.valor_pedido}</p>
@@ -606,6 +607,10 @@ Respaldo y Seguridad en cada entrega.`;
                   <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                     <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><CreditCard className="w-3 h-3" /> Pago</span>
                     <p className="text-sm font-medium capitalize">{selectedPackage.metodo_pago}</p>
+                  </div>
+                  <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Total a Cobrar</span>
+                    <p className="text-lg font-bold text-white">${selectedPackage.total_a_cobrar ?? selectedPackage.valor_pedido}</p>
                   </div>
                 </div>
 

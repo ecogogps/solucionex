@@ -5,7 +5,7 @@ import {
   Truck, 
   PlusCircle, 
   Package, 
-  Image as ImageIcon, 
+  Settings,
   LogOut,
   Wallet
 } from 'lucide-react';
@@ -73,7 +73,7 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
                 pathname === '/dashboard/business-portal/logo' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
             >
-              <ImageIcon className={cn("h-5 w-5", pathname === '/dashboard/business-portal/logo' && "text-accent")} /> Configuración
+              <Settings className={cn("h-5 w-5", pathname === '/dashboard/business-portal/logo' && "text-accent")} /> Configuración
             </Button>
           </Link>
         </nav>
@@ -118,8 +118,8 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
           {pathname === '/dashboard/business-portal/my-wallet' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
         </Link>
         <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
-          <ImageIcon className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Logo</span>
+          <Settings className="h-5 w-5" />
+          <span className="text-[10px] font-bold">Config</span>
           {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
         </Link>
       </nav>
