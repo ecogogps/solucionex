@@ -12,6 +12,7 @@ interface PaquetePrintData {
   direccion: string;
   telefono: string;
   valor_pedido: number;
+  total_a_cobrar?: number; // Agregado para soportar el total a cobrar
   metodo_pago: string;
   nota?: string;
   novedad?: string;
@@ -186,8 +187,10 @@ export function PrintTemplate({ data }: { data: PaquetePrintData }) {
               {/* Box valor y pago */}
               <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 border border-black rounded-lg mt-3">
                 <div className="flex-1">
-                  <span className="block font-bold uppercase text-[10px] text-black">Valor pedido:</span>
-                  <span className="text-2xl font-black leading-none mt-1 text-black">${data.valor_pedido}</span>
+                  <span className="block font-bold uppercase text-[10px] text-black">Total a cobrar:</span>
+                  <span className="text-2xl font-black leading-none mt-1 text-black">
+                    ${data.total_a_cobrar ?? data.valor_pedido}
+                  </span>
                 </div>
                 <div className="flex-1 text-right border-l border-black pl-2">
                   <span className="block font-bold uppercase text-[10px] text-black">Pago:</span>
