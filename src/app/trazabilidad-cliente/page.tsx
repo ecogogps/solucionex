@@ -227,9 +227,13 @@ function TrackingContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                   <p className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1 mb-1">
-                    <DollarSign className="w-3 h-3" /> Valor Pedido
+                    <DollarSign className="w-3 h-3" /> Valor Total
                   </p>
-                  <p className="text-xl font-black text-accent">${paquete.valor_pedido?.toFixed(2)}</p>
+                  <p className="text-xl font-black text-accent">
+                    {paquete.total_a_cobrar !== undefined && paquete.total_a_cobrar !== null
+                      ? `$${paquete.total_a_cobrar.toFixed(2)}`
+                      : 'error'}
+                  </p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                   <p className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1 mb-1">

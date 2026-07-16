@@ -9,7 +9,9 @@ import {
   Loader2,
   Globe,
   MapPin,
-  MapPinned
+  MapPinned,
+  Percent,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +41,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import MultiplicadorConfig from '@/components/MultiplicadorConfig';
+import TasaConfig from '@/components/TasaConfig';
 
 interface Ciudad {
   id: string;
@@ -57,6 +61,8 @@ interface Sector {
   nombre: string;
   zona_id: string;
   zonas?: Zona;
+  valor?: number;
+  valor_operador?: number;
 }
 
 export default function ConfigurationPage() {
@@ -77,7 +83,9 @@ export default function ConfigurationPage() {
   const [formData, setFormData] = useState({
     nombre: '',
     ciudad_id: '',
-    zona_id: ''
+    zona_id: '',
+    valor: '0',
+    valor_operador: '0'
   });
 
   const router = useRouter();
@@ -110,10 +118,18 @@ export default function ConfigurationPage() {
       setFormData({
         nombre: item.nombre,
         ciudad_id: item.ciudad_id || '',
-        zona_id: item.zona_id || ''
+        zona_id: item.zona_id || '',
+        valor: item.valor !== undefined ? String(item.valor) : '0',
+        valor_operador: item.valor_operador !== undefined ? String(item.valor_operador) : '0'
       });
     } else {
-      setFormData({ nombre: '', ciudad_id: '', zona_id: '' });
+      setFormData({ 
+        nombre: '', 
+        ciudad_id: '', 
+        zona_id: '',
+        valor: '0',
+        valor_operador: '0'
+      });
     }
     setIsDialogOpen(true);
   };
@@ -142,10 +158,18 @@ export default function ConfigurationPage() {
         }
       } else if (activeTab === 'sectores') {
         if (!formData.zona_id) throw new Error("Debes seleccionar una zona.");
+        
+        const sectorPayload = {
+          nombre: formData.nombre,
+          zona_id: formData.zona_id,
+          valor: parseFloat(formData.valor) || 0,
+          valor_operador: parseFloat(formData.valor_operador) || 0
+        };
+
         if (editingItem) {
-          ({ error } = await supabase.from('sectores').update({ nombre: formData.nombre, zona_id: formData.zona_id }).eq('id', editingItem.id));
+          ({ error } = await supabase.from('sectores').update(sectorPayload).eq('id', editingItem.id));
         } else {
-          ({ error } = await supabase.from('sectores').insert([{ nombre: formData.nombre, zona_id: formData.zona_id }]));
+          ({ error } = await supabase.from('sectores').insert([sectorPayload]));
         }
       }
 
@@ -178,15 +202,17 @@ export default function ConfigurationPage() {
     <>
       <header className="h-16 bg-white/5 border-b border-white/10 flex items-center justify-between px-8">
         <h2 className="text-xl font-bold text-white">Configuración del Sistema</h2>
-        <Button onClick={() => handleOpenDialog()} className="bg-accent text-primary hover:bg-accent/90 font-bold">
-          <Plus className="h-4 w-4 mr-2" /> 
-          {activeTab === 'ciudades' ? 'Nueva Ciudad' : activeTab === 'zonas' ? 'Nueva Zona' : 'Nuevo Sector'}
-        </Button>
+        {activeTab !== 'multiplicadores' && activeTab !== 'config' && ( // <--- Modificado
+          <Button onClick={() => handleOpenDialog()} className="bg-accent text-primary hover:bg-accent/90 font-bold">
+            <Plus className="h-4 w-4 mr-2" /> 
+            {activeTab === 'ciudades' ? 'Nueva Ciudad' : activeTab === 'zonas' ? 'Nueva Zona' : 'Nuevo Sector'}
+          </Button>
+        )}
       </header>
 
       <div className="p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white/5 border border-white/10">
+        <TabsList className="bg-white/5 border border-white/10">
             <TabsTrigger value="ciudades" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold">
               <Globe className="w-4 h-4 mr-2" /> Ciudades
             </TabsTrigger>
@@ -195,6 +221,12 @@ export default function ConfigurationPage() {
             </TabsTrigger>
             <TabsTrigger value="sectores" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold">
               <MapPin className="w-4 h-4 mr-2" /> Sectores
+            </TabsTrigger>
+            <TabsTrigger value="multiplicadores" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold">
+              <Percent className="w-4 h-4 mr-2" /> Multiplicadores
+            </TabsTrigger>
+            <TabsTrigger value="config" className="data-[state=active]:bg-accent data-[state=active]:text-primary font-bold"> {/* <--- Agregado */}
+              <Settings className="w-4 h-4 mr-2" /> Tasa
             </TabsTrigger>
           </TabsList>
 
@@ -260,6 +292,8 @@ export default function ConfigurationPage() {
                     <TableHead className="text-slate-300">Sector</TableHead>
                     <TableHead className="text-slate-300">Zona</TableHead>
                     <TableHead className="text-slate-300">Ciudad</TableHead>
+                    <TableHead className="text-slate-300">Valor</TableHead>
+                    <TableHead className="text-slate-300">Valor Operador</TableHead>
                     <TableHead className="text-right text-slate-300">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -269,6 +303,8 @@ export default function ConfigurationPage() {
                       <TableCell className="font-medium text-white">{s.nombre}</TableCell>
                       <TableCell className="text-slate-400">{s.zonas?.nombre}</TableCell>
                       <TableCell className="text-slate-500 text-xs">{(s.zonas as any)?.ciudades?.nombre}</TableCell>
+                      <TableCell className="font-mono text-white">${s.valor !== undefined ? Number(s.valor).toFixed(2) : '0.00'}</TableCell>
+                      <TableCell className="font-mono text-white">${s.valor_operador !== undefined ? Number(s.valor_operador).toFixed(2) : '0.00'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" className="hover:bg-blue-500/20 text-blue-400" onClick={() => handleOpenDialog(s)}><Edit2 className="h-4 w-4" /></Button>
@@ -280,6 +316,13 @@ export default function ConfigurationPage() {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+          <TabsContent value="multiplicadores">
+            <MultiplicadorConfig />
+          </TabsContent>
+
+          <TabsContent value="config"> {/* <--- Agregado */}
+            <TasaConfig />
           </TabsContent>
         </Tabs>
       </div>
@@ -314,19 +357,48 @@ export default function ConfigurationPage() {
             )}
 
             {activeTab === 'sectores' && (
-              <div className="grid gap-2">
-                <Label>Zona Perteneciente</Label>
-                <Select value={formData.zona_id} onValueChange={(v) => setFormData({...formData, zona_id: v})}>
-                  <SelectTrigger className="bg-white/5 border-white/10">
-                    <SelectValue placeholder="Seleccionar zona" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-white/10 text-white">
-                    {zonas.map(z => (
-                      <SelectItem key={z.id} value={z.id}>{z.nombre} ({(z.ciudades as any)?.nombre})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="grid gap-2">
+                  <Label>Zona Perteneciente</Label>
+                  <Select value={formData.zona_id} onValueChange={(v) => setFormData({...formData, zona_id: v})}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Seleccionar zona" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                      {zonas.map(z => (
+                        <SelectItem key={z.id} value={z.id}>{z.nombre} ({(z.ciudades as any)?.nombre})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="valor">Valor</Label>
+                    <Input 
+                      id="valor" 
+                      type="number" 
+                      step="0.01"
+                      value={formData.valor} 
+                      onChange={(e) => setFormData({...formData, valor: e.target.value})} 
+                      className="bg-white/5 border-white/10 focus:ring-accent" 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="valor_operador">Valor Operador</Label>
+                    <Input 
+                      id="valor_operador" 
+                      type="number" 
+                      step="0.01"
+                      value={formData.valor_operador} 
+                      onChange={(e) => setFormData({...formData, valor_operador: e.target.value})} 
+                      className="bg-white/5 border-white/10 focus:ring-accent" 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                </div>
+              </>
             )}
           </div>
           <DialogFooter>

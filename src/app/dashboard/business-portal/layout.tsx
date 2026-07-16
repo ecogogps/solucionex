@@ -62,7 +62,7 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
                 pathname === '/dashboard/business-portal/my-wallet' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
             >
-              <Wallet className={cn("h-5 w-5", pathname === '/dashboard/business-portal/my-wallet' && "text-accent")} /> Mi Billetera
+              <Wallet className={cn("h-5 w-5", pathname === '/dashboard/business-portal/my-wallet' && "text-accent")} /> Tmax Pay
             </Button>
           </Link>
           <Link href="/dashboard/business-portal/logo">

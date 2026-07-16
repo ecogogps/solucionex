@@ -10,6 +10,7 @@ interface PackageData {
   estado: string;
   direccion: string;
   valor_pedido: number;
+  total_a_cobrar?: number; // Agregado para soportar el total a cobrar
   metodo_pago: string;
   operador_id: string | null;
   empresa_id: string;
@@ -45,7 +46,9 @@ export const exportPackagesToPDF = (packages: PackageData[]) => {
     pkg.operadores?.nombres || 'Sin asignar',
     pkg.tipo,
     pkg.guia_numero,
-    `$${pkg.valor_pedido}`,
+    pkg.total_a_cobrar !== undefined && pkg.total_a_cobrar !== null
+      ? `$${pkg.total_a_cobrar}`
+      : 'error', // Fallback estricto a 'error' si no está definido
     pkg.metodo_pago,
     pkg.direccion,
     pkg.telefono || 'N/A'
@@ -53,7 +56,7 @@ export const exportPackagesToPDF = (packages: PackageData[]) => {
 
   autoTable(doc, {
     startY: 28,
-    head: [['Empresa', 'Operador', 'Tipo', 'Guía', 'Valor', 'Pago', 'Dirección', 'Teléfono']],
+    head: [['Empresa', 'Operador', 'Tipo', 'Guía', 'Total a Cobrar', 'Pago', 'Dirección', 'Teléfono']],
     body: tableRows,
     theme: 'grid',
     headStyles: { fillColor: [13, 13, 84], textColor: [255, 255, 255] },

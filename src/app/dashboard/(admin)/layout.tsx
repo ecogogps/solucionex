@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/business', label: 'Empresas', icon: Building2 },
     { href: '/dashboard/operators', label: 'Operadores', icon: UserCheck },
     { href: '/dashboard/tracking', label: 'Ubicación Operador', icon: Navigation },
-    { href: '/dashboard/wallets', label: 'Movimientos', icon: Wallet },
+    { href: '/dashboard/wallets', label: 'Billeteras', icon: Wallet },
     { href: '/dashboard/settlement', label: 'Liquidación', icon: CircleDollarSign },
     { href: '/dashboard/transfers', label: 'Cobros Transf.', icon: Banknote },
     { href: '/dashboard/configuration', label: 'Configuración', icon: Settings },

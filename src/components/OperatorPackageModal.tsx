@@ -452,7 +452,7 @@ export function OperatorPackageModal({
 ${pkg.direccion}
 
 ------------------------------
-💰*TOTAL* ${pkg.metodo_pago} | ${pkg.valor_pedido}
+💰*TOTAL* ${pkg.metodo_pago} | ${pkg.total_a_cobrar !== undefined && pkg.total_a_cobrar !== null ? pkg.total_a_cobrar : 'error'}
 ------------------------------
 *INGRESA TU UBICACIÓN*
 📍GOOGLE MAPS📍
@@ -610,7 +610,11 @@ Respaldo y Seguridad en cada entrega.`;
                   </div>
                   <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
                     <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Total a Cobrar</span>
-                    <p className="text-lg font-bold text-white">${selectedPackage.total_a_cobrar ?? selectedPackage.valor_pedido}</p>
+                    <p className="text-lg font-bold text-white">
+                      {selectedPackage.total_a_cobrar !== undefined && selectedPackage.total_a_cobrar !== null
+                        ? `$${selectedPackage.total_a_cobrar}`
+                        : 'error'}
+                    </p>
                   </div>
                 </div>
 

@@ -83,6 +83,7 @@ interface PackageData {
   estado: string;
   direccion: string;
   valor_pedido: number;
+  total_a_cobrar?: number;
   metodo_pago: string;
   operador_id: string | null;
   empresa_id: string;
@@ -676,7 +677,7 @@ export default function DashboardAdmin() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-white font-bold">${pkg.valor_pedido}</TableCell>
+                    <TableCell className="text-white font-bold">${pkg.total_a_cobrar ?? pkg.valor_pedido}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1.5 items-start">
                         {getStatusBadge(pkg.estado)}
@@ -1116,8 +1117,8 @@ export default function DashboardAdmin() {
                   <div className="flex items-center gap-3">
                     <DollarSign className="h-5 w-5 text-accent shrink-0" />
                     <div>
-                      <p className="text-xs text-slate-500 font-bold uppercase">Valor y Pago</p>
-                      <p className="text-sm font-bold">${viewingPackage.valor_pedido} <span className="text-[10px] text-slate-400 font-normal uppercase">({viewingPackage.metodo_pago})</span></p>
+                      <p className="text-xs text-slate-500 font-bold uppercase">Total a Cobrar y Pago</p>
+                      <p className="text-sm font-bold">${viewingPackage.total_a_cobrar ?? viewingPackage.valor_pedido} <span className="text-[10px] text-slate-400 font-normal uppercase">({viewingPackage.metodo_pago})</span></p>
                     </div>
                   </div>
                 </div>

@@ -213,21 +213,20 @@ export function ManagePackageModal({ pkg, isOpen, onClose, onSuccess }: ManagePa
     const nombreEmpresa = (pkgData.empresas?.nombre || '').toUpperCase();
     const trackingLink = `https://solucionexdv.vercel.app/trazabilidad-cliente?guia=${pkgData.guia_numero}`;
     
-    const message = `⚠️ Paquete por recibir de 
-Origen ➡️ *${nombreEmpresa}*
-------------------------------
-*Conoce Información y el estado de tu paquete*
-${trackingLink}
-*Guía N°* ${pkgData.guia_numero}
-*Hora de creación:* ${formatDateEcuador(pkgData.created_at)} ${formatTimeEcuador(pkgData.created_at)}
-*A pagar:* ${pkgData.metodo_pago} | ${Number(pkgData.valor_pedido).toFixed(2)}
-------------------------------
-📲*Un operador se comunicara con usted para coordinar la entrega*
-*🚚💨*
-
-------------------------------
-*Tmax sistema de entregas*
-Respaldo y Seguridad en cada Transacción.`;
+      const message = `⚠️ Tienes una encomienda por recibir
+    *Con Solucionex conoce el estado de tu paquete*
+    ${trackingLink}
+    *Guía N°* ${pkgData.guia_numero}
+    ------------------------------
+    ORIGEN: ➡️ *${nombreEmpresa}*
+    -----------------------------
+    *Hora de creación:* ${formatDateEcuador(pkgData.created_at)} ${formatTimeEcuador(pkgData.created_at)}
+    *A pagar:* ${pkgData.metodo_pago} | ${pkgData.total_a_cobrar !== undefined && pkgData.total_a_cobrar !== null ? Number(pkgData.total_a_cobrar).toFixed(2) : 'error'}
+    -----------------------------
+    *Operadora:* Solucionex Delivery
+    -----------------------------
+    *Tmax System*
+    Respaldo y Seguridad en cada Transacción.`;
 
     // Al usar "whatsapp://send" directamente, el sistema operativo (Windows/macOS/móvil)
     // lanzará automáticamente la aplicación de escritorio instalada (WhatsApp o WhatsApp Business).
@@ -294,8 +293,12 @@ Respaldo y Seguridad en cada Transacción.`;
                   </div>
                 </div>
                 <div className="space-y-2 pt-2 border-t border-white/5">
-                  <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Valor Total</div>
-                  <div className="text-2xl font-black text-accent truncate">${pkg.valor_pedido}</div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500"><DollarSign className="w-3 h-3 shrink-0" /> Total a Cobrar</div>
+                  <div className="text-2xl font-black text-accent truncate">
+                    {pkg.total_a_cobrar !== undefined && pkg.total_a_cobrar !== null
+                      ? `$${pkg.total_a_cobrar}`
+                      : 'error'}
+                  </div>
                 </div>
 
                 {/* Sección interactiva del PIN */}
