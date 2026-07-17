@@ -7,7 +7,8 @@ import {
   Package, 
   Settings,
   LogOut,
-  Wallet
+  Wallet,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,14 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
     router.push('/');
   };
 
+  const navItems = [
+    { href: '/dashboard/business-portal', label: 'Nueva Solicitud', icon: PlusCircle },
+    { href: '/dashboard/business-portal/packages', label: 'Mis Paquetes', icon: Package },
+    { href: '/dashboard/business-portal/stats-business', label: 'Estadísticas', icon: BarChart3 },
+    { href: '/dashboard/business-portal/my-wallet', label: 'Tmax Pay', icon: Wallet },
+    { href: '/dashboard/business-portal/logo', label: 'Config', icon: Settings },
+  ];
+
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row text-white overflow-hidden">
       {/* Menú lateral (Escritorio) */}
@@ -32,50 +41,23 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
           <span className="text-xl font-bold tracking-tight">Solucionex</span>
         </div>
         <nav className="flex-1 space-y-2">
-          <Link href="/dashboard/business-portal">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <PlusCircle className={cn("h-5 w-5", pathname === '/dashboard/business-portal' && "text-accent")} /> Nueva Solicitud
-            </Button>
-          </Link>
-          <Link href="/dashboard/business-portal/packages">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal/packages' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Package className={cn("h-5 w-5", pathname === '/dashboard/business-portal/packages' && "text-accent")} /> Mis Paquetes
-            </Button>
-          </Link>
-          <Link href="/dashboard/business-portal/my-wallet">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal/my-wallet' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Wallet className={cn("h-5 w-5", pathname === '/dashboard/business-portal/my-wallet' && "text-accent")} /> Tmax Pay
-            </Button>
-          </Link>
-          <Link href="/dashboard/business-portal/logo">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-3 transition-all",
-                pathname === '/dashboard/business-portal/logo' ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Settings className={cn("h-5 w-5", pathname === '/dashboard/business-portal/logo' && "text-accent")} /> Configuración
-            </Button>
-          </Link>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full justify-start gap-3 transition-all",
+                    isActive ? "bg-white/10 text-white" : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", isActive && "text-accent")} /> {item.label}
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
         <div className="pt-6 border-t border-white/10">
           <Button variant="ghost" className="w-full justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={handleLogout}>
@@ -102,26 +84,24 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
 
       {/* Navegación inferior fija (Móvil) */}
       <nav className="fixed bottom-6 left-6 right-6 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex lg:hidden items-center justify-around z-50 shadow-2xl overflow-hidden px-2">
-        <Link href="/dashboard/business-portal" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal' ? "text-accent" : "text-slate-400")}>
-          <PlusCircle className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Solicitud</span>
-          {pathname === '/dashboard/business-portal' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/packages" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/packages' ? "text-accent" : "text-slate-400")}>
-          <Package className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Paquetes</span>
-          {pathname === '/dashboard/business-portal/packages' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/my-wallet" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/my-wallet' ? "text-accent" : "text-slate-400")}>
-          <Wallet className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Billetera</span>
-          {pathname === '/dashboard/business-portal/my-wallet' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
-        <Link href="/dashboard/business-portal/logo" className={cn("flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", pathname === '/dashboard/business-portal/logo' ? "text-accent" : "text-slate-400")}>
-          <Settings className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Config</span>
-          {pathname === '/dashboard/business-portal/logo' && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
-        </Link>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link 
+              key={item.href}
+              href={item.href} 
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 w-full h-full transition-all relative", 
+                isActive ? "text-accent" : "text-slate-400"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-bold">{item.label === 'Nueva Solicitud' ? 'Solicitud' : item.label === 'Estadísticas' ? 'Stats' : item.label === 'Tmax Pay' ? 'Billetera' : item.label}</span>
+              {isActive && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
