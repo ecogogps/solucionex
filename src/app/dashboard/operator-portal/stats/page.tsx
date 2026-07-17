@@ -9,12 +9,10 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock, 
-  Truck,
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { 
   BarChart, 
   Bar, 
@@ -55,17 +53,23 @@ export default function OperatorStatsPage() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      // 1. Totales
+      // 1. Totales (se accede al primer objeto del arreglo devuelto)
       const { data: dataTotales } = await supabase.rpc('stats_operador_totales');
-      if (dataTotales) setTotales(dataTotales);
+      if (dataTotales && dataTotales.length > 0) {
+        setTotales(dataTotales[0]);
+      }
 
-      // 2. Tiempo promedio entrega
+      // 2. Tiempo promedio entrega (se extrae la propiedad del primer objeto)
       const { data: dataEntrega } = await supabase.rpc('stats_operador_tiempo_entrega');
-      if (dataEntrega !== undefined) setPromedioEntrega(Number(dataEntrega));
+      if (dataEntrega && dataEntrega.length > 0) {
+        setPromedioEntrega(Number(dataEntrega[0].promedio_minutos) || 0);
+      }
 
-      // 3. Tiempo promedio retiro
+      // 3. Tiempo promedio retiro (se extrae la propiedad del primer objeto)
       const { data: dataRetiro } = await supabase.rpc('stats_operador_tiempo_retiro');
-      if (dataRetiro !== undefined) setPromedioRetiro(Number(dataRetiro));
+      if (dataRetiro && dataRetiro.length > 0) {
+        setPromedioRetiro(Number(dataRetiro[0].promedio_minutos) || 0);
+      }
 
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -213,7 +217,7 @@ export default function OperatorStatsPage() {
         <div className="bg-accent/5 border border-accent/20 p-4 rounded-xl flex items-start gap-3">
           <TrendingUp className="h-5 w-5 text-accent shrink-0 mt-0.5" />
           <p className="text-xs text-slate-400 leading-relaxed">
-            Tus estadísticas se calculan en base a tus últimas 50 operaciones finalizadas. Mantener tiempos bajos mejora tu reputación en el sistema.
+            Tus estadísticas
           </p>
         </div>
 
