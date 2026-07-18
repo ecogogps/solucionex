@@ -29,7 +29,7 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
     { href: '/dashboard/business-portal/packages', label: 'Mis Paquetes', icon: Package },
     { href: '/dashboard/business-portal/stats-business', label: 'Estadísticas', icon: BarChart3 },
     { href: '/dashboard/business-portal/my-wallet', label: 'Tmax Pay', icon: Wallet },
-    { href: '/dashboard/business-portal/logo', label: 'Config', icon: Settings },
+    { href: '/dashboard/business-portal/logo', label: 'Configuración', icon: Settings },
   ];
 
   return (
@@ -97,7 +97,7 @@ export default function BusinessPortalLayout({ children }: { children: React.Rea
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-bold">{item.label === 'Nueva Solicitud' ? 'Solicitud' : item.label === 'Estadísticas' ? 'Stats' : item.label === 'Tmax Pay' ? 'Billetera' : item.label}</span>
+              <span className="text-[10px] font-bold">{item.label === 'Nueva Solicitud' ? 'Solicitud' : item.label === 'Estadísticas' ? 'Esta' : item.label === 'Tmax Pay' ? 'Tmax Pay' : item.label}</span>
               {isActive && <div className="absolute top-0 w-8 h-1 bg-accent rounded-b-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" />}
             </Link>
           );

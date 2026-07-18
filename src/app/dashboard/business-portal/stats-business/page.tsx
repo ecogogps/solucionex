@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
   BarChart3, 
   Loader2, 
-  TrendingUp, 
-  TrendingDown,
   Minus,
   CheckCircle2, 
   AlertTriangle, 
@@ -14,7 +12,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   XAxis, 
   YAxis, 
@@ -53,7 +51,7 @@ export default function BusinessStatsPage() {
         return;
       }
 
-      // Obtener todas las estadísticas en paralelo
+      // Se mantiene la carga de datos paralela para no romper la lógica de tendencia
       const [
         { data: resPorDia },
         { data: resTendencia },
@@ -75,7 +73,7 @@ export default function BusinessStatsPage() {
         entrega: Number(resEntrega?.[0]?.promedio_minutos) || 0,
         totales: {
           entregados: resTotales?.[0]?.total_entregados || 0,
-          novedades: resTotales?.[0]?.total_novedades || 0
+          novedades: resTotales?.[0]?.total_entregados_novedad || 0
         }
       });
 
@@ -90,7 +88,7 @@ export default function BusinessStatsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-10 w-10 animate-spin text-accent mb-4" />
-        <p className="text-slate-400 text-sm font-medium">Analizando rendimiento comercial...</p>
+        <p className="text-slate-400 text-sm font-medium">Analizando rendimiento</p>
       </div>
     );
   }
@@ -98,7 +96,9 @@ export default function BusinessStatsPage() {
   // Formatear datos para el gráfico
   const chartData = data.porDia.map((item: any) => ({
     ...item,
-    name: new Date(item.fecha).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+    name: item.dia 
+      ? new Date(item.dia).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+      : ''
   }));
 
   const tendenciaPct = data.tendencia?.tendencia_pct || 0;
@@ -106,8 +106,7 @@ export default function BusinessStatsPage() {
   return (
     <div className="p-4 lg:p-8 space-y-6 max-w-4xl mx-auto pb-24 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold">Estadísticas de Empresa</h2>
-        <p className="text-slate-400 text-sm">Visualiza el flujo de tus entregas y tiempos de respuesta</p>
+        <h2 className="text-2xl font-bold">Mis Estadísticas</h2>
       </div>
 
       {/* SECCIÓN A: CARDS DE TEXTO */}
@@ -157,9 +156,8 @@ export default function BusinessStatsPage() {
       <Card className="bg-white/5 border-white/10 overflow-hidden shadow-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-accent" /> Flujo de Paquetes (30 días)
+            <BarChart3 className="h-4 w-4 text-accent" /> Gráfico Estadístico
           </CardTitle>
-          <CardDescription className="text-xs text-slate-400">Volumen diario de envíos procesados</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64 w-full mt-4">
@@ -190,7 +188,7 @@ export default function BusinessStatsPage() {
                 />
                 <Area 
                   type="monotone" 
-                  dataKey="cantidad" 
+                  dataKey="total" 
                   stroke="hsl(var(--accent))" 
                   fillOpacity={1} 
                   fill="url(#colorCount)" 
@@ -199,7 +197,7 @@ export default function BusinessStatsPage() {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="cantidad" 
+                  dataKey="total" 
                   stroke="#ffffff20" 
                   strokeDasharray="5 5" 
                   dot={false}
@@ -213,47 +211,16 @@ export default function BusinessStatsPage() {
       </Card>
 
       {/* SECCIÓN C: BLOQUE INDICADOR DE TENDENCIA */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 bg-white/5 border-white/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold">Resumen de Periodos</CardTitle>
-            <CardDescription className="text-[10px] text-slate-500">Comparativa de carga operativa semanal</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-4 pt-4">
-            <div className="space-y-1">
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Últimos 7 días</p>
-              <p className="text-2xl font-black text-white">{data.tendencia?.actual_7_dias || 0}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">7 días anteriores</p>
-              <p className="text-2xl font-black text-white">{data.tendencia?.previo_7_dias || 0}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Total del periodo</p>
-              <p className="text-2xl font-black text-accent">{data.tendencia?.total_periodo || 0}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/5 border-white/10 flex flex-col justify-center items-center p-6 text-center">
-          <p className="text-[10px] text-slate-500 uppercase font-bold mb-3 tracking-widest">Indicador de Tendencia</p>
-          <div className={cn(
-            "flex items-center gap-2 text-3xl font-black transition-colors duration-500",
-            tendenciaPct > 0 ? "text-emerald-400" : tendenciaPct < 0 ? "text-red-400" : "text-slate-400"
-          )}>
-            {tendenciaPct > 0 ? <ArrowUpRight className="h-8 w-8" /> : tendenciaPct < 0 ? <ArrowDownRight className="h-8 w-8" /> : <Minus className="h-8 w-8" />}
-            {Math.abs(tendenciaPct).toFixed(2)}%
-          </div>
-          <p className="text-[10px] text-slate-500 mt-3 font-medium">Crecimiento vs. semana anterior</p>
-        </Card>
-      </div>
-
-      <div className="bg-accent/5 border border-accent/20 p-4 rounded-xl flex items-start gap-3 shadow-inner">
-        <TrendingUp className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-400 leading-relaxed italic">
-          Las métricas se calculan en base a los últimos 30 días de operación. Usa estos datos para optimizar tus tiempos de despacho y mejorar la satisfacción del cliente final.
-        </p>
-      </div>
+      <Card className="bg-white/5 border-white/10 flex flex-col justify-center items-center p-6 text-center shadow-2xl">
+        <p className="text-[10px] text-slate-500 uppercase font-bold mb-3 tracking-widest">Indicador de Tendencia</p>
+        <div className={cn(
+          "flex items-center gap-2 text-3xl font-black transition-colors duration-500",
+          tendenciaPct > 0 ? "text-emerald-400" : tendenciaPct < 0 ? "text-red-400" : "text-slate-400"
+        )}>
+          {tendenciaPct > 0 ? <ArrowUpRight className="h-8 w-8" /> : tendenciaPct < 0 ? <ArrowDownRight className="h-8 w-8" /> : <Minus className="h-8 w-8" />}
+          {Math.abs(tendenciaPct).toFixed(2)}%
+        </div>
+      </Card>
     </div>
   );
 }
