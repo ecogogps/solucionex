@@ -8,37 +8,14 @@ import {
   Navigation, Wallet, Settings, LogOut,
   CircleDollarSign,
   Banknote,
-  LayoutDashboard,
-  BarChart3,
-  Undo2
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [retreatsCount, setRetreatsCount] = useState(0);
-
-  useEffect(() => {
-    fetchRetreatsCount();
-    const channel = supabase
-      .channel('retreats_count')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'retiro_solicitudes' }, () => {
-        fetchRetreatsCount();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const fetchRetreatsCount = async () => {
-    const { count } = await supabase
-      .from('retiro_solicitudes')
-      .select('*', { count: 'exact', head: true })
-      .eq('estado', 'pendiente');
-    setRetreatsCount(count || 0);
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -50,11 +27,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/business', label: 'Empresas', icon: Building2 },
     { href: '/dashboard/operators', label: 'Operadores', icon: UserCheck },
     { href: '/dashboard/tracking', label: 'Ubicación Operador', icon: Navigation },
-    { href: '/dashboard/wallets', label: 'Movimientos', icon: Wallet },
+    { href: '/dashboard/wallets', label: 'Billeteras', icon: Wallet },
     { href: '/dashboard/settlement', label: 'Liquidación', icon: CircleDollarSign },
     { href: '/dashboard/transfers', label: 'Cobros Transf.', icon: Banknote },
-    { href: '/dashboard/retreats', label: 'Retiros', icon: Undo2, badge: retreatsCount },
-    { href: '/dashboard/stats-admin', label: 'Analítica', icon: BarChart3 },
+    { href: '/dashboard/stats-admin', label: 'Estadística', icon: BarChart3 },
     { href: '/dashboard/configuration', label: 'Configuración', icon: Settings },
   ];
 
@@ -82,11 +58,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <Icon className={cn("h-5 w-5", isActive && "text-accent")} /> 
                   {item.label}
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                      {item.badge}
-                    </span>
-                  )}
                 </Button>
               </Link>
             );

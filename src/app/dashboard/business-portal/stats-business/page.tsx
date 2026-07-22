@@ -96,9 +96,9 @@ export default function BusinessStatsPage() {
   // Formatear datos para el gráfico
   const chartData = data.porDia.map((item: any) => ({
     ...item,
-    name: item.dia 
-      ? new Date(item.dia).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
-      : ''
+      name: item.dia
+    ? new Date(item.dia + 'T00:00:00').toLocaleDateString('es-EC', { day: '2-digit', month: 'short' })
+    : ''
   }));
 
   const tendenciaPct = data.tendencia?.tendencia_pct || 0;

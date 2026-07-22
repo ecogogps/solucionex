@@ -160,7 +160,7 @@ export function Ticket({ data, className }: TicketProps) {
               <div className="flex-1">
                 <span className="block font-bold uppercase text-[10px] text-black">Total a cobrar:</span>
                 <span className="text-2xl font-black leading-none mt-1 text-black">
-                  ${data.total_a_cobrar ?? data.valor_pedido}
+                ${(data.total_a_cobrar ?? data.valor_pedido).toFixed(2)}
                 </span>
               </div>
               <div className="flex-1 text-right border-l border-black pl-2">
